@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Brirar Chapel Connect
+
+A modern neighborhood hub built with Next.js 15.5.6, connecting neighbors through local services, marketplace, and community events.
+
+## Features
+
+- **Local Services** - Find trusted neighborhood service providers (plumbers, electricians, tutors, cleaners)
+- **Marketplace** - Buy and sell items with neighbors
+- **Community Events** - Discover yard sales, block parties, meetups, and local happenings
+- **Authentication** - Secure user accounts with Clerk
+- **Modern UI** - Beautiful, responsive design with dark mode support
+- **Real-time Updates** - Powered by Supabase
+- **TypeScript** - Full type safety throughout the application
+- **Tailwind CSS** - Utility-first styling for rapid development
+
+## Tech Stack
+
+- **Framework:** Next.js 15.5.6 with App Router
+- **Language:** TypeScript 5
+- **Styling:** Tailwind CSS 4
+- **Runtime:** React 19.1.0
+- **Build Tool:** Turbopack (Next.js native)
+- **Authentication:** Clerk
+- **Database:** Supabase (PostgreSQL)
+- **Storage:** Supabase Storage
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18.17 or later
+- npm, yarn, or pnpm
+- Supabase account (database already created)
+- Clerk account (for authentication)
+
+### Quick Start
+
+1. **Set up environment variables**
+   - Create `.env.local` file in the root directory
+   - Add your Supabase credentials (already configured)
+   - Add your Clerk API keys (see SETUP.md for details)
+
+2. **Set up the database**
+   - Go to your Supabase SQL Editor
+   - Run the SQL from `supabase-schema.sql`
+
+3. **Configure Clerk**
+   - Create a Clerk account at https://dashboard.clerk.com
+   - Get your API keys and add them to `.env.local`
+
+4. **Run the development server**
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+📖 **For detailed setup instructions, see [SETUP.md](./SETUP.md)**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Available Scripts
 
-## Learn More
+- `npm run dev` - Start development server with Turbopack
+- `npm run build` - Create production build
+- `npm start` - Start production server
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+brirar-chapel-connect/
+├── app/
+│   ├── layout.tsx              # Root layout with Clerk provider
+│   ├── page.tsx                # Home page
+│   └── globals.css             # Global styles
+├── lib/
+│   └── supabase/
+│       ├── client.ts           # Client-side Supabase client
+│       ├── server.ts           # Server-side Supabase client
+│       └── types.ts            # Database type definitions
+├── middleware.ts               # Clerk authentication middleware
+├── public/                     # Static assets
+├── supabase-schema.sql        # Database schema
+├── SETUP.md                    # Detailed setup instructions
+├── package.json                # Dependencies and scripts
+└── README.md                   # Project documentation
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Development
 
-## Deploy on Vercel
+The application uses the Next.js App Router for routing and server components. Edit `app/page.tsx` to modify the home page, and changes will hot-reload automatically.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The app can be deployed to:
+- **Vercel** (recommended) - Zero configuration deployment
+- **Any Node.js hosting** - Supports standard Node.js environments
+- **Docker** - Containerized deployment
+- **Static export** - For static hosting (if applicable)
+
+## License
+
+Private - Brirar Chapel Connect © 2025
