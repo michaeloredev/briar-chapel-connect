@@ -13,7 +13,7 @@ export default function ServicesPage() {
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* <PageHeader title="Local Services" description="Discover trusted providers in your neighborhood." /> */}
+        <PageHeader title="Local Services" description="Discover trusted providers in your neighborhood." />
 
         {serviceSections.map((section) => (
           <section key={section.slug} className="mt-10">
