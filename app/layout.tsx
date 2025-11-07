@@ -18,9 +18,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Brirar Chapel Connect - Your Neighborhood Hub",
+  title: "Briar Chapel Connect - Your Neighborhood Hub",
   description:
-    "Find local services, buy and sell items, discover community events in Brirar Chapel",
+    "Find local services, buy and sell items, discover community events in Briar Chapel",
 };
 
 export default function RootLayout({

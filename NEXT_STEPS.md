@@ -1,4 +1,4 @@
-# Next Steps - Brirar Chapel Connect
+# Next Steps - Briar Chapel Connect
 
 ## Immediate Setup (Required to run the app)
 

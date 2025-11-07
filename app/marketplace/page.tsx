@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Marketplace • Brirar Chapel Connect',
-  description: 'Browse items for sale in Brirar Chapel',
+  title: 'Marketplace • Briar Chapel Connect',
+  description: 'Browse items for sale in Briar Chapel',
 };
 
 export default function MarketplacePage() {

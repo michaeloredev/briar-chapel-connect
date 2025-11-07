@@ -26,7 +26,7 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/services/providers', {
+      const res = await fetch('/api/providers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

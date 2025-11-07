@@ -14,7 +14,7 @@ export default function Home() {
             <span className="text-blue-600 dark:text-blue-400">All In One Place</span>
           </h2>
           <p className="text-xl text-slate-600 dark:text-slate-300">
-            Discover local services, buy and sell with neighbors, and stay connected with community events in Brirar Chapel.
+            Discover local services, buy and sell with neighbors, and stay connected with community events in Briar Chapel.
           </p>
         </div>
 
