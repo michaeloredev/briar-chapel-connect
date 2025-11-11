@@ -33,12 +33,17 @@ export async function POST(req: Request) {
       );
     }
 
-    const { userId } = await auth();
+    const { userId, getToken } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase: SupabaseClient<Database> = await createClient();
+    // Use Clerk session token (recommended). Configure Supabase External JWT with Clerk JWKS.
+    const sessionToken = await getToken();
+    if (!sessionToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const supabase: SupabaseClient<Database> = await createClient(sessionToken);
     type ServiceInsert = Database['public']['Tables']['services']['Insert'];
     const insert: ServiceInsert = {
       user_id: userId,
