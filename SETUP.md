@@ -1,4 +1,4 @@
-# Brirar Chapel Connect - Setup Guide
+# Briar Chapel Connect - Setup Guide
 
 ## Prerequisites
 - Node.js 18+ installed

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Events • Brirar Chapel Connect',
-  description: 'Discover community events in Brirar Chapel',
+  title: 'Events • Briar Chapel Connect',
+  description: 'Discover community events in Briar Chapel',
 };
 
 export default function EventsPage() {

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Marketplace Item • Brirar Chapel Connect',
+  title: 'Marketplace Item • Briar Chapel Connect',
 };
 
 interface PageProps {

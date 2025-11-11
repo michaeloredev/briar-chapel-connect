@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Group • Brirar Chapel Connect',
+  title: 'Group • Briar Chapel Connect',
 };
 
 interface PageProps {

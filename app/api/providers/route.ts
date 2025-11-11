@@ -1,46 +1,75 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
+import { auth } from '@clerk/nextjs/server';
+import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/lib/supabase/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-const Schema = z.object({
-  category: z.string().min(1),
-  service: z.string().min(1),
-  name: z.string().min(1),
-  summary: z.string().optional().default(''),
-  details: z.string().optional().default(''),
-  tags: z.array(z.string()).optional().default([]),
-  contact_email: z.string().email().nullable().optional(),
-  contact_phone: z.string().nullable().optional(),
-});
+type Payload = {
+  category?: string;
+  service?: string;
+  name?: string;
+  summary?: string;
+  details?: string;
+  tags?: string[];
+  contact_email?: string | null;
+  contact_phone?: string | null;
+};
 
 export async function POST(req: Request) {
   try {
-    const json = await req.json();
-    const parsed = Schema.safeParse(json);
+    const body: Payload = await req.json();
+    const category = (body.category || '').trim();
+    const service = (body.service || '').trim();
+    const name = (body.name || '').trim();
+    const summary = (body.summary || '').trim();
+    const details = (body.details || '').trim();
+    const contact_email = body.contact_email ?? null;
+    const contact_phone = body.contact_phone ?? null;
 
-    if (!parsed.success) {
+    if (!category || !service || !name) {
       return NextResponse.json(
-        { error: 'Invalid payload', issues: parsed.error.flatten() },
+        { error: 'category, service, and name are required' },
         { status: 400 }
       );
     }
 
-    const data = parsed.data;
+    const { userId, getToken } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    const provider = await prisma.provider.create({
-      data: {
-        categorySlug: data.category,
-        serviceSlug: data.service,
-        name: data.name,
-        summary: data.summary || null,
-        details: data.details || null,
-        tags: data.tags ?? [],
-        contactEmail: data.contact_email ?? null,
-        contactPhone: data.contact_phone ?? null,
-      },
-    });
+    // Use Clerk session token (recommended). Configure Supabase External JWT with Clerk JWKS.
+    const sessionToken = await getToken();
+    if (!sessionToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const supabase: SupabaseClient<Database> = await createClient(sessionToken);
+    type ServiceInsert = Database['public']['Tables']['services']['Insert'];
+    const insert: ServiceInsert = {
+      user_id: userId,
+      title: name,
+      description: details || summary || '',
+      category: `${category}/${service}`,
+      price_range: null,
+      contact_email,
+      contact_phone,
+      location: 'Briar Chapel',
+      status: 'active',
+      image_url: null,
+    };
 
-    return NextResponse.json(provider, { status: 201 });
+    const { data, error } = await supabase
+      .from('services')
+      .insert(insert as any)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return NextResponse.json({ error: 'Failed to create provider' }, { status: 500 });
+    }
+
+    return NextResponse.json(data, { status: 201 });
   } catch (err: any) {
     console.error('Create provider error:', err);
     return NextResponse.json(

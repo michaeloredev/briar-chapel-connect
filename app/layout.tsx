@@ -18,9 +18,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Brirar Chapel Connect - Your Neighborhood Hub",
+  title: "Briar Chapel Connect - Your Neighborhood Hub",
   description:
-    "Find local services, buy and sell items, discover community events in Brirar Chapel",
+    "Find local services, buy and sell items, discover community events in Briar Chapel",
 };
 
 export default function RootLayout({
@@ -29,7 +29,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      signInUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL}
+      signUpUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL}
+      afterSignInUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
+      afterSignUpUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
+    >
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}

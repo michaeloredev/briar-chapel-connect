@@ -7,6 +7,7 @@ export type Provider = {
   name: string;
   rating: number;
   tags?: string[];
+  description: string;
 };
 
 type ProviderListProps = {
@@ -29,6 +30,7 @@ export function ProviderList({ providers }: ProviderListProps) {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{p.name}</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{p.description}</h3>
               <div className="mt-1 flex items-center gap-2">
                 <StarRating value={p.rating} size="sm" showValue />
                 <span className="text-xs text-slate-500">({p.rating.toFixed(1)})</span>

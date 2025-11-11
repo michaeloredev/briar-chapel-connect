@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Groups & Clubs • Brirar Chapel Connect',
-  description: 'Join groups and clubs in Brirar Chapel',
+  title: 'Groups & Clubs • Briar Chapel Connect',
+  description: 'Join groups and clubs in Briar Chapel',
 };
 
 export default function GroupsPage() {
