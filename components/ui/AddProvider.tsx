@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Plus, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   categorySlug: string;
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function AddProviderButton({ categorySlug, serviceSlug, className = '' }: Props) {
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -20,12 +22,30 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
   const [tags, setTags] = React.useState('');
   const [contactEmail, setContactEmail] = React.useState('');
   const [contactPhone, setContactPhone] = React.useState('');
+  const [locationText, setLocationText] = React.useState('');
+  const [website, setWebsite] = React.useState('');
+  const [logoFile, setLogoFile] = React.useState<File | null>(null);
+  const [logoUploading, setLogoUploading] = React.useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
+      let imageUrl: string | null = null;
+      if (logoFile) {
+        setLogoUploading(true);
+        const fd = new FormData();
+        fd.append('file', logoFile);
+        const up = await fetch('/api/uploads/provider-logo', { method: 'POST', body: fd });
+        if (!up.ok) {
+          const msg = await up.text();
+          throw new Error(msg || 'Failed to upload logo');
+        }
+        const uploaded = await up.json();
+        imageUrl = uploaded?.url ?? null;
+        setLogoUploading(false);
+      }
       const res = await fetch('/api/providers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -38,6 +58,9 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
           tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
           contact_email: contactEmail || null,
           contact_phone: contactPhone || null,
+          image_url: imageUrl,
+          location: locationText || null,
+          website: website || null,
         }),
       });
       if (!res.ok) {
@@ -51,7 +74,12 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
       setTags('');
       setContactEmail('');
       setContactPhone('');
+      setLocationText('');
+      setWebsite('');
+      setLogoFile(null);
       setOpen(false);
+      // Trigger a re-fetch of the server component list
+      router.refresh();
     } catch (err: any) {
       setError(err?.message ?? 'Something went wrong');
     } finally {
@@ -111,6 +139,7 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Summary</label>
                 <input
+                  required
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -131,22 +160,12 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Tags</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Website</label>
                   <input
-                    value={tags}
-                    onChange={(e) => setTags(e.target.value)}
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g. insured, local, eco-friendly"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Contact Email</label>
-                  <input
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="name@example.com"
+                    placeholder="https://example.com"
                   />
                 </div>
                 <div>
@@ -158,6 +177,44 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
                     placeholder="(555) 123-4567"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Location</label>
+                  <input
+                    value={locationText}
+                    onChange={(e) => setLocationText(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Neighborhood or city (e.g., Briar Chapel)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Tags</label>
+                  <input
+                    value={tags}
+                    onChange={(e) => setTags(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. insured, local, eco-friendly"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Logo (optional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
+                    className="mt-1 block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700"
+                  />
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">512x512 WebP/PNG, ≤200KB recommended.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Contact Email</label>
+                  <input
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="name@example.com"
+                  />
+                </div>
               </div>
 
               {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
@@ -167,16 +224,16 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
                   type="button"
                   className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
                   onClick={() => setOpen(false)}
-                  disabled={loading}
+                  disabled={loading || logoUploading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
-                  disabled={loading}
+                  disabled={loading || logoUploading}
                 >
-                  {loading ? 'Saving…' : 'Save'}
+                  {loading || logoUploading ? 'Saving…' : 'Save'}
                 </button>
               </div>
             </form>

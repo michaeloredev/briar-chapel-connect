@@ -27,11 +27,11 @@ export default async function ServiceDetailListPage({ params }: PageProps) {
   const supabase = await createClient();
   type ServiceRow = Pick<
     Database['public']['Tables']['services']['Row'],
-    'id' | 'title' | 'description' | 'category' | 'status'
+    'id' | 'title' | 'summary' | 'details' | 'website' | 'location' | 'category' | 'status' | 'image_url'
   >;
   const { data: rows, error } = await supabase
     .from('services')
-    .select('id, title, description, category, status')
+    .select('id, title, summary, details, website, location, category, status, image_url')
     .eq('category', `${category}/${service}`)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -45,7 +45,9 @@ export default async function ServiceDetailListPage({ params }: PageProps) {
     (rows ?? []).map((r) => ({
       id: r.id,
       name: r.title,
-      description: r.description,
+      summary: r.summary ?? undefined,
+      details: r.details ?? undefined,
+      imageUrl: r.image_url ?? undefined,
       rating: 2.5,
       // No tags column yet; leaving undefined to avoid UI clutter
     })) ?? [];

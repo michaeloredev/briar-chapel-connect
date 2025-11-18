@@ -19,16 +19,31 @@ export interface Database {
           updated_at: string;
           user_id: string;
           title: string;
-          description: string;
+          summary: string | null;
+          details: string | null;
           category: string;
           price_range: string | null;
           contact_email: string | null;
           contact_phone: string | null;
-          location: string;
+          location: string | null;
+          website: string | null;
           status: 'active' | 'inactive';
           image_url: string | null;
         };
-        Insert: Omit<Database['public']['Tables']['services']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Insert: {
+          user_id: string;
+          title: string;
+          summary: string | null;
+          details: string | null;
+          category: string;
+          price_range?: string | null; // optional when inserting
+          contact_email: string | null;
+          contact_phone: string | null;
+          location: string | null;
+          website: string | null;
+          status: 'active' | 'inactive';
+          image_url: string | null;
+        };
         Update: Partial<Database['public']['Tables']['services']['Insert']>;
       };
       marketplace_items: {

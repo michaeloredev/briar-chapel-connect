@@ -11,12 +11,14 @@ CREATE TABLE IF NOT EXISTS services (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     user_id TEXT NOT NULL, -- Clerk user ID
     title TEXT NOT NULL,
-    description TEXT NOT NULL,
+    summary TEXT,              -- short summary shown in lists
+    details TEXT,              -- longer description for detail views
     category TEXT NOT NULL,
     price_range TEXT,
     contact_email TEXT,
     contact_phone TEXT,
-    location TEXT NOT NULL,
+    location TEXT,
+    website TEXT,
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
     image_url TEXT
 );
