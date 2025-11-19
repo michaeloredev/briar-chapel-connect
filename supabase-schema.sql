@@ -68,6 +68,18 @@ CREATE TABLE IF NOT EXISTS event_attendees (
     UNIQUE(event_id, user_id)
 );
 
+-- Service Reviews Table (ratings and text reviews for services)
+CREATE TABLE IF NOT EXISTS service_reviews (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL, -- Clerk user ID
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    author_name TEXT
+);
+
 -- Indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_services_user_id ON services(user_id);
 CREATE INDEX IF NOT EXISTS idx_services_category ON services(category);
@@ -88,6 +100,11 @@ CREATE INDEX IF NOT EXISTS idx_events_location ON events(location);
 CREATE INDEX IF NOT EXISTS idx_event_attendees_event_id ON event_attendees(event_id);
 CREATE INDEX IF NOT EXISTS idx_event_attendees_user_id ON event_attendees(user_id);
 
+-- Indexes for reviews
+CREATE INDEX IF NOT EXISTS idx_service_reviews_service_id ON service_reviews(service_id);
+CREATE INDEX IF NOT EXISTS idx_service_reviews_user_id ON service_reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_service_reviews_rating ON service_reviews(rating);
+
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -107,12 +124,16 @@ CREATE TRIGGER update_marketplace_items_updated_at BEFORE UPDATE ON marketplace_
 CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON events
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_service_reviews_updated_at BEFORE UPDATE ON service_reviews
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Row Level Security (RLS) Policies
 -- Enable RLS on all tables
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE marketplace_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE event_attendees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE service_reviews ENABLE ROW LEVEL SECURITY;
 
 -- Services Policies
 CREATE POLICY "Anyone can view active services" ON services
@@ -159,6 +180,19 @@ CREATE POLICY "Anyone can view event attendees" ON event_attendees
 
 CREATE POLICY "Users can manage their own attendance" ON event_attendees
     FOR ALL USING (auth.jwt() ->> 'sub' = user_id);
+
+-- Service Reviews Policies
+CREATE POLICY "Anyone can view service reviews" ON service_reviews
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert their own reviews" ON service_reviews
+    FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = user_id);
+
+CREATE POLICY "Users can update their own reviews" ON service_reviews
+    FOR UPDATE USING (auth.jwt() ->> 'sub' = user_id);
+
+CREATE POLICY "Users can delete their own reviews" ON service_reviews
+    FOR DELETE USING (auth.jwt() ->> 'sub' = user_id);
 
 -- Function to increment current_attendees when someone joins
 CREATE OR REPLACE FUNCTION increment_event_attendees()

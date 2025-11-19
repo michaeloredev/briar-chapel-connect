@@ -7,10 +7,13 @@ export type Provider = {
   id: string;
   name: string;
   rating: number;
+  reviewCount?: number;
   tags?: string[];
   summary?: string;
   details?: string;
   imageUrl?: string;
+  website?: string;
+  phone?: string;
 };
 
 type ProviderListProps = {
@@ -36,8 +39,11 @@ export function ProviderList({ providers }: ProviderListProps) {
           summary={p.summary}
           details={p.details}
           rating={p.rating}
+          reviewCount={p.reviewCount}
           tags={p.tags}
           imageUrl={p.imageUrl}
+          website={p.website}
+          phone={p.phone}
         />
       ))}
     </div>

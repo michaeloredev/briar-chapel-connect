@@ -96,6 +96,26 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['event_attendees']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['event_attendees']['Insert']>;
       };
+      service_reviews: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          service_id: string;
+          user_id: string;
+          rating: number; // 1..5
+          comment: string | null;
+          author_name: string | null;
+        };
+        Insert: {
+          service_id: string;
+          user_id: string;
+          rating: number; // 1..5
+          comment?: string | null;
+          author_name?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['service_reviews']['Insert']>;
+      };
     };
     Views: {
       [_ in never]: never;

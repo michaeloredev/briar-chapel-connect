@@ -27,11 +27,11 @@ export default async function ServiceDetailListPage({ params }: PageProps) {
   const supabase = await createClient();
   type ServiceRow = Pick<
     Database['public']['Tables']['services']['Row'],
-    'id' | 'title' | 'summary' | 'details' | 'website' | 'location' | 'category' | 'status' | 'image_url'
+    'id' | 'title' | 'summary' | 'details' | 'website' | 'contact_phone' | 'location' | 'category' | 'status' | 'image_url'
   >;
   const { data: rows, error } = await supabase
     .from('services')
-    .select('id, title, summary, details, website, location, category, status, image_url')
+    .select('id, title, summary, details, website, contact_phone, location, category, status, image_url')
     .eq('category', `${category}/${service}`)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -41,16 +41,47 @@ export default async function ServiceDetailListPage({ params }: PageProps) {
     console.error('Failed to load providers:', error.message);
   }
 
+  // Compute average ratings for all listed services in one query
+  const serviceIds = (rows ?? []).map((r) => r.id);
+  let avgByServiceId = new Map<string, { sum: number; count: number }>();
+  if (serviceIds.length > 0) {
+    type RatingRow = { service_id: string; rating: number };
+    const { data: ratingsRows, error: ratingsError } = await supabase
+      .from('service_reviews')
+      .select('service_id, rating')
+      .in('service_id', serviceIds)
+      .returns<RatingRow[]>();
+    if (ratingsError) {
+      console.error('Failed to load service review ratings:', ratingsError.message);
+    } else {
+      avgByServiceId = ratingsRows.reduce((map, row) => {
+        const key = row.service_id;
+        const current = map.get(key) || { sum: 0, count: 0 };
+        current.sum += Number(row.rating || 0);
+        current.count += 1;
+        map.set(key, current);
+        return map;
+      }, new Map<string, { sum: number; count: number }>());
+    }
+  }
+
   const providers =
-    (rows ?? []).map((r) => ({
-      id: r.id,
-      name: r.title,
-      summary: r.summary ?? undefined,
-      details: r.details ?? undefined,
-      imageUrl: r.image_url ?? undefined,
-      rating: 2.5,
-      // No tags column yet; leaving undefined to avoid UI clutter
-    })) ?? [];
+    (rows ?? []).map((r) => {
+      const stats = avgByServiceId.get(r.id);
+      const rating = stats && stats.count > 0 ? stats.sum / stats.count : 0;
+      return {
+        id: r.id,
+        name: r.title,
+        summary: r.summary ?? undefined,
+        details: r.details ?? undefined,
+        imageUrl: r.image_url ?? undefined,
+        website: r.website ?? undefined,
+        phone: r.contact_phone ?? undefined,
+        rating,
+        reviewCount: stats?.count ?? 0,
+        // No tags column yet; leaving undefined to avoid UI clutter
+      };
+    }) ?? [];
 
 
     console.log(providers);
