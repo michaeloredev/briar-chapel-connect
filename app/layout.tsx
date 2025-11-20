@@ -4,8 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 // @ts-expect-error Global CSS import is allowed in Next.js app directory
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
-import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { defaultLabelOverrides } from "@/components/common/Breadcrumbs";
+import BreadcrumbsBar from "@/components/common/BreadcrumbsBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,7 +42,7 @@ export default function RootLayout({
           <Header />
           <div className="bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <Breadcrumbs labelOverrides={defaultLabelOverrides} />
+              <BreadcrumbsBar />
             </div>
           </div>
           {children}
