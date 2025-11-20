@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 import EventCalendar from '@/components/events/EventCalendar';
 import EventList from '@/components/events/EventList';
+import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import AddEventButton from '@/components/events/AddEventButton';
 
 export const metadata: Metadata = {
   title: 'Events • Briar Chapel Connect',
@@ -44,21 +46,56 @@ export default async function EventsPage({ searchParams }: { searchParams: Searc
       endDate: e.end_date ?? null,
       location: e.location,
       status: e.status,
+      category: e.category,
     })) ?? [];
+
+  // Use local date (YYYY-MM-DD in viewer's TZ) for calendar dot keys to avoid UTC off-by-one
+  const toLocalYMD = (iso: string) => {
+    const d = new Date(iso);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const initialYMD = toLocalYMD(initialDate.toISOString());
+
+  const dayCategories: Record<string, string[]> = {};
+  for (const e of events) {
+    const iso = toLocalYMD(e.date);
+    const cats = dayCategories[iso] || [];
+    const val = (e.category || 'other').trim() || 'other';
+    if (!cats.includes(val)) {
+      if (cats.length < 3) cats.push(val);
+      dayCategories[iso] = cats;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Community Events</h1>
-        <p className="text-slate-600 dark:text-slate-300 mb-6">
-          Find yard sales, meetups, and local happenings.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1">
-            <EventCalendar initialDateISO={initialDate.toISOString()} />
+        <div className="flex items-center justify-between gap-4 mb-2">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Community Events</h1>
+          <div>
+            <SignedIn>
+              <AddEventButton />
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  Add Event
+                </button>
+              </SignInButton>
+            </SignedOut>
           </div>
-          <div className="md:col-span-2">
-            <EventList initialDateISO={initialDate.toISOString()} events={events} />
+        </div>
+        <p className="text-slate-600 dark:text-slate-300 mb-6">Find yard sales, meetups, and local happenings.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <EventCalendar initialDateYMD={initialYMD} dayCategories={dayCategories} />
+          </div>
+          <div>
+            <EventList initialDateYMD={initialYMD} events={events} />
           </div>
         </div>
       </div>

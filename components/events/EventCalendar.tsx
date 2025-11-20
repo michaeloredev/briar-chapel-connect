@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getCategoryMeta } from '@/lib/data/event-categories';
 
 function formatISODate(d: Date): string {
   const y = d.getFullYear();
@@ -11,13 +12,24 @@ function formatISODate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-export default function EventCalendar({ initialDateISO }: { initialDateISO: string }) {
+export default function EventCalendar({
+  initialDateYMD,
+  dayCategories,
+}: {
+  initialDateYMD: string;
+  dayCategories?: Record<string, string[]>;
+}) {
   const router = useRouter();
   const params = useSearchParams();
-  const initial = new Date(initialDateISO);
-  const [viewYear, setViewYear] = React.useState(initial.getFullYear());
-  const [viewMonth, setViewMonth] = React.useState(initial.getMonth()); // 0..11
-  const [selectedISO, setSelectedISO] = React.useState(formatISODate(initial));
+  const [viewYear, setViewYear] = React.useState(() => {
+    const [y, m, d] = initialDateYMD.split('-').map((n) => Number(n));
+    return new Date(y, (m || 1) - 1, d || 1).getFullYear();
+  });
+  const [viewMonth, setViewMonth] = React.useState(() => {
+    const [y, m, d] = initialDateYMD.split('-').map((n) => Number(n));
+    return new Date(y, (m || 1) - 1, d || 1).getMonth();
+  }); // 0..11
+  const [selectedISO, setSelectedISO] = React.useState(initialDateYMD);
 
   function prevMonth() {
     const d = new Date(viewYear, viewMonth - 1, 1);
@@ -93,26 +105,36 @@ export default function EventCalendar({ initialDateISO }: { initialDateISO: stri
         {weeks.map((w, wi) =>
           w.map((d, di) => {
             if (d === null) {
-              return <div key={`${wi}-${di}`} className="h-9" />;
+              return <div key={`${wi}-${di}`} className="h-12" />;
             }
             const iso = formatISODate(new Date(viewYear, viewMonth, d));
             const isSelected = selectedISO === iso;
+            const cats = (dayCategories?.[iso] || []).slice(0, 3);
             return (
-              <button
-                key={`${wi}-${di}`}
-                type="button"
-                onClick={() => onSelect(d)}
-                className={[
-                  'h-9 rounded-md text-sm',
-                  isSelected
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700',
-                ].join(' ')}
-                aria-pressed={isSelected}
-                aria-label={`Select ${iso}`}
-              >
-                {d}
-              </button>
+              <div key={`${wi}-${di}`} className="flex flex-col items-center">
+                <button
+                  type="button"
+                  onClick={() => onSelect(d)}
+                  className={[
+                    'h-9 w-9 rounded-md text-sm flex items-center justify-center',
+                    isSelected
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700',
+                  ].join(' ')}
+                  aria-pressed={isSelected}
+                  aria-label={`Select ${iso}`}
+                >
+                  {d}
+                </button>
+                {cats.length > 0 ? (
+                  <div className="mt-1 flex gap-1">
+                    {cats.map((c, idx) => {
+                      const meta = getCategoryMeta(c);
+                      return <span key={c + idx} className={['w-2 h-2 rounded-full', meta.dotClasses].join(' ')} />;
+                    })}
+                  </div>
+                ) : null}
+              </div>
             );
           })
         )}
