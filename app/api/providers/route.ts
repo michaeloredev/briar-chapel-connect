@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { requireAuthSupabase } from '@/lib/supabase/auth';
 
 type Payload = {
   category?: string;
@@ -38,17 +36,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { userId, getToken } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Use Clerk session token (recommended). Configure Supabase External JWT with Clerk JWKS.
-    const sessionToken = await getToken();
-    if (!sessionToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const supabase: SupabaseClient<Database> = await createClient(sessionToken);
+    const { supabase, userId } = await requireAuthSupabase();
     type ServiceInsert = Database['public']['Tables']['services']['Insert'];
     const insert: ServiceInsert = {
       user_id: userId,
@@ -78,10 +66,10 @@ export async function POST(req: Request) {
     return NextResponse.json(data, { status: 201 });
   } catch (err: any) {
     console.error('Create provider error:', err);
-    return NextResponse.json(
-      { error: 'Failed to create provider' },
-      { status: 500 }
-    );
+    if (err?.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    return NextResponse.json({ error: 'Failed to create provider' }, { status: 500 });
   }
 }
 
@@ -93,15 +81,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
 
-    const { userId, getToken } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const sessionToken = await getToken();
-    if (!sessionToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const supabase: SupabaseClient<Database> = await createClient(sessionToken);
+    const { supabase, userId } = await requireAuthSupabase();
 
     const { data: deleted, error } = await supabase
       .from('services')
@@ -121,9 +101,9 @@ export async function DELETE(req: Request) {
     return new NextResponse(null, { status: 204 });
   } catch (err: any) {
     console.error('Delete provider error:', err);
-    return NextResponse.json(
-      { error: 'Failed to delete provider' },
-      { status: 500 }
-    );
+    if (err?.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    return NextResponse.json({ error: 'Failed to delete provider' }, { status: 500 });
   }
 }

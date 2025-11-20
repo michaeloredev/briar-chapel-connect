@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
-import { createClient } from '@/lib/supabase/server';
+import { currentUser } from '@clerk/nextjs/server';
 import type { Database } from '@/lib/supabase/types';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { requireAuthSupabase } from '@/lib/supabase/auth';
 
 type Payload = {
   service_id?: string;
@@ -27,15 +26,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'comment too long (max 2000 chars)' }, { status: 400 });
     }
 
-    const { userId, getToken } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const sessionToken = await getToken();
-    if (!sessionToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const supabase: SupabaseClient<Database> = await createClient(sessionToken);
+    const { supabase, userId } = await requireAuthSupabase();
 
     // Ensure service exists and is active
     type ServiceStatusRow = { id: string; status: 'active' | 'inactive' };
@@ -90,6 +81,9 @@ export async function POST(req: Request) {
     return NextResponse.json(data, { status: 201 });
   } catch (err: any) {
     console.error('Create review error:', err);
+    if (err?.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     return NextResponse.json({ error: 'Failed to submit review' }, { status: 500 });
   }
 }

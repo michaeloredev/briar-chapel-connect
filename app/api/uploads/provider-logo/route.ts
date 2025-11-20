@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { createClient } from '@/lib/supabase/server';
+import { requireAuthSupabase } from '@/lib/supabase/auth';
 
 export async function POST(req: Request) {
   try {
@@ -11,15 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing file' }, { status: 400 });
     }
 
-    const { userId, getToken } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const sessionToken = await getToken();
-    if (!sessionToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const supabase = await createClient(sessionToken);
+    const { supabase, userId } = await requireAuthSupabase();
 
     const ext = (file.name?.split('.').pop() || 'webp').toLowerCase();
     const fileName = `${userId}/${crypto.randomUUID()}.${ext}`;
@@ -41,6 +32,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: data.publicUrl, path: fileName }, { status: 200 });
   } catch (err: any) {
     console.error('Upload handler error:', err);
+    if (err?.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
   }
 }
