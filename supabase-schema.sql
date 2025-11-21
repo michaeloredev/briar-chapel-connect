@@ -39,6 +39,10 @@ CREATE TABLE IF NOT EXISTS marketplace_items (
     images TEXT[] DEFAULT '{}'
 );
 
+-- Optional contact field for buyer outreach (email or phone)
+ALTER TABLE IF EXISTS marketplace_items
+  ADD COLUMN IF NOT EXISTS contact TEXT;
+
 -- Events Table (for community events)
 CREATE TABLE IF NOT EXISTS events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

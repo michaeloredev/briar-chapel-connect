@@ -60,6 +60,7 @@ export interface Database {
           location: string;
           status: 'available' | 'pending' | 'sold';
           images: string[];
+          contact: string | null;
         };
         Insert: Omit<Database['public']['Tables']['marketplace_items']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['marketplace_items']['Insert']>;
