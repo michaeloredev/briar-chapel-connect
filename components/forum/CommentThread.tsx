@@ -55,6 +55,25 @@ export default function CommentThread({ entityType, entityId, className = '' }: 
     await load();
   }
 
+  async function postWithImages(content: string, images: string[], parent_id?: string) {
+    const res = await fetch('/api/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        entity_type: entityType,
+        entity_id: entityId,
+        parent_id,
+        content,
+        images,
+      }),
+    });
+    if (!res.ok) {
+      const msg = await res.text();
+      throw new Error(msg || 'Failed to post comment');
+    }
+    await load();
+  }
+
   async function handleDelete(id: string) {
     const res = await fetch(`/api/comments?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
     if (!res.ok) {
@@ -92,7 +111,7 @@ export default function CommentThread({ entityType, entityId, className = '' }: 
       {loading ? <p className="mt-2 text-sm text-slate-500">Loading…</p> : null}
       {error ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <div className="mt-3">
-        <CommentComposer onSubmit={(text) => post(text)} />
+        <CommentComposer onSubmit={(text, images) => postWithImages(text, images)} />
       </div>
       <div className="mt-4">
         {!comments || comments.length === 0 ? (
@@ -104,7 +123,7 @@ export default function CommentThread({ entityType, entityId, className = '' }: 
                 key={c.id}
                 comment={c}
                 replies={tree!.childrenByParent.get(c.id) || []}
-                onReply={(pid, text) => post(text, pid)}
+                onReply={(pid, text) => postWithImages(text, [], pid)}
                 onDelete={(id) => handleDelete(id)}
                 canDelete={canDelete}
               />

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import CommentComposer from './CommentComposer';
+import Image from 'next/image';
 
 export type Comment = {
   id: string;
@@ -12,6 +13,7 @@ export type Comment = {
   entity_id: string;
   parent_id: string | null;
   content: string;
+  images?: string[];
 };
 
 type Props = {
@@ -29,6 +31,23 @@ export default function CommentItem({ comment, replies, onReply, onDelete, canDe
   return (
     <li className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
       <div className="text-sm text-slate-900 dark:text-slate-100 whitespace-pre-wrap">{comment.content}</div>
+      {Array.isArray(comment.images) && comment.images.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {comment.images.map((src, i) => (
+            <a key={src + i} href={src} target="_blank" rel="noopener noreferrer" className="block">
+              {/* using img for simplicity to avoid layout shift constraints */}
+              <img
+                src={src}
+                alt=""
+                className="w-24 h-24 object-cover rounded-md border border-slate-200 dark:border-slate-700"
+                width={96}
+                height={96}
+                loading="lazy"
+              />
+            </a>
+          ))}
+        </div>
+      ) : null}
       <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
         <span>{created}</span>
         <button

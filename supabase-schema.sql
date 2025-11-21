@@ -236,7 +236,8 @@ CREATE TABLE IF NOT EXISTS comments (
     entity_type TEXT NOT NULL, -- e.g., marketplace_item, service, event
     entity_id TEXT NOT NULL, -- string to support UUIDs or other ids
     parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
-    content TEXT NOT NULL
+    content TEXT NOT NULL,
+    images TEXT[] DEFAULT '{}'
 );
 
 CREATE INDEX IF NOT EXISTS idx_comments_entity ON comments(entity_type, entity_id);
@@ -259,4 +260,65 @@ CREATE POLICY "Users can update own comments" ON comments
 
 CREATE POLICY "Users can delete own comments" ON comments
     FOR DELETE USING (auth.jwt() ->> 'sub' = user_id);
+
+-- Storage: comment images bucket and policies
+insert into storage.buckets (id, name, public)
+values ('comment-images', 'comment-images', true)
+on conflict (id) do update set public = excluded.public;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname='storage' and tablename='objects'
+      and policyname='Public read comment-images'
+  ) then
+    create policy "Public read comment-images"
+    on storage.objects for select to public
+    using (bucket_id = 'comment-images');
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname='storage' and tablename='objects'
+      and policyname='Auth upload own files comment-images'
+  ) then
+    create policy "Auth upload own files comment-images"
+    on storage.objects for insert to authenticated
+    with check (
+      bucket_id = 'comment-images'
+      and auth.uid() is not null
+      and name like (auth.uid()::text || '/%')
+    );
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname='storage' and tablename='objects'
+      and policyname='Auth update own files comment-images'
+  ) then
+    create policy "Auth update own files comment-images"
+    on storage.objects for update to authenticated
+    using (bucket_id = 'comment-images' and name like (auth.uid()::text || '/%'));
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname='storage' and tablename='objects'
+      and policyname='Auth delete own files comment-images'
+  ) then
+    create policy "Auth delete own files comment-images"
+    on storage.objects for delete to authenticated
+    using (bucket_id = 'comment-images' and name like (auth.uid()::text || '/%'));
+  end if;
+end $$;
 

@@ -13,6 +13,7 @@ type PostBody = {
   entity_id?: string;
   parent_id?: string | null;
   content?: string;
+  images?: string[];
 };
 
 export async function GET(req: Request) {
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
     const entity_id = (body.entity_id || '').trim();
     const parent_id = (body.parent_id || '')?.trim() || null;
     const content = (body.content || '').trim();
+    const images = Array.isArray(body.images) ? body.images.slice(0, 5) : [];
     if (!entity_type || !entity_id || !content) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
@@ -56,6 +58,7 @@ export async function POST(req: Request) {
       entity_id,
       parent_id,
       content,
+      images,
     };
     const { data, error } = await supabase
       .from('comments')

@@ -107,6 +107,7 @@ export interface Database {
           entity_id: string;
           parent_id: string | null;
           content: string;
+          images: string[];
         };
         Insert: {
           user_id: string;
@@ -114,6 +115,7 @@ export interface Database {
           entity_id: string;
           parent_id?: string | null;
           content: string;
+          images?: string[];
         };
         Update: Partial<Database['public']['Tables']['comments']['Insert']>;
       };
