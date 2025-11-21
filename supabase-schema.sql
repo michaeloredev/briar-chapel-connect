@@ -227,3 +227,36 @@ CREATE TRIGGER increment_attendees AFTER INSERT ON event_attendees
 CREATE TRIGGER decrement_attendees AFTER DELETE ON event_attendees
     FOR EACH ROW EXECUTE FUNCTION decrement_event_attendees();
 
+-- Comments (generic, reusable across entities)
+CREATE TABLE IF NOT EXISTS comments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    user_id TEXT NOT NULL, -- Clerk user ID
+    entity_type TEXT NOT NULL, -- e.g., marketplace_item, service, event
+    entity_id TEXT NOT NULL, -- string to support UUIDs or other ids
+    parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+    content TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_comments_entity ON comments(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_id);
+CREATE INDEX IF NOT EXISTS idx_comments_user ON comments(user_id);
+
+CREATE TRIGGER update_comments_updated_at BEFORE UPDATE ON comments
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view comments" ON comments
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert own comments" ON comments
+    FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = user_id);
+
+CREATE POLICY "Users can update own comments" ON comments
+    FOR UPDATE USING (auth.jwt() ->> 'sub' = user_id);
+
+CREATE POLICY "Users can delete own comments" ON comments
+    FOR DELETE USING (auth.jwt() ->> 'sub' = user_id);
+

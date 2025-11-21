@@ -5,6 +5,7 @@ import type { Database } from '@/lib/supabase/types';
 import MarketplaceImageCarousel from '@/components/marketplace/MarketplaceImageCarousel';
 import { auth } from '@clerk/nextjs/server';
 import DeleteMarketplaceItemButton from '@/components/marketplace/DeleteMarketplaceItemButton';
+import CommentThread from '@/components/forum/CommentThread';
 
 export const metadata: Metadata = {
   title: 'Marketplace Item • Briar Chapel Connect',
@@ -81,6 +82,9 @@ export default async function MarketplaceDetailPage({ params }: PageProps) {
             ) : null}
             {isOwner ? <DeleteMarketplaceItemButton id={item.id} /> : null}
           </div>
+        </div>
+        <div className="mt-10">
+          <CommentThread entityType="marketplace_item" entityId={item.id} />
         </div>
       </div>
     </div>
