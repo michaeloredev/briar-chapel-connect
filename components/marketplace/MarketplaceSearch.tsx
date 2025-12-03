@@ -37,6 +37,7 @@ export default function MarketplaceSearch({
         router.push(qs ? `/marketplace?${qs}` : '/marketplace');
       }}
       placeholder="Search items…"
+      inputClassName="w-64 sm:w-72 lg:w-96"
     />
   );
 }

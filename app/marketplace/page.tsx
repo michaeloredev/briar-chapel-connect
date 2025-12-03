@@ -6,7 +6,6 @@ import type { Database } from '@/lib/supabase/types';
 import { PageHeader } from '@/components/common/PageHeader';
 import { AddMarketplaceItemButton } from '@/components/ui/AddMarketplaceItem';
 import MarketplaceItemCard from '@/components/marketplace/MarketplaceItemCard';
-import MarketplaceSearch from '@/components/marketplace/MarketplaceSearch';
 
 export const metadata: Metadata = {
   title: 'Marketplace • Briar Chapel Connect',
@@ -75,17 +74,8 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <PageHeader title="Marketplace" description="Buy and sell with neighbors." />
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-2">
-          <div className="w-full md:max-w-2xl">
-            <MarketplaceSearch
-              initialQ={q}
-              category={category}
-              condition={condition}
-              min={min}
-              max={max}
-            />
-          </div>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Marketplace</h1>
           <div className="flex items-center gap-2">
             <SignedIn>
               <AddMarketplaceItemButton />
@@ -99,6 +89,9 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
             </SignedOut>
           </div>
         </div>
+        <p className="mt-2 text-slate-600 dark:text-slate-300">
+          Buy and sell with neighbors.
+        </p>
 
         <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {(items ?? []).map((item) => (
