@@ -139,6 +139,30 @@ export interface Database {
         };
         Update: Partial<Database['public']['Tables']['service_reviews']['Insert']>;
       };
+      groups: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          user_id: string;
+          title: string;
+          description: string;
+          type: string;
+          location: string | null;
+          status: 'active' | 'inactive';
+          image_url: string | null;
+        };
+        Insert: {
+          user_id: string;
+          title: string;
+          description: string;
+          type: string;
+          location?: string | null;
+          status?: 'active' | 'inactive';
+          image_url?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['groups']['Insert']>;
+      };
     };
     Views: {
       [_ in never]: never;

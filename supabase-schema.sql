@@ -131,6 +131,38 @@ CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON events
 CREATE TRIGGER update_service_reviews_updated_at BEFORE UPDATE ON service_reviews
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- Groups Table
+CREATE TABLE IF NOT EXISTS groups (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    user_id TEXT NOT NULL, -- Clerk user ID
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    type TEXT NOT NULL, -- group category/type
+    location TEXT,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+    image_url TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_groups_user_id ON groups(user_id);
+CREATE INDEX IF NOT EXISTS idx_groups_type ON groups(type);
+CREATE INDEX IF NOT EXISTS idx_groups_status ON groups(status);
+
+ALTER TABLE groups ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view active groups" ON groups
+    FOR SELECT USING (status = 'active');
+
+CREATE POLICY "Users can insert their own groups" ON groups
+    FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = user_id);
+
+CREATE POLICY "Users can update their own groups" ON groups
+    FOR UPDATE USING (auth.jwt() ->> 'sub' = user_id);
+
+CREATE POLICY "Users can delete their own groups" ON groups
+    FOR DELETE USING (auth.jwt() ->> 'sub' = user_id);
+
 -- Row Level Security (RLS) Policies
 -- Enable RLS on all tables
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
