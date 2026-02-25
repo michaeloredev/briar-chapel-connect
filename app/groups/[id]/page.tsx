@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
+import AddGroupEventButton from '@/components/events/AddGroupEventButton';
 
 export const metadata: Metadata = {
   title: 'Group • Briar Chapel Connect',
@@ -27,7 +28,10 @@ export default async function GroupDetailPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{group.title}</h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{group.title}</h1>
+          <AddGroupEventButton defaultLocation={group.location ?? 'Briar Chapel'} />
+        </div>
         <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {group.location ? group.location : 'Briar Chapel'} • {new Date(group.created_at).toLocaleString()}
         </div>

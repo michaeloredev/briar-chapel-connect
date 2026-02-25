@@ -163,6 +163,23 @@ export interface Database {
         };
         Update: Partial<Database['public']['Tables']['groups']['Insert']>;
       };
+      group_members: {
+        Row: {
+          id: string;
+          created_at: string;
+          group_id: string;
+          user_id: string;
+          role: 'owner' | 'admin' | 'member';
+          status: 'active' | 'inactive';
+        };
+        Insert: {
+          group_id: string;
+          user_id: string;
+          role?: 'owner' | 'admin' | 'member';
+          status?: 'active' | 'inactive';
+        };
+        Update: Partial<Database['public']['Tables']['group_members']['Insert']>;
+      };
     };
     Views: {
       [_ in never]: never;

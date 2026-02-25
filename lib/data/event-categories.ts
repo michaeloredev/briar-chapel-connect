@@ -13,6 +13,12 @@ export const EVENT_CATEGORIES: EventCategory[] = [
     dotClasses: 'bg-amber-500',
   },
   {
+    value: 'group',
+    label: 'Group',
+    badgeClasses: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+    dotClasses: 'bg-orange-500',
+  },
+  {
     value: 'meetup',
     label: 'Meetup',
     badgeClasses: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',

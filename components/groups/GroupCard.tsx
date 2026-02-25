@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
+import JoinGroupButton from './JoinGroupButton';
 
 export type GroupCardProps = {
   id: string;
@@ -14,6 +15,8 @@ export type GroupCardProps = {
   icon?: LucideIcon;
   iconColorClass?: string;
   iconBgClass?: string;
+  showJoinButton?: boolean;
+  isMember?: boolean;
 };
 
 export default function GroupCard({
@@ -28,6 +31,8 @@ export default function GroupCard({
   icon: Icon,
   iconColorClass,
   iconBgClass,
+  showJoinButton = true,
+  isMember = false,
 }: GroupCardProps) {
   return (
     <Link
@@ -72,6 +77,11 @@ export default function GroupCard({
             ) : null}
           </div>
         </div>
+        {showJoinButton ? (
+          <div className="ml-auto">
+            <JoinGroupButton groupId={id} isMember={isMember} />
+          </div>
+        ) : null}
       </div>
     </Link>
   );

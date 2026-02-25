@@ -163,6 +163,30 @@ CREATE POLICY "Users can update their own groups" ON groups
 CREATE POLICY "Users can delete their own groups" ON groups
     FOR DELETE USING (auth.jwt() ->> 'sub' = user_id);
 
+-- Group Members (membership)
+CREATE TABLE IF NOT EXISTS group_members (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL, -- Clerk user ID
+    role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member')),
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_group_members_group_id ON group_members(group_id);
+CREATE INDEX IF NOT EXISTS idx_group_members_user_id ON group_members(user_id);
+
+ALTER TABLE group_members ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Members can view own memberships" ON group_members
+    FOR SELECT USING (auth.jwt() ->> 'sub' = user_id);
+
+CREATE POLICY "Users can join groups (insert own membership)" ON group_members
+    FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = user_id);
+
+CREATE POLICY "Users can leave groups (delete own membership)" ON group_members
+    FOR DELETE USING (auth.jwt() ->> 'sub' = user_id);
+
 -- Row Level Security (RLS) Policies
 -- Enable RLS on all tables
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
