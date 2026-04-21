@@ -13,6 +13,10 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // Allow unauthenticated reads on comments (GET only)
+  if (request.method === 'GET' && request.nextUrl.pathname === '/api/comments') {
+    return;
+  }
   if (!isPublicRoute(request)) {
     await auth.protect();
   }

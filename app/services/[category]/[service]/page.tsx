@@ -4,7 +4,7 @@ import { serviceSections } from '@/lib/data/services';
 import { PageHeader } from '@/components/common/PageHeader';
 import ProviderList from '@/components/services/ProviderList';
 
-import { AddProviderButton } from '@/components/ui/AddProvider';
+import { AddProviderButton } from '@/components/services/AddProvider';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';

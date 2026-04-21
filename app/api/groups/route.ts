@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
+import { apiError, apiBadRequest } from '@/lib/api/response';
 
 type Payload = {
   title?: string;
@@ -18,9 +19,11 @@ export async function POST(req: Request) {
     const type = (body.type || '').trim();
     const location = (body.location || '')?.trim() || null;
     const image_url = (body.image_url || '')?.trim() || null;
+
     if (!title || !description || !type) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return apiBadRequest('Missing required fields');
     }
+
     const { supabase, userId } = await requireAuthSupabase();
     type Insert = Database['public']['Tables']['groups']['Insert'];
     const insert: Insert = {
@@ -32,23 +35,20 @@ export async function POST(req: Request) {
       status: 'active',
       image_url,
     };
+
     const { data, error } = await supabase
       .from('groups')
       .insert(insert as any)
       .select('*')
       .single();
+
     if (error) {
       console.error('[Groups][POST] insert error:', error.message);
-      return NextResponse.json({ error: 'Failed to create group' }, { status: 500 });
+      return apiError(error, 'Failed to create group');
     }
+
     return NextResponse.json(data, { status: 201 });
-  } catch (err: any) {
-    console.error('[Groups][POST] unhandled error:', err?.message);
-    if (err?.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json({ error: 'Failed to create group' }, { status: 500 });
+  } catch (err) {
+    return apiError(err, 'Failed to create group');
   }
 }
-
-

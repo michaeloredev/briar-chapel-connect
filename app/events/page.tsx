@@ -5,6 +5,8 @@ import EventCalendar from '@/components/events/EventCalendar';
 import EventList from '@/components/events/EventList';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import AddEventButton from '@/components/events/AddEventButton';
+import { PageHeader } from '@/components/common/PageHeader';
+import { toLocalYMD } from '@/lib/utils/date';
 
 export const metadata: Metadata = {
   title: 'Events • Briar Chapel Connect',
@@ -49,14 +51,7 @@ export default async function EventsPage({ searchParams }: { searchParams: Searc
       category: e.category,
     })) ?? [];
 
-  // Use local date (YYYY-MM-DD in viewer's TZ) for calendar dot keys to avoid UTC off-by-one
-  const toLocalYMD = (iso: string) => {
-    const d = new Date(iso);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  };
+  
 
   const initialYMD = toLocalYMD(initialDate.toISOString());
 
@@ -74,22 +69,24 @@ export default async function EventsPage({ searchParams }: { searchParams: Searc
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center justify-between gap-4 mb-2">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Community Events</h1>
-          <div>
-            <SignedIn>
-              <AddEventButton />
-            </SignedIn>
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  Add Event
-                </button>
-              </SignInButton>
-            </SignedOut>
-          </div>
-        </div>
-        <p className="text-slate-600 dark:text-slate-300 mb-6">Find yard sales, meetups, and local happenings.</p>
+        <PageHeader
+          title="Community Events"
+          description="Find yard sales, meetups, and local happenings."
+          actions={
+            <>
+              <SignedIn>
+                <AddEventButton />
+              </SignedIn>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Add Event
+                  </button>
+                </SignInButton>
+              </SignedOut>
+            </>
+          }
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <EventCalendar initialDateYMD={initialYMD} dayCategories={dayCategories} />

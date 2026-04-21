@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
-// @ts-expect-error Global CSS import is allowed in Next.js app directory
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import BreadcrumbsBar from "@/components/common/BreadcrumbsBar";

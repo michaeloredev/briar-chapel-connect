@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import CommentComposer from './CommentComposer';
 import CommentItem, { Comment } from './CommentItem';
 
@@ -111,7 +112,16 @@ export default function CommentThread({ entityType, entityId, className = '' }: 
       {loading ? <p className="mt-2 text-sm text-slate-500">Loading…</p> : null}
       {error ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <div className="mt-3">
-        <CommentComposer onSubmit={(text, images) => postWithImages(text, images)} />
+        <SignedIn>
+          <CommentComposer onSubmit={(text, images) => postWithImages(text, images)} />
+        </SignedIn>
+        <SignedOut>
+          <SignInButton mode="modal">
+            <button className="text-sm text-blue-600 hover:underline dark:text-blue-400">
+              Sign in to comment
+            </button>
+          </SignInButton>
+        </SignedOut>
       </div>
       <div className="mt-4">
         {!comments || comments.length === 0 ? (

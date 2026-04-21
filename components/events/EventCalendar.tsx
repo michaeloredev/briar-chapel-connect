@@ -4,13 +4,7 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getCategoryMeta } from '@/lib/data/event-categories';
-
-function formatISODate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+import { formatLocalDate, parseYMD } from '@/lib/utils/date';
 
 export default function EventCalendar({
   initialDateYMD,
@@ -21,14 +15,8 @@ export default function EventCalendar({
 }) {
   const router = useRouter();
   const params = useSearchParams();
-  const [viewYear, setViewYear] = React.useState(() => {
-    const [y, m, d] = initialDateYMD.split('-').map((n) => Number(n));
-    return new Date(y, (m || 1) - 1, d || 1).getFullYear();
-  });
-  const [viewMonth, setViewMonth] = React.useState(() => {
-    const [y, m, d] = initialDateYMD.split('-').map((n) => Number(n));
-    return new Date(y, (m || 1) - 1, d || 1).getMonth();
-  }); // 0..11
+  const [viewYear, setViewYear] = React.useState(() => parseYMD(initialDateYMD).getFullYear());
+  const [viewMonth, setViewMonth] = React.useState(() => parseYMD(initialDateYMD).getMonth());
   const [selectedISO, setSelectedISO] = React.useState(initialDateYMD);
 
   function prevMonth() {
@@ -44,7 +32,7 @@ export default function EventCalendar({
 
   function onSelect(day: number) {
     const d = new Date(viewYear, viewMonth, day);
-    const iso = formatISODate(d);
+    const iso = formatLocalDate(d);
     setSelectedISO(iso);
     const sp = new URLSearchParams(params ?? undefined);
     sp.set('date', iso);
@@ -107,7 +95,7 @@ export default function EventCalendar({
             if (d === null) {
               return <div key={`${wi}-${di}`} className="h-12" />;
             }
-            const iso = formatISODate(new Date(viewYear, viewMonth, d));
+            const iso = formatLocalDate(new Date(viewYear, viewMonth, d));
             const isSelected = selectedISO === iso;
             const cats = (dayCategories?.[iso] || []).slice(0, 3);
             return (

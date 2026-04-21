@@ -4,7 +4,7 @@ import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 import { PageHeader } from '@/components/common/PageHeader';
-import { AddMarketplaceItemButton } from '@/components/ui/AddMarketplaceItem';
+import { AddMarketplaceItemButton } from '@/components/marketplace/AddMarketplaceItem';
 import MarketplaceItemCard from '@/components/marketplace/MarketplaceItemCard';
 
 export const metadata: Metadata = {
@@ -74,24 +74,24 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Marketplace</h1>
-          <div className="flex items-center gap-2">
-            <SignedIn>
-              <AddMarketplaceItemButton />
-            </SignedIn>
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  List an item
-                </button>
-              </SignInButton>
-            </SignedOut>
-          </div>
-        </div>
-        <p className="mt-2 text-slate-600 dark:text-slate-300">
-          Buy and sell with neighbors.
-        </p>
+        <PageHeader
+          title="Marketplace"
+          description="Buy and sell with neighbors."
+          actions={
+            <>
+              <SignedIn>
+                <AddMarketplaceItemButton />
+              </SignedIn>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    List an item
+                  </button>
+                </SignInButton>
+              </SignedOut>
+            </>
+          }
+        />
 
         <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {(items ?? []).map((item) => (

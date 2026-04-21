@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 import { GROUP_TYPES } from '@/lib/data/group-types';
-import AddGroupButton from '@/components/ui/AddGroupButton';
+import AddGroupButton from '@/components/groups/AddGroupButton';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import GroupCard from '@/components/groups/GroupCard';
+import { PageHeader } from '@/components/common/PageHeader';
 import { auth } from '@clerk/nextjs/server';
 
 export const metadata: Metadata = {
@@ -71,18 +72,26 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Groups & Clubs</h1>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/groups"
-              className={['px-8 py-1.5 rounded-md text-sm border', mineSelected ? 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'bg-blue-600 text-white border-blue-600'].join(' ')}
-            >
-              All Groups
-            </Link>
-          </div>
-        </div>
-        <div className="mt-3 justify-between flex">
+        <PageHeader
+          title="Groups & Clubs"
+          actions={
+            <>
+              <Link
+                href="/groups"
+                className={['px-8 py-1.5 rounded-md text-sm border', mineSelected ? 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'bg-blue-600 text-white border-blue-600'].join(' ')}
+              >
+                All Groups
+              </Link>
+              <Link
+                href="/groups?mine=1"
+                className={['px-8 py-1.5 rounded-md text-sm border', mineSelected ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300'].join(' ')}
+              >
+                My Groups
+              </Link>
+            </>
+          }
+        />
+        <div className="flex">
           <SignedIn>
             <AddGroupButton />
           </SignedIn>
@@ -93,16 +102,6 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
               </button>
             </SignInButton>
           </SignedOut>
-
-          <div className="flex items-center justify-end ">
-            <Link
-              href="/groups?mine=1"
-              className={['px-8 py-1.5 rounded-md text-sm border', mineSelected ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300'].join(' ')}
-            >
-              My Groups
-            </Link>
-          </div>
-
         </div>
 
 

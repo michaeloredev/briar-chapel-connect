@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
+import { apiError, apiBadRequest } from '@/lib/api/response';
 
 type Payload = {
   title?: string;
   description?: string;
   category?: string;
-  event_date?: string; // ISO
-  end_date?: string | null; // ISO
+  event_date?: string;
+  end_date?: string | null;
   location?: string;
   address?: string | null;
   max_attendees?: number | null;
   image_url?: string | null;
+  group_id?: string | null;
 };
 
 export async function POST(req: Request) {
@@ -25,15 +27,14 @@ export async function POST(req: Request) {
     const location = (body.location || 'Briar Chapel').trim() || 'Briar Chapel';
     const address = (body.address || '')?.trim() || null;
     const max_attendees =
-      typeof body.max_attendees === 'number' && Number.isFinite(body.max_attendees) ? body.max_attendees : null;
+      typeof body.max_attendees === 'number' && Number.isFinite(body.max_attendees)
+        ? body.max_attendees
+        : null;
     const image_url = (body.image_url || '')?.trim() || null;
+    const group_id = (body.group_id || '')?.trim() || null;
 
-    if (!title) {
-      return NextResponse.json({ error: 'Missing title' }, { status: 400 });
-    }
-    if (!event_date) {
-      return NextResponse.json({ error: 'Missing event_date' }, { status: 400 });
-    }
+    if (!title) return apiBadRequest('Missing title');
+    if (!event_date) return apiBadRequest('Missing event_date');
 
     const { supabase, userId } = await requireAuthSupabase();
     type Insert = Database['public']['Tables']['events']['Insert'];
@@ -49,6 +50,7 @@ export async function POST(req: Request) {
       max_attendees,
       status: 'upcoming',
       image_url,
+      group_id,
     };
 
     const { data, error } = await supabase
@@ -58,29 +60,12 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      console.error('[Events][POST] Supabase insert error:', {
-        message: error.message,
-        details: (error as any)?.details,
-        hint: (error as any)?.hint,
-        code: (error as any)?.code,
-      });
-      return NextResponse.json(
-        { error: 'Failed to create event', ...(process.env.NODE_ENV !== 'production' ? { debug: error.message } : {}) },
-        { status: 500 }
-      );
+      console.error('[Events][POST] insert error:', error.message);
+      return apiError(error, 'Failed to create event');
     }
 
     return NextResponse.json(data, { status: 201 });
-  } catch (err: any) {
-    console.error('[Events][POST] Unhandled error:', { message: err?.message, stack: err?.stack });
-    if (err?.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json(
-      { error: 'Failed to create event', ...(process.env.NODE_ENV !== 'production' ? { debug: err?.message } : {}) },
-      { status: 500 }
-    );
+  } catch (err) {
+    return apiError(err, 'Failed to create event');
   }
 }
-
-

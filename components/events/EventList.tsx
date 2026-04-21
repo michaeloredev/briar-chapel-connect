@@ -1,6 +1,7 @@
 'use client';
 
 import { getCategoryMeta } from '@/lib/data/event-categories';
+import { parseYMD, formatDateRange } from '@/lib/utils/date';
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
 
@@ -8,32 +9,17 @@ type EventListItem = {
   id: string;
   title: string;
   description: string;
-  date: string; // ISO
-  endDate: string | null; // ISO
+  date: string;
+  endDate: string | null;
   location: string;
   status: string;
   category?: string;
 };
 
-function formatDateRange(startISO: string, endISO: string | null) {
-  const start = new Date(startISO);
-  const end = endISO ? new Date(endISO) : null;
-  const startStr = start.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  if (!end) return startStr;
-  const sameDay = start.toDateString() === end.toDateString();
-  const endStr = end.toLocaleString(undefined, {
-    ...(sameDay ? { hour: '2-digit', minute: '2-digit' } : { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-  });
-  return `${startStr} – ${endStr}`;
-}
-
 export default function EventList({ initialDateYMD, events }: { initialDateYMD: string; events: EventListItem[] }) {
   const params = useSearchParams();
   const selected = params.get('date') || initialDateYMD;
-  const selectedDate = (() => {
-    const [y, m, d] = selected.split('-').map((n) => Number(n));
-    return new Date(y, (m || 1) - 1, d || 1);
-  })();
+  const selectedDate = parseYMD(selected);
   const filtered = events.filter((e) => {
     const start = new Date(e.date);
     const end = e.endDate ? new Date(e.endDate) : start;

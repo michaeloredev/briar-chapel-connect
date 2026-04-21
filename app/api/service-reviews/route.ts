@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
+import { apiError, apiBadRequest } from '@/lib/api/response';
 
 type Payload = {
   service_id?: string;
@@ -16,19 +17,16 @@ export async function POST(req: Request) {
     const rating = Number(body.rating || 0);
     const comment = (body.comment || '').trim();
 
-    if (!service_id) {
-      return NextResponse.json({ error: 'Missing service_id' }, { status: 400 });
-    }
+    if (!service_id) return apiBadRequest('Missing service_id');
     if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
-      return NextResponse.json({ error: 'rating must be between 1 and 5' }, { status: 400 });
+      return apiBadRequest('rating must be between 1 and 5');
     }
     if (comment && comment.length > 2000) {
-      return NextResponse.json({ error: 'comment too long (max 2000 chars)' }, { status: 400 });
+      return apiBadRequest('comment too long (max 2000 chars)');
     }
 
     const { supabase, userId } = await requireAuthSupabase();
 
-    // Ensure service exists and is active
     type ServiceStatusRow = { id: string; status: 'active' | 'inactive' };
     const { data: service, error: serviceError } = await supabase
       .from('services')
@@ -36,16 +34,15 @@ export async function POST(req: Request) {
       .eq('id', service_id)
       .returns<ServiceStatusRow[]>()
       .single();
+
     if (serviceError || !service) {
       return NextResponse.json({ error: 'Service not found' }, { status: 404 });
     }
     if (service.status !== 'active') {
-      return NextResponse.json({ error: 'Service is not active' }, { status: 400 });
+      return apiBadRequest('Service is not active');
     }
 
-    // Fetch display name from Clerk
     let author_name: string | null = null;
-    // Try currentUser() first (works well in API routes)
     try {
       const user = await currentUser();
       if (user) {
@@ -56,7 +53,6 @@ export async function POST(req: Request) {
         author_name = (fullName || user.username || primaryEmail || '').trim() || null;
       }
     } catch {}
-    // If still missing, keep null (will render "Anonymous" on the client)
 
     type Insert = Database['public']['Tables']['service_reviews']['Insert'];
     const insert: Insert = {
@@ -74,18 +70,12 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      console.error('Supabase insert review error:', error);
-      return NextResponse.json({ error: 'Failed to submit review' }, { status: 500 });
+      console.error('[ServiceReviews][POST] insert error:', error.message);
+      return apiError(error, 'Failed to submit review');
     }
 
     return NextResponse.json(data, { status: 201 });
-  } catch (err: any) {
-    console.error('Create review error:', err);
-    if (err?.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json({ error: 'Failed to submit review' }, { status: 500 });
+  } catch (err) {
+    return apiError(err, 'Failed to submit review');
   }
 }
-
-

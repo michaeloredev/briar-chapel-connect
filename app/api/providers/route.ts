@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
+import { apiError, apiBadRequest } from '@/lib/api/response';
 
 type Payload = {
   category?: string;
@@ -30,10 +31,7 @@ export async function POST(req: Request) {
     const contact_phone = body.contact_phone ?? null;
 
     if (!category || !service || !name) {
-      return NextResponse.json(
-        { error: 'category, service, and name are required' },
-        { status: 400 }
-      );
+      return apiBadRequest('category, service, and name are required');
     }
 
     const { supabase, userId } = await requireAuthSupabase();
@@ -59,17 +57,13 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      console.error('Supabase insert error:', error);
-      return NextResponse.json({ error: 'Failed to create provider' }, { status: 500 });
+      console.error('[Providers][POST] insert error:', error.message);
+      return apiError(error, 'Failed to create provider');
     }
 
     return NextResponse.json(data, { status: 201 });
-  } catch (err: any) {
-    console.error('Create provider error:', err);
-    if (err?.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json({ error: 'Failed to create provider' }, { status: 500 });
+  } catch (err) {
+    return apiError(err, 'Failed to create provider');
   }
 }
 
@@ -77,12 +71,9 @@ export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get('id')?.trim();
-    if (!id) {
-      return NextResponse.json({ error: 'Missing id' }, { status: 400 });
-    }
+    if (!id) return apiBadRequest('Missing id');
 
     const { supabase, userId } = await requireAuthSupabase();
-
     const { data: deleted, error } = await supabase
       .from('services')
       .delete()
@@ -91,19 +82,15 @@ export async function DELETE(req: Request) {
       .select('id');
 
     if (error) {
-      console.error('Supabase delete error:', error);
-      return NextResponse.json({ error: error.message || 'Failed to delete provider' }, { status: 500 });
+      console.error('[Providers][DELETE] error:', error.message);
+      return apiError(error, 'Failed to delete provider');
     }
     if (!deleted || deleted.length === 0) {
       return NextResponse.json({ error: 'Provider not found or not owned by user' }, { status: 404 });
     }
 
     return new NextResponse(null, { status: 204 });
-  } catch (err: any) {
-    console.error('Delete provider error:', err);
-    if (err?.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json({ error: 'Failed to delete provider' }, { status: 500 });
+  } catch (err) {
+    return apiError(err, 'Failed to delete provider');
   }
 }

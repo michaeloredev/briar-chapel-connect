@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
+import { apiError, apiBadRequest } from '@/lib/api/response';
 
 type Payload = {
   title?: string;
@@ -25,27 +26,10 @@ export async function POST(req: Request) {
     const images = Array.isArray(body.images) ? body.images.slice(0, 5) : [];
     const contact = (body.contact || '').trim() || null;
 
-    // Debug: payload summary (avoid logging large arrays)
-    console.log('[MarketplaceItems][POST] Incoming payload summary:', {
-      hasTitle: Boolean(title),
-      hasDescription: Boolean(description),
-      category,
-      price,
-      condition,
-      location,
-      imagesCount: images.length,
-      hasContact: Boolean(contact),
-    });
-
-    if (!title) {
-      return NextResponse.json({ error: 'Missing title' }, { status: 400 });
-    }
-    if (!Number.isFinite(price) || price < 0) {
-      return NextResponse.json({ error: 'Invalid price' }, { status: 400 });
-    }
+    if (!title) return apiBadRequest('Missing title');
+    if (!Number.isFinite(price) || price < 0) return apiBadRequest('Invalid price');
 
     const { supabase, userId } = await requireAuthSupabase();
-    console.log('[MarketplaceItems][POST] Authenticated userId:', userId);
     type Insert = Database['public']['Tables']['marketplace_items']['Insert'];
     const insert: Insert = {
       user_id: userId,
@@ -67,40 +51,13 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      console.error('[MarketplaceItems][POST] Supabase insert error:', {
-        message: error.message,
-        details: (error as any)?.details,
-        hint: (error as any)?.hint,
-        code: (error as any)?.code,
-        insertPreview: { ...insert, images: `(${images.length} images)` },
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to create item',
-          ...(process.env.NODE_ENV !== 'production'
-            ? { debug: error.message, code: (error as any)?.code }
-            : {}),
-        },
-        { status: 500 }
-      );
+      console.error('[MarketplaceItems][POST] insert error:', error.message);
+      return apiError(error, 'Failed to create item');
     }
 
     return NextResponse.json(data, { status: 201 });
-  } catch (err: any) {
-    console.error('[MarketplaceItems][POST] Unhandled error:', {
-      message: err?.message,
-      stack: err?.stack,
-    });
-    if (err?.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json(
-      {
-        error: 'Failed to create item',
-        ...(process.env.NODE_ENV !== 'production' ? { debug: err?.message } : {}),
-      },
-      { status: 500 }
-    );
+  } catch (err) {
+    return apiError(err, 'Failed to create item');
   }
 }
 
@@ -108,9 +65,8 @@ export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get('id')?.trim();
-    if (!id) {
-      return NextResponse.json({ error: 'Missing id' }, { status: 400 });
-    }
+    if (!id) return apiBadRequest('Missing id');
+
     const { supabase, userId } = await requireAuthSupabase();
     const { data: deleted, error } = await supabase
       .from('marketplace_items')
@@ -118,21 +74,17 @@ export async function DELETE(req: Request) {
       .eq('id', id)
       .eq('user_id', userId)
       .select('id');
+
     if (error) {
-      console.error('Supabase delete item error:', error);
-      return NextResponse.json({ error: error.message || 'Failed to delete item' }, { status: 500 });
+      console.error('[MarketplaceItems][DELETE] error:', error.message);
+      return apiError(error, 'Failed to delete item');
     }
     if (!deleted || deleted.length === 0) {
       return NextResponse.json({ error: 'Item not found or not owned by user' }, { status: 404 });
     }
+
     return new NextResponse(null, { status: 204 });
-  } catch (err: any) {
-    console.error('Delete marketplace item error:', err);
-    if (err?.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 });
+  } catch (err) {
+    return apiError(err, 'Failed to delete item');
   }
 }
-
-

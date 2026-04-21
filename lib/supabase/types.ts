@@ -82,8 +82,9 @@ export interface Database {
           current_attendees: number;
           status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
           image_url: string | null;
+          group_id: string | null;
         };
-        Insert: Omit<Database['public']['Tables']['events']['Row'], 'id' | 'created_at' | 'updated_at' | 'current_attendees'>;
+        Insert: Omit<Database['public']['Tables']['events']['Row'], 'id' | 'created_at' | 'updated_at' | 'current_attendees' | 'group_id'> & { group_id?: string | null };
         Update: Partial<Database['public']['Tables']['events']['Insert']>;
       };
       event_attendees: {

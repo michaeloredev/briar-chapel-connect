@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { SignedIn } from '@clerk/nextjs';
 import CommentComposer from './CommentComposer';
-import Image from 'next/image';
 
 export type Comment = {
   id: string;
@@ -50,32 +50,36 @@ export default function CommentItem({ comment, replies, onReply, onDelete, canDe
       ) : null}
       <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
         <span>{created}</span>
-        <button
-          type="button"
-          onClick={() => setShowReply((v) => !v)}
-          className="hover:underline"
-        >
-          {showReply ? 'Cancel' : 'Reply'}
-        </button>
-        {canDelete(comment) ? (
+        <SignedIn>
           <button
             type="button"
-            onClick={() => onDelete(comment.id)}
-            className="hover:underline text-red-600 dark:text-red-400"
+            onClick={() => setShowReply((v) => !v)}
+            className="hover:underline"
           >
-            Delete
+            {showReply ? 'Cancel' : 'Reply'}
           </button>
-        ) : null}
+          {canDelete(comment) ? (
+            <button
+              type="button"
+              onClick={() => onDelete(comment.id)}
+              className="hover:underline text-red-600 dark:text-red-400"
+            >
+              Delete
+            </button>
+          ) : null}
+        </SignedIn>
       </div>
       {showReply ? (
         <div className="mt-3">
-          <CommentComposer
-            placeholder="Write a reply…"
-            onSubmit={async (text) => {
-              await onReply(comment.id, text);
-              setShowReply(false);
-            }}
-          />
+          <SignedIn>
+            <CommentComposer
+              placeholder="Write a reply…"
+              onSubmit={async (text) => {
+                await onReply(comment.id, text);
+                setShowReply(false);
+              }}
+            />
+          </SignedIn>
         </div>
       ) : null}
       {replies.length > 0 ? (
