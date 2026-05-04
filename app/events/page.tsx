@@ -3,9 +3,10 @@ import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 import EventCalendar from '@/components/events/EventCalendar';
 import EventList from '@/components/events/EventList';
-import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { SignedIn } from '@clerk/nextjs';
 import AddEventButton from '@/components/events/AddEventButton';
 import { PageHeader } from '@/components/common/PageHeader';
+import RoleGate from '@/components/auth/RoleGate';
 import { toLocalYMD } from '@/lib/utils/date';
 
 export const metadata: Metadata = {
@@ -73,18 +74,11 @@ export default async function EventsPage({ searchParams }: { searchParams: Searc
           title="Community Events"
           description="Find yard sales, meetups, and local happenings."
           actions={
-            <>
-              <SignedIn>
+            <SignedIn>
+              <RoleGate minimum="admin">
                 <AddEventButton />
-              </SignedIn>
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    Add Event
-                  </button>
-                </SignInButton>
-              </SignedOut>
-            </>
+              </RoleGate>
+            </SignedIn>
           }
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

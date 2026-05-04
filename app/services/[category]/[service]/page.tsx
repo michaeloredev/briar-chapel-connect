@@ -5,7 +5,8 @@ import { PageHeader } from '@/components/common/PageHeader';
 import ProviderList from '@/components/services/ProviderList';
 
 import { AddProviderButton } from '@/components/services/AddProvider';
-import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { SignedIn } from '@clerk/nextjs';
+import RoleGate from '@/components/auth/RoleGate';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 
@@ -90,15 +91,10 @@ export default async function ServiceDetailListPage({ params }: PageProps) {
         <ProviderList providers={providers} />
         <div className="mt-6">
           <SignedIn>
-            <AddProviderButton categorySlug={category} serviceSlug={service} />
+            <RoleGate minimum="superadmin">
+              <AddProviderButton categorySlug={category} serviceSlug={service} />
+            </RoleGate>
           </SignedIn>
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                Sign in to add a provider
-              </button>
-            </SignInButton>
-          </SignedOut>
         </div>
       </div>
     </div>

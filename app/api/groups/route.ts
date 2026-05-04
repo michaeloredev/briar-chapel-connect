@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
+import { requireRole } from '@/lib/auth/roles';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 
 type Payload = {
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
     }
 
     const { supabase, userId } = await requireAuthSupabase();
+    await requireRole(userId, 'admin');
     type Insert = Database['public']['Tables']['groups']['Insert'];
     const insert: Insert = {
       user_id: userId,

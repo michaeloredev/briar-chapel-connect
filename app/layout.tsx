@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import BreadcrumbsBar from "@/components/common/BreadcrumbsBar";
+import RoleProvider from "@/components/auth/RoleProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,13 +39,15 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
         >
-          <Header />
-          <div className="bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <BreadcrumbsBar />
+          <RoleProvider>
+            <Header />
+            <div className="bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <BreadcrumbsBar />
+              </div>
             </div>
-          </div>
-          {children}
+            {children}
+          </RoleProvider>
         </body>
       </html>
     </ClerkProvider>

@@ -164,6 +164,19 @@ export interface Database {
         };
         Update: Partial<Database['public']['Tables']['groups']['Insert']>;
       };
+      user_roles: {
+        Row: {
+          id: string;
+          created_at: string;
+          user_id: string;
+          role: 'superadmin' | 'admin' | 'client';
+        };
+        Insert: {
+          user_id: string;
+          role?: 'superadmin' | 'admin' | 'client';
+        };
+        Update: Partial<Database['public']['Tables']['user_roles']['Insert']>;
+      };
       group_members: {
         Row: {
           id: string;

@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
+import RoleGate from '@/components/auth/RoleGate';
 
 export function Header() {
   return (
@@ -23,6 +26,11 @@ export function Header() {
               <Link href="/groups" className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
                 Groups
               </Link>
+              <RoleGate minimum="superadmin">
+                <Link href="/members" className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
+                  Members
+                </Link>
+              </RoleGate>
             </div>
             <div className="flex gap-4 items-center">
               <SignedOut>

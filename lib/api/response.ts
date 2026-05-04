@@ -15,6 +15,10 @@ export function apiError(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (message === 'Forbidden') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   return NextResponse.json(
     {
       error: fallbackMessage,

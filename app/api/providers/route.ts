@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
+import { requireRole } from '@/lib/auth/roles';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 
 type Payload = {
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
     }
 
     const { supabase, userId } = await requireAuthSupabase();
+    await requireRole(userId, 'superadmin');
     type ServiceInsert = Database['public']['Tables']['services']['Insert'];
     const insert: ServiceInsert = {
       user_id: userId,
@@ -74,11 +76,11 @@ export async function DELETE(req: Request) {
     if (!id) return apiBadRequest('Missing id');
 
     const { supabase, userId } = await requireAuthSupabase();
+    await requireRole(userId, 'superadmin');
     const { data: deleted, error } = await supabase
       .from('services')
       .delete()
       .eq('id', id)
-      .eq('user_id', userId)
       .select('id');
 
     if (error) {

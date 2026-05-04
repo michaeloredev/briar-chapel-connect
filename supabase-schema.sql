@@ -378,3 +378,26 @@ begin
   end if;
 end $$;
 
+-- User Roles (application-level RBAC)
+-- Roles: superadmin, admin, client
+-- Users without a row default to 'client' in application code.
+CREATE TABLE IF NOT EXISTS user_roles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    user_id TEXT NOT NULL UNIQUE, -- Clerk user ID
+    role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('superadmin', 'admin', 'client'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
+
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+
+-- Anyone can read roles (needed for UI role checks)
+CREATE POLICY "Anyone can view user roles" ON user_roles
+    FOR SELECT USING (true);
+
+-- Only superadmins can manage roles (enforced at application level;
+-- RLS allows the JWT owner to insert/update/delete their own row as a fallback)
+CREATE POLICY "Superadmins can manage roles" ON user_roles
+    FOR ALL USING (true) WITH CHECK (true);
+

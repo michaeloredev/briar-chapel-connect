@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 import { GROUP_TYPES } from '@/lib/data/group-types';
 import AddGroupButton from '@/components/groups/AddGroupButton';
-import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { SignedIn, SignInButton } from '@clerk/nextjs';
+import RoleGate from '@/components/auth/RoleGate';
 import GroupCard from '@/components/groups/GroupCard';
 import { PageHeader } from '@/components/common/PageHeader';
 import { auth } from '@clerk/nextjs/server';
@@ -93,15 +94,10 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
         />
         <div className="flex">
           <SignedIn>
-            <AddGroupButton />
+            <RoleGate minimum="admin">
+              <AddGroupButton />
+            </RoleGate>
           </SignedIn>
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                Create Group
-              </button>
-            </SignInButton>
-          </SignedOut>
         </div>
 
 
