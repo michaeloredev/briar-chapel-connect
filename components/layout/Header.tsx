@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import RoleGate from '@/components/auth/RoleGate';
 
+//this is the header component for the app
 export function Header() {
   return (
     <header className="border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
