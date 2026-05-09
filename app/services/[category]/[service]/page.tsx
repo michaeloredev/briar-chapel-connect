@@ -3,10 +3,8 @@ import { notFound } from 'next/navigation';
 import { serviceSections } from '@/lib/data/services';
 import { PageHeader } from '@/components/common/PageHeader';
 import ProviderList from '@/components/services/ProviderList';
-
-import { AddProviderButton } from '@/components/services/AddProvider';
-import { SignedIn } from '@clerk/nextjs';
-import RoleGate from '@/components/auth/RoleGate';
+import { auth } from '@clerk/nextjs/server';
+import { getUserRole, hasRole } from '@/lib/auth/roles';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 
@@ -24,15 +22,19 @@ export default async function ServiceDetailListPage({ params }: PageProps) {
   const item = section?.items.find((i) => i.slug === service);
   if (!section || !item) return notFound();
 
+  const { userId } = await auth();
+  const appRole = userId ? await getUserRole(userId) : 'client';
+  const canManageProviders = hasRole(appRole, 'superadmin');
+
   // Fetch providers from Supabase filtered by category/service
   const supabase = await createClient();
   type ServiceRow = Pick<
     Database['public']['Tables']['services']['Row'],
-    'id' | 'title' | 'summary' | 'details' | 'website' | 'contact_phone' | 'location' | 'category' | 'status' | 'image_url'
+    'id' | 'title' | 'summary' | 'details' | 'website' | 'contact_email' | 'contact_phone' | 'location' | 'category' | 'status' | 'image_url'
   >;
   const { data: rows, error } = await supabase
     .from('services')
-    .select('id, title, summary, details, website, contact_phone, location, category, status, image_url')
+    .select('id, title, summary, details, website, contact_email, contact_phone, location, category, status, image_url')
     .eq('category', `${category}/${service}`)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -78,9 +80,10 @@ export default async function ServiceDetailListPage({ params }: PageProps) {
         imageUrl: r.image_url ?? undefined,
         website: r.website ?? undefined,
         phone: r.contact_phone ?? undefined,
+        contactEmail: r.contact_email ?? undefined,
+        location: r.location ?? undefined,
         rating,
         reviewCount: stats?.count ?? 0,
-        // No tags column yet; leaving undefined to avoid UI clutter
       };
     }) ?? [];
 
@@ -88,14 +91,12 @@ export default async function ServiceDetailListPage({ params }: PageProps) {
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <PageHeader title={item.title} description={item.description} />
-        <ProviderList providers={providers} />
-        <div className="mt-6">
-          <SignedIn>
-            <RoleGate minimum="superadmin">
-              <AddProviderButton categorySlug={category} serviceSlug={service} />
-            </RoleGate>
-          </SignedIn>
-        </div>
+        <ProviderList
+          providers={providers}
+          categorySlug={category}
+          serviceSlug={service}
+          canManageProviders={canManageProviders}
+        />
       </div>
     </div>
   );

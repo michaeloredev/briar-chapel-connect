@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { requireRole } from '@/lib/auth/roles';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 
 type Payload = {
@@ -11,6 +12,18 @@ type Payload = {
   summary?: string;
   details?: string;
   tags?: string[];
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  image_url?: string | null;
+  location?: string | null;
+  website?: string | null;
+};
+
+type PatchPayload = {
+  id?: string;
+  name?: string;
+  summary?: string;
+  details?: string;
   contact_email?: string | null;
   contact_phone?: string | null;
   image_url?: string | null;
@@ -69,15 +82,64 @@ export async function POST(req: Request) {
   }
 }
 
+export async function PATCH(req: Request) {
+  try {
+    const body: PatchPayload = await req.json();
+    const id = (body.id || '').trim();
+    if (!id) return apiBadRequest('Missing id');
+
+    const { userId } = await requireAuthSupabase();
+    await requireRole(userId, 'superadmin');
+
+    const name = (body.name ?? '').trim();
+    if (!name) return apiBadRequest('name is required');
+
+    const summary = (body.summary ?? '').trim();
+    const details = (body.details ?? '').trim();
+    const website = (body.website ?? '')?.trim() || null;
+    const location = (body.location ?? '')?.trim() || null;
+
+    const admin = createAdminClient();
+    type ServiceUpdate = Database['public']['Tables']['services']['Update'];
+    const update: ServiceUpdate = {
+      title: name,
+      summary: summary || null,
+      details: details || null,
+      contact_email: body.contact_email ?? null,
+      contact_phone: body.contact_phone ?? null,
+      location,
+      website,
+      image_url: body.image_url === undefined ? undefined : body.image_url,
+    };
+
+    const { data, error } = await admin
+      .from('services')
+      .update(update as never)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('[Providers][PATCH] error:', error.message);
+      return apiError(error, 'Failed to update provider');
+    }
+
+    return NextResponse.json(data);
+  } catch (err) {
+    return apiError(err, 'Failed to update provider');
+  }
+}
+
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get('id')?.trim();
     if (!id) return apiBadRequest('Missing id');
 
-    const { supabase, userId } = await requireAuthSupabase();
+    const { userId } = await requireAuthSupabase();
     await requireRole(userId, 'superadmin');
-    const { data: deleted, error } = await supabase
+    const admin = createAdminClient();
+    const { data: deleted, error } = await admin
       .from('services')
       .delete()
       .eq('id', id)

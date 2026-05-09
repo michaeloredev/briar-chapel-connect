@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     const admin = createAdminClient();
     const { data, error } = await admin
       .from('user_roles')
-      .upsert({ user_id: targetUserId, role }, { onConflict: 'user_id' })
+      .upsert({ user_id: targetUserId, role } as never, { onConflict: 'user_id' })
       .select('*')
       .single();
 

@@ -9,6 +9,13 @@ import { apiError, apiBadRequest } from '@/lib/api/response';
  */
 export async function handleFileUpload(req: Request, bucket: string): Promise<NextResponse> {
   try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+      return apiError(
+        new Error('SUPABASE_SERVICE_ROLE_KEY is not set'),
+        'File upload is not configured on the server',
+      );
+    }
+
     const form = await req.formData();
     const file = form.get('file') as File | null;
     if (!file) return apiBadRequest('Missing file');
@@ -29,7 +36,13 @@ export async function handleFileUpload(req: Request, bucket: string): Promise<Ne
 
     if (uploadError) {
       console.error(`[Upload][${bucket}] error:`, uploadError.message);
-      return apiError(uploadError, 'Failed to upload file');
+      const hint =
+        uploadError.message?.toLowerCase().includes('bucket') ||
+        uploadError.message?.toLowerCase().includes('not found')
+          ? ' Create the bucket in Supabase (Dashboard → Storage, or run the provider-logos / marketplace-images section in supabase-schema.sql).'
+          : '';
+      const detail = `${uploadError.message || 'Unknown storage error'}${hint}`;
+      return apiError(new Error(detail), `Failed to upload file: ${detail}`);
     }
 
     const { data } = await admin.storage.from(bucket).getPublicUrl(fileName);

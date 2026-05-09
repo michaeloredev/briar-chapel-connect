@@ -2,7 +2,7 @@
 import React from 'react';
 import StarRating from '@/components/ui/StarRating';
 import TagPill from '@/components/ui/TagPill';
-import { Trash2, X, ChevronDown } from 'lucide-react';
+import { Trash2, X, ChevronDown, Pencil } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import type { Database } from '@/lib/supabase/types';
 import StarRatingInput from '@/components/ui/StarRatingInput';
@@ -18,6 +18,9 @@ export type ProviderCardProps = {
   tags?: string[];
   className?: string;
   deletable?: boolean;
+  /** Superadmin: show edit control */
+  canManage?: boolean;
+  onEdit?: () => void;
   onDeleted?: () => void;
   imageUrl?: string;
   website?: string;
@@ -34,6 +37,8 @@ export function ProviderCard({
   tags,
   className = '',
   deletable = true,
+  canManage = false,
+  onEdit,
   onDeleted,
   imageUrl,
   website,
@@ -153,7 +158,7 @@ export function ProviderCard({
             <img
               src={imageUrl}
               alt={`${name} logo`}
-              className="w-14 h-14 rounded-lg object-cover bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+              className="w-20 h-20 rounded-lg object-cover bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
               width={56}
               height={56}
             />
@@ -196,7 +201,37 @@ export function ProviderCard({
               ) : null}
             </div>
           ) : null}
-          {deletable ? (
+          {canManage && onEdit ? (
+            <div className="ml-2 flex flex-col gap-1 items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="p-2 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                title="Edit provider"
+                aria-label="Edit provider"
+              >
+                <Pencil className="w-5 h-5" aria-hidden />
+              </button>
+              {deletable ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }}
+                  disabled={deleting}
+                  className="p-2 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                  title="Delete"
+                  aria-label="Delete"
+                >
+                  <Trash2 className="w-5 h-5" aria-hidden />
+                </button>
+              ) : null}
+            </div>
+          ) : deletable ? (
             <button
               type="button"
               onClick={(e) => {
@@ -407,19 +442,14 @@ export function ProviderCard({
                             const msg = await res.text();
                             throw new Error(msg || 'Failed to submit review');
                           }
-                          const created = (await res.json()) as ReviewRow;
-                          // Optimistically update average and count
-                          const prevCount = displayReviewCount;
-                          const newCount = prevCount + 1;
-                          const newAvg = ((displayRating * prevCount) + reviewRating) / newCount;
-                          setDisplayReviewCount(newCount);
-                          setDisplayRating(newAvg);
-                          // If a comment was provided, prepend it to the visible list
-                          if ((created.comment || '').trim().length > 0) {
-                            setReviews((prev) => {
-                              const next = prev ? [created, ...prev] : [created];
-                              return next;
-                            });
+                          const saved = (await res.json()) as ReviewRow;
+                          // Merge into list if already loaded (one row per user after upsert)
+                          setReviews((prev) => {
+                            if (prev === null) return null;
+                            const without = prev.filter((r) => r.user_id !== saved.user_id);
+                            return [saved, ...without];
+                          });
+                          if ((saved.comment || '').trim().length > 0) {
                             setReviewsExpanded(true);
                           }
                           setShowReviewForm(false);

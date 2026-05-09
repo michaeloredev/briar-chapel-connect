@@ -65,16 +65,19 @@ export async function POST(req: Request) {
 
     const { data, error } = await supabase
       .from('service_reviews')
-      .insert(insert as any)
+      .upsert(insert as any, {
+        onConflict: 'service_id,user_id',
+        ignoreDuplicates: false,
+      })
       .select('*')
       .single();
 
     if (error) {
-      console.error('[ServiceReviews][POST] insert error:', error.message);
+      console.error('[ServiceReviews][POST] upsert error:', error.message);
       return apiError(error, 'Failed to submit review');
     }
 
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json(data, { status: 200 });
   } catch (err) {
     return apiError(err, 'Failed to submit review');
   }

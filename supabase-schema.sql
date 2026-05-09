@@ -108,6 +108,8 @@ CREATE INDEX IF NOT EXISTS idx_event_attendees_user_id ON event_attendees(user_i
 CREATE INDEX IF NOT EXISTS idx_service_reviews_service_id ON service_reviews(service_id);
 CREATE INDEX IF NOT EXISTS idx_service_reviews_user_id ON service_reviews(user_id);
 CREATE INDEX IF NOT EXISTS idx_service_reviews_rating ON service_reviews(rating);
+-- One review per user per service (re-submit updates the same row; averages stay fair)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_service_reviews_service_id_user_id ON service_reviews(service_id, user_id);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

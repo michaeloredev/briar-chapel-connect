@@ -91,7 +91,7 @@ export async function PATCH(req: Request) {
     } else {
       await admin
         .from('user_roles')
-        .upsert({ user_id: targetId, role }, { onConflict: 'user_id' });
+        .upsert({ user_id: targetId, role } as never, { onConflict: 'user_id' });
     }
 
     return NextResponse.json({ user_id: targetId, role });
