@@ -15,6 +15,7 @@ export function Header() {
           </Link>
           <div className="flex items-center gap-6">
             <div className="hidden md:flex gap-4">
+              {/* this is a test */}
               <Link href="/services" className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
                 Services
               </Link>
