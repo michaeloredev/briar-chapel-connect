@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { getUserRole, hasRole } from '@/lib/auth/roles';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 
 type PostBody = {
@@ -51,6 +53,30 @@ export async function POST(req: Request) {
     }
 
     const { supabase, userId } = await requireAuthSupabase();
+
+    if (parent_id) {
+      type Row = Database['public']['Tables']['comments']['Row'];
+      const { data: parent, error: parentError } = await supabase
+        .from('comments')
+        .select('id, parent_id, entity_type, entity_id')
+        .eq('id', parent_id)
+        .maybeSingle<Pick<Row, 'id' | 'parent_id' | 'entity_type' | 'entity_id'>>();
+
+      if (parentError) {
+        console.error('[Comments][POST] parent lookup error:', parentError.message);
+        return apiError(parentError, 'Failed to create comment');
+      }
+      if (!parent) {
+        return apiBadRequest('Parent comment not found');
+      }
+      if (parent.entity_type !== entity_type || parent.entity_id !== entity_id) {
+        return apiBadRequest('Parent comment belongs to a different item');
+      }
+      if (parent.parent_id) {
+        return apiBadRequest('Replies are limited to two levels');
+      }
+    }
+
     type Insert = Database['public']['Tables']['comments']['Insert'];
     const insert: Insert = {
       user_id: userId,
@@ -84,19 +110,24 @@ export async function DELETE(req: Request) {
     if (!id) return apiBadRequest('Missing id');
 
     const { supabase, userId } = await requireAuthSupabase();
-    const { data: deleted, error } = await supabase
-      .from('comments')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', userId)
-      .select('id');
+    const role = await getUserRole(userId);
+    const isModerator = hasRole(role, 'admin');
+
+    // The owner-only RLS policy blocks moderators from deleting other users'
+    // comments, so moderation goes through the service-role client instead.
+    const { data: deleted, error } = isModerator
+      ? await createAdminClient().from('comments').delete().eq('id', id).select('id')
+      : await supabase.from('comments').delete().eq('id', id).eq('user_id', userId).select('id');
 
     if (error) {
       console.error('[Comments][DELETE] error:', error.message);
       return apiError(error, 'Failed to delete comment');
     }
     if (!deleted || deleted.length === 0) {
-      return NextResponse.json({ error: 'Comment not found or not owned by user' }, { status: 404 });
+      return NextResponse.json(
+        { error: isModerator ? 'Comment not found' : 'Comment not found or not owned by user' },
+        { status: 404 },
+      );
     }
 
     return new NextResponse(null, { status: 204 });

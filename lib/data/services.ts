@@ -63,7 +63,7 @@ export const serviceSections: ServiceSection[] = [
       },
       {
         icon: Paintbrush,
-        title: 'Roofing, Painting, Carpentry',
+        title: 'Roofing & Painting',
         description: 'Exterior/interior painting, shingles, and woodwork.',
         colorClasses: { bg: serviceAccent.bg, icon: 'text-purple-600 dark:text-purple-400' },
         slug: 'roofing-painting-carpentry',

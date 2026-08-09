@@ -202,6 +202,7 @@ export function ProviderFormDialog({
             name,
             summary,
             details,
+            tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
             contact_email: contactEmail || null,
             contact_phone: contactPhone || null,
             location: locationText || null,

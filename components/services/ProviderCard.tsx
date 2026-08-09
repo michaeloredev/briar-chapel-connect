@@ -145,6 +145,70 @@ export function ProviderCard({
     }
   }
 
+  const showAdminColumns = Boolean(canManage && onEdit);
+
+  const logoBlock = imageUrl ? (
+    <img
+      src={imageUrl}
+      alt={`${name} logo`}
+      className="h-20 w-20 shrink-0 rounded-lg border border-slate-200 object-cover bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+      width={80}
+      height={80}
+    />
+  ) : (
+    <div
+      className="h-20 w-20 shrink-0 rounded-lg border border-dashed border-slate-200 bg-slate-50 dark:border-slate-600 dark:bg-slate-800/80"
+      aria-hidden
+    />
+  );
+
+  const titleSummaryRating = (
+    <>
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{name}</h3>
+      {summary || details ? (
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{summary ?? details}</p>
+      ) : null}
+      <div className="mt-2 flex items-center gap-2">
+        <StarRating value={displayRating} size="sm" showValue />
+        <span className="text-xs text-slate-500">({displayReviewCount})</span>
+      </div>
+    </>
+  );
+
+  const tagsBlock =
+    tags && tags.length > 0 ? (
+      <div className="mt-2 flex flex-wrap gap-2">
+        {tags.map((t) => (
+          <TagPill key={t} label={t} />
+        ))}
+      </div>
+    ) : null;
+
+  const websitePhoneBlock =
+    website || phone ? (
+      <div
+        className="flex min-w-0 flex-col gap-2 text-sm text-slate-700 dark:text-slate-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {website ? (
+          <a
+            href={website.startsWith('http') ? website : `https://${website}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-all text-blue-600 hover:underline dark:text-blue-400"
+            title="Website"
+          >
+            {website}
+          </a>
+        ) : null}
+        {phone ? (
+          <span className="w-full text-start tabular-nums md:text-end" title="Phone">
+            {phone}
+          </span>
+        ) : null}
+      </div>
+    ) : null;
+
   return (
     <>
     <div
@@ -152,102 +216,83 @@ export function ProviderCard({
       role="button"
       onClick={openDetails}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-start gap-4">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={`${name} logo`}
-              className="w-20 h-20 rounded-lg object-cover bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-              width={56}
-              height={56}
-            />
-          ) : null}
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{name}</h3>
-            {summary || details ? (
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{summary ?? details}</p>
-            ) : null}
-            <div className="mt-2 flex items-center gap-2">
-              <StarRating value={displayRating} size="sm" showValue />
-              <span className="text-xs text-slate-500">({displayReviewCount})</span>
-            </div>
+      {showAdminColumns ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start md:gap-x-4 md:gap-y-0">
+          <div className="flex md:block">{logoBlock}</div>
+          <div className="min-w-0">
+            {titleSummaryRating}
+            {tagsBlock}
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          {tags?.map((t) => (
-            <TagPill key={t} label={t} />
-          ))}
-          {website || phone ? (
-            <div
-              className="ml-2 flex flex-col gap-2 text-sm text-slate-700 dark:text-slate-300"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {website ? (
-                <a
-                  href={website.startsWith('http') ? website : `https://${website}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                  title="Website"
-                >
-                  {website}
-                </a>
-              ) : null}
-              {phone ? (
-                <span title="Phone">
-                  {phone}
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-          {canManage && onEdit ? (
-            <div className="ml-2 flex flex-col gap-1 items-center shrink-0" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-                className="p-2 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                title="Edit provider"
-                aria-label="Edit provider"
-              >
-                <Pencil className="w-5 h-5" aria-hidden />
-              </button>
-              {deletable ? (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete();
-                  }}
-                  disabled={deleting}
-                  className="p-2 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-                  title="Delete"
-                  aria-label="Delete"
-                >
-                  <Trash2 className="w-5 h-5" aria-hidden />
-                </button>
-              ) : null}
-            </div>
-          ) : deletable ? (
+          <div className="flex min-w-0 flex-col items-start md:items-end">{websitePhoneBlock}</div>
+          <div className="flex flex-col items-start gap-1 md:items-end" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                handleDelete();
+                onEdit?.();
               }}
-              disabled={deleting}
-              className="ml-2 p-2 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-              title="Delete"
-              aria-label="Delete"
+              className="p-2 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Edit provider"
+              aria-label="Edit provider"
             >
-              <Trash2 className="w-5 h-5" aria-hidden />
+              <Pencil className="h-5 w-5" aria-hidden />
             </button>
+            {deletable ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+                disabled={deleting}
+                className="p-2 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                title="Delete"
+                aria-label="Delete"
+              >
+                <Trash2 className="h-5 w-5" aria-hidden />
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-4">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={`${name} logo`}
+                className="h-20 w-20 shrink-0 rounded-lg border border-slate-200 object-cover bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+                width={56}
+                height={56}
+              />
+            ) : null}
+            <div>
+              {titleSummaryRating}
+              {tagsBlock}
+            </div>
+          </div>
+          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:max-w-[min(100%,24rem)] sm:justify-end">
+            {websitePhoneBlock}
+          </div>
+          {deletable ? (
+            <div className="shrink-0 sm:ml-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+                disabled={deleting}
+                className="p-2 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                title="Delete"
+                aria-label="Delete"
+              >
+                <Trash2 className="h-5 w-5" aria-hidden />
+              </button>
+            </div>
           ) : null}
         </div>
-      </div>
+      )}
     </div>
     {open ? (
       <div

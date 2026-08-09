@@ -6,6 +6,7 @@ import MarketplaceImageCarousel from '@/components/marketplace/MarketplaceImageC
 import { auth } from '@clerk/nextjs/server';
 import DeleteMarketplaceItemButton from '@/components/marketplace/DeleteMarketplaceItemButton';
 import CommentThread from '@/components/forum/CommentThread';
+import SetBreadcrumbTitle from '@/components/common/SetBreadcrumbTitle';
 
 export const metadata: Metadata = {
   title: 'Marketplace Item • Briar Chapel Connect',
@@ -36,6 +37,7 @@ export default async function MarketplaceDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <SetBreadcrumbTitle value={item.title} />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid md:grid-cols-2 gap-6">
           <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">

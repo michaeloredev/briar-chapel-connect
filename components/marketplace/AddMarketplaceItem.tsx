@@ -3,6 +3,10 @@
 import * as React from 'react';
 import { Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { ProviderLogoCropDialog } from '@/components/services/ProviderLogoCropDialog';
+
+const MAX_PHOTOS = 3;
+const PHOTO_SIZE = 800;
 
 export function AddMarketplaceItemButton({ className = '' }: { className?: string }) {
   const router = useRouter();
@@ -17,8 +21,39 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
   const [condition, setCondition] = React.useState<'new' | 'like_new' | 'good' | 'fair' | 'poor'>('good');
   const [locationText, setLocationText] = React.useState('');
   const [contact, setContact] = React.useState('');
-  const [files, setFiles] = React.useState<FileList | null>(null);
+  const [photos, setPhotos] = React.useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = React.useState<string[]>([]);
+  const [imageToCrop, setImageToCrop] = React.useState<string | null>(null);
   const [uploading, setUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    const urls = photos.map((file) => URL.createObjectURL(file));
+    setPhotoPreviews(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [photos]);
+
+  function revokeCropUrl() {
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
+      setImageToCrop(null);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function handleCropComplete(file: File) {
+    revokeCropUrl();
+    setPhotos((prev) => (prev.length >= MAX_PHOTOS ? prev : [...prev, file]));
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function closeModal() {
+    revokeCropUrl();
+    setOpen(false);
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,20 +66,23 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
         return;
       }
       const images: string[] = [];
-      if (files && files.length > 0) {
+      if (photos.length > 0) {
         setUploading(true);
-        for (const file of Array.from(files)) {
-          const fd = new FormData();
-          fd.append('file', file);
-          const up = await fetch('/api/uploads/marketplace-image', { method: 'POST', body: fd });
-          if (!up.ok) {
-            const msg = await up.text();
-            throw new Error(msg || 'Failed to upload image');
+        try {
+          for (const file of photos.slice(0, MAX_PHOTOS)) {
+            const fd = new FormData();
+            fd.append('file', file);
+            const up = await fetch('/api/uploads/marketplace-image', { method: 'POST', body: fd });
+            if (!up.ok) {
+              const msg = await up.text();
+              throw new Error(msg || 'Failed to upload image');
+            }
+            const uploaded = await up.json();
+            if (uploaded?.url) images.push(uploaded.url);
           }
-          const uploaded = await up.json();
-          if (uploaded?.url) images.push(uploaded.url);
+        } finally {
+          setUploading(false);
         }
-        setUploading(false);
       }
       const res = await fetch('/api/marketplace-items', {
         method: 'POST',
@@ -71,8 +109,8 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
       setCondition('good');
       setLocationText('');
       setContact('');
-      setFiles(null);
-      setOpen(false);
+      setPhotos([]);
+      closeModal();
       router.refresh();
     } catch (err: any) {
       setError(err?.message ?? 'Something went wrong');
@@ -103,7 +141,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
         >
           <div
             className="absolute inset-0 bg-black/50"
-            onClick={() => !loading && setOpen(false)}
+            onClick={() => !loading && closeModal()}
           />
           <div className="relative z-10 w-full max-w-lg rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
@@ -111,7 +149,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
               <button
                 type="button"
                 className="p-1 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onClick={() => !loading && setOpen(false)}
+                onClick={() => !loading && closeModal()}
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />
@@ -202,15 +240,60 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Photos</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Photos <span className="font-normal text-slate-500 dark:text-slate-400">({photos.length}/{MAX_PHOTOS})</span>
+                </label>
+                {photoPreviews.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {photoPreviews.map((src, i) => (
+                      <div key={src} className="relative">
+                        <img
+                          src={src}
+                          alt={`Photo ${i + 1}`}
+                          className="w-20 h-20 rounded-md object-cover border border-slate-200 dark:border-slate-700"
+                          width={80}
+                          height={80}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(i)}
+                          className="absolute -right-1.5 -top-1.5 rounded-full bg-slate-900/80 p-0.5 text-white hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          aria-label={`Remove photo ${i + 1}`}
+                        >
+                          <X className="h-3.5 w-3.5" aria-hidden />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
-                  multiple
-                  onChange={(e) => setFiles(e.target.files)}
-                  className="mt-1 block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700"
+                  disabled={photos.length >= MAX_PHOTOS || !!imageToCrop}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (photos.length >= MAX_PHOTOS) {
+                      setError(`You can add up to ${MAX_PHOTOS} photos.`);
+                      e.target.value = '';
+                      return;
+                    }
+                    if (!file.type.startsWith('image/')) {
+                      setError('Please choose an image file.');
+                      e.target.value = '';
+                      return;
+                    }
+                    setError(null);
+                    setImageToCrop(URL.createObjectURL(file));
+                  }}
+                  className="mt-2 block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 disabled:opacity-50 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700"
                 />
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Up to 5 images, ≤1MB each recommended.</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  {photos.length >= MAX_PHOTOS
+                    ? `Maximum of ${MAX_PHOTOS} photos added. Remove one to replace it.`
+                    : `Add up to ${MAX_PHOTOS} photos, one at a time. Each is cropped to a ${PHOTO_SIZE}×${PHOTO_SIZE} square.`}
+                </p>
               </div>
 
               {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
@@ -219,7 +302,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                 <button
                   type="button"
                   className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-                  onClick={() => setOpen(false)}
+                  onClick={closeModal}
                   disabled={loading || uploading}
                 >
                   Cancel
@@ -236,6 +319,17 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
           </div>
         </div>
       )}
+
+      {imageToCrop ? (
+        <ProviderLogoCropDialog
+          imageSrc={imageToCrop}
+          title="Crop photo"
+          outputSize={PHOTO_SIZE}
+          fileBaseName="marketplace-photo"
+          onCancel={revokeCropUrl}
+          onComplete={handleCropComplete}
+        />
+      ) : null}
     </>
   );
 }
