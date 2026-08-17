@@ -3,6 +3,7 @@ import React from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { Breadcrumbs, defaultLabelOverrides } from "@/components/common/Breadcrumbs";
 import SearchInput from "@/components/ui/SearchInput";
+import { marketplaceListHref } from "@/lib/data/marketplace-categories";
 
 export default function BreadcrumbsBar() {
   const pathname = usePathname();
@@ -27,13 +28,25 @@ export default function BreadcrumbsBar() {
           placeholder="Search items…"
           ariaLabel="Search marketplace items"
           onSubmit={(value) => {
-            const sp = new URLSearchParams();
-            if (value) sp.set('q', value);
-            const qs = sp.toString();
-            router.push(qs ? `/marketplace?${qs}` : '/marketplace');
+            router.push(
+              marketplaceListHref({
+                q: value,
+                category,
+                condition,
+                min,
+                max,
+              }),
+            );
           }}
           onClear={() => {
-            router.push('/marketplace');
+            router.push(
+              marketplaceListHref({
+                category,
+                condition,
+                min,
+                max,
+              }),
+            );
           }}
         />
       ) : null}

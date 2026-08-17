@@ -5,6 +5,7 @@ import { Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ProviderLogoCropDialog } from '@/components/services/ProviderLogoCropDialog';
 import { MARKETPLACE_PHOTO_SIZE } from '@/lib/images/cropImageToSquareWebp';
+import { MARKETPLACE_CATEGORIES } from '@/lib/data/marketplace-categories';
 
 const MAX_PHOTOS = 3;
 
@@ -16,7 +17,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
 
   const [title, setTitle] = React.useState('');
   const [description, setDescription] = React.useState('');
-  const [category, setCategory] = React.useState('');
+  const [category, setCategory] = React.useState<string>('general');
   const [price, setPrice] = React.useState<string>('');
   const [condition, setCondition] = React.useState<'new' | 'like_new' | 'good' | 'fair' | 'poor'>('good');
   const [locationText, setLocationText] = React.useState('');
@@ -93,7 +94,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
           category: category || 'general',
           price: Number(price || 0),
           condition,
-          location: locationText || 'Briar Chapel',
+          location: locationText || 'Road',
           images,
           contact: contact.trim() || undefined,
         }),
@@ -104,7 +105,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
       }
       setTitle('');
       setDescription('');
-      setCategory('');
+      setCategory('general');
       setPrice('');
       setCondition('good');
       setLocationText('');
@@ -184,12 +185,17 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Category</label>
-                  <input
+                  <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g. furniture, electronics"
-                  />
+                  >
+                    {MARKETPLACE_CATEGORIES.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Price (USD)</label>
@@ -221,7 +227,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                     value={locationText}
                     onChange={(e) => setLocationText(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Neighborhood or city"
+                    placeholder="Road"
                   />
                 </div>
                 <div className="sm:col-span-2">

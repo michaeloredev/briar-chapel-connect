@@ -6,6 +6,8 @@ import type { Database } from '@/lib/supabase/types';
 import { PageHeader } from '@/components/common/PageHeader';
 import { AddMarketplaceItemButton } from '@/components/marketplace/AddMarketplaceItem';
 import MarketplaceItemCard from '@/components/marketplace/MarketplaceItemCard';
+import MarketplaceCategoryFilter from '@/components/marketplace/MarketplaceCategoryFilter';
+import { isMarketplaceCategory } from '@/lib/data/marketplace-categories';
 
 export const metadata: Metadata = {
   title: 'Marketplace • Briar Chapel Connect',
@@ -35,8 +37,9 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
     const escaped = q.replace(/%/g, '\\%').replace(/_/g, '\\_');
     query = query.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
   }
-  if (category) {
-    query = query.eq('category', category);
+  const categoryFilter = isMarketplaceCategory(category) ? category : '';
+  if (categoryFilter) {
+    query = query.eq('category', categoryFilter);
   }
   if (condition) {
     query = query.eq('condition', condition);
@@ -55,21 +58,6 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
     // Non-fatal: show empty with error text
     console.error('Marketplace query error:', error.message);
   }
-
-  const urlFromParams = (overrides: Partial<Record<string, string>>) => {
-    const sp = new URLSearchParams();
-    if (q) sp.set('q', q);
-    if (category) sp.set('category', category);
-    if (condition) sp.set('condition', condition);
-    if (min) sp.set('min', min);
-    if (max) sp.set('max', max);
-    Object.entries(overrides).forEach(([k, v]) => {
-      if (!v) return;
-      sp.set(k, v);
-    });
-    const qs = sp.toString();
-    return qs ? `/marketplace?${qs}` : '/marketplace';
-  };
 
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -93,6 +81,16 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
           }
         />
 
+        <div className="mb-6">
+          <MarketplaceCategoryFilter
+            q={q}
+            category={categoryFilter}
+            condition={condition}
+            min={min}
+            max={max}
+          />
+        </div>
+
         <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {(items ?? []).map((item) => (
             <Link
@@ -115,7 +113,7 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
 
         {!items?.length ? (
           <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-700 p-8 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-            {q || category || condition || min || max
+            {q || categoryFilter || condition || min || max
               ? 'No items match your filters.'
               : 'No items listed yet.'}
           </div>
