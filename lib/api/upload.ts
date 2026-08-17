@@ -3,6 +3,49 @@ import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 
+const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+
+const IMAGE_EXTENSIONS = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+} as const;
+
+type AllowedImageType = keyof typeof IMAGE_EXTENSIONS;
+
+function detectImageType(bytes: Uint8Array): AllowedImageType | null {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return 'image/jpeg';
+  }
+  if (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  ) {
+    return 'image/png';
+  }
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
+    return 'image/webp';
+  }
+  return null;
+}
+
 /**
  * Handles a file upload POST request for a given Supabase Storage bucket.
  * Expects a FormData body with a "file" field.
@@ -19,18 +62,27 @@ export async function handleFileUpload(req: Request, bucket: string): Promise<Ne
     const form = await req.formData();
     const file = form.get('file') as File | null;
     if (!file) return apiBadRequest('Missing file');
+    if (file.size <= 0) return apiBadRequest('Empty file');
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return apiBadRequest('Image must be 2MB or smaller');
+    }
 
     const { userId } = await requireAuthSupabase();
     const admin = createAdminClient();
 
-    const ext = (file.name?.split('.').pop() || 'webp').toLowerCase();
-    const fileName = `${userId}/${crypto.randomUUID()}.${ext}`;
     const arrayBuffer = await file.arrayBuffer();
+    const detectedType = detectImageType(new Uint8Array(arrayBuffer));
+    if (!detectedType) {
+      return apiBadRequest('Only JPEG, PNG, and WebP images are allowed');
+    }
+
+    const ext = IMAGE_EXTENSIONS[detectedType];
+    const fileName = `${userId}/${crypto.randomUUID()}.${ext}`;
 
     const { error: uploadError } = await admin.storage
       .from(bucket)
       .upload(fileName, arrayBuffer, {
-        contentType: file.type || 'application/octet-stream',
+        contentType: detectedType,
         upsert: true,
       });
 

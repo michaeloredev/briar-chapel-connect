@@ -56,7 +56,20 @@ export interface Database {
           user_id: string;
           title: string;
           description: string;
-          category: string;
+          category:
+            | 'furniture'
+            | 'electronics'
+            | 'appliances'
+            | 'home_garden'
+            | 'clothing'
+            | 'kids'
+            | 'toys_games'
+            | 'sports_outdoors'
+            | 'tools'
+            | 'vehicles'
+            | 'pets'
+            | 'free'
+            | 'general';
           price: number;
           condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
           location: string;

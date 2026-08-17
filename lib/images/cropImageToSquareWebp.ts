@@ -9,13 +9,19 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/** Square output for services logos and comment images. */
+export const SQUARE_IMAGE_SIZE = 512;
+
+/** Square output for marketplace listing photos (larger than logos/comments). */
+export const MARKETPLACE_PHOTO_SIZE = 800;
+
 /**
  * Renders the given pixel crop into a square canvas and encodes as WebP (PNG fallback).
  */
 export async function cropImageToSquareWebp(
   imageSrc: string,
   pixelCrop: Area,
-  outputSize = 512,
+  outputSize = SQUARE_IMAGE_SIZE,
   quality = 0.9,
 ): Promise<Blob> {
   const image = await loadImage(imageSrc);

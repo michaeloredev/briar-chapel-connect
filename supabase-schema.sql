@@ -31,7 +31,21 @@ CREATE TABLE IF NOT EXISTS marketplace_items (
     user_id TEXT NOT NULL, -- Clerk user ID
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    category TEXT NOT NULL,
+    category TEXT NOT NULL CHECK (category IN (
+        'furniture',
+        'electronics',
+        'appliances',
+        'home_garden',
+        'clothing',
+        'kids',
+        'toys_games',
+        'sports_outdoors',
+        'tools',
+        'vehicles',
+        'pets',
+        'free',
+        'general'
+    )),
     price DECIMAL(10, 2) NOT NULL,
     condition TEXT NOT NULL CHECK (condition IN ('new', 'like_new', 'good', 'fair', 'poor')),
     location TEXT NOT NULL,

@@ -4,9 +4,10 @@ import * as React from 'react';
 import { Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ProviderLogoCropDialog } from '@/components/services/ProviderLogoCropDialog';
+import { MARKETPLACE_PHOTO_SIZE } from '@/lib/images/cropImageToSquareWebp';
+import { MARKETPLACE_CATEGORIES } from '@/lib/data/marketplace-categories';
 
 const MAX_PHOTOS = 3;
-const PHOTO_SIZE = 800;
 
 export function AddMarketplaceItemButton({ className = '' }: { className?: string }) {
   const router = useRouter();
@@ -16,7 +17,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
 
   const [title, setTitle] = React.useState('');
   const [description, setDescription] = React.useState('');
-  const [category, setCategory] = React.useState('');
+  const [category, setCategory] = React.useState<string>('general');
   const [price, setPrice] = React.useState<string>('');
   const [condition, setCondition] = React.useState<'new' | 'like_new' | 'good' | 'fair' | 'poor'>('good');
   const [locationText, setLocationText] = React.useState('');
@@ -93,7 +94,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
           category: category || 'general',
           price: Number(price || 0),
           condition,
-          location: locationText || 'Briar Chapel',
+          location: locationText || 'Road',
           images,
           contact: contact.trim() || undefined,
         }),
@@ -104,7 +105,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
       }
       setTitle('');
       setDescription('');
-      setCategory('');
+      setCategory('general');
       setPrice('');
       setCondition('good');
       setLocationText('');
@@ -184,12 +185,17 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Category</label>
-                  <input
+                  <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g. furniture, electronics"
-                  />
+                  >
+                    {MARKETPLACE_CATEGORIES.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Price (USD)</label>
@@ -221,7 +227,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                     value={locationText}
                     onChange={(e) => setLocationText(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Neighborhood or city"
+                    placeholder="Road"
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -292,7 +298,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   {photos.length >= MAX_PHOTOS
                     ? `Maximum of ${MAX_PHOTOS} photos added. Remove one to replace it.`
-                    : `Add up to ${MAX_PHOTOS} photos, one at a time. Each is cropped to a ${PHOTO_SIZE}×${PHOTO_SIZE} square.`}
+                    : `Add up to ${MAX_PHOTOS} photos, one at a time. Choose a photo, then crop to a square. We save ${MARKETPLACE_PHOTO_SIZE}×${MARKETPLACE_PHOTO_SIZE} WebP (or PNG).`}
                 </p>
               </div>
 
@@ -324,7 +330,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
         <ProviderLogoCropDialog
           imageSrc={imageToCrop}
           title="Crop photo"
-          outputSize={PHOTO_SIZE}
+          outputSize={MARKETPLACE_PHOTO_SIZE}
           fileBaseName="marketplace-photo"
           onCancel={revokeCropUrl}
           onComplete={handleCropComplete}

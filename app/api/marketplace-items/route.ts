@@ -4,6 +4,7 @@ import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 import { removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
+import { isMarketplaceCategory } from '@/lib/data/marketplace-categories';
 
 type Payload = {
   title?: string;
@@ -24,11 +25,12 @@ export async function POST(req: Request) {
     const category = (body.category || 'general').trim() || 'general';
     const price = Number(body.price || 0);
     const condition = body.condition ?? 'good';
-    const location = (body.location || 'Briar Chapel').trim() || 'Briar Chapel';
+    const location = (body.location || 'Road').trim() || 'Road';
     const images = Array.isArray(body.images) ? body.images.slice(0, 3) : [];
     const contact = (body.contact || '').trim() || null;
 
     if (!title) return apiBadRequest('Missing title');
+    if (!isMarketplaceCategory(category)) return apiBadRequest('Invalid category');
     if (!Number.isFinite(price) || price < 0) return apiBadRequest('Invalid price');
 
     const { supabase, userId } = await requireAuthSupabase();
