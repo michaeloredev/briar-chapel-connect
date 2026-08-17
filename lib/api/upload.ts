@@ -3,7 +3,7 @@ import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
 
 const IMAGE_EXTENSIONS = {
   'image/jpeg': 'jpg',
@@ -64,7 +64,7 @@ export async function handleFileUpload(req: Request, bucket: string): Promise<Ne
     if (!file) return apiBadRequest('Missing file');
     if (file.size <= 0) return apiBadRequest('Empty file');
     if (file.size > MAX_UPLOAD_BYTES) {
-      return apiBadRequest('Image must be 5MB or smaller');
+      return apiBadRequest('Image must be 2MB or smaller');
     }
 
     const { userId } = await requireAuthSupabase();

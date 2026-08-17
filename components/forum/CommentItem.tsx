@@ -21,7 +21,7 @@ type Props = {
   replies: Comment[];
   /** Top-level comment that replies attach to. Omitted for top-level comments. */
   rootId?: string;
-  onReply: (parentId: string, content: string) => Promise<void>;
+  onReply: (parentId: string, content: string, images: string[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   canDelete: (c: Comment) => boolean;
 };
@@ -78,8 +78,8 @@ export default function CommentItem({ comment, replies, rootId, onReply, onDelet
           <SignedIn>
             <CommentComposer
               placeholder="Write a reply…"
-              onSubmit={async (text) => {
-                await onReply(replyTargetId, text);
+              onSubmit={async (text, images) => {
+                await onReply(replyTargetId, text, images);
                 setShowReply(false);
               }}
             />

@@ -159,7 +159,7 @@ export default function CommentThread({ entityType, entityId, className = '' }: 
                 key={c.id}
                 comment={c}
                 replies={tree!.childrenByParent.get(c.id) || []}
-                onReply={(pid, text) => postWithImages(text, [], pid)}
+                onReply={(pid, text, images) => postWithImages(text, images, pid)}
                 onDelete={(id) => handleDelete(id)}
                 canDelete={canDelete}
               />

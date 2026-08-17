@@ -4,9 +4,9 @@ import * as React from 'react';
 import { Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ProviderLogoCropDialog } from '@/components/services/ProviderLogoCropDialog';
+import { MARKETPLACE_PHOTO_SIZE } from '@/lib/images/cropImageToSquareWebp';
 
 const MAX_PHOTOS = 3;
-const PHOTO_SIZE = 800;
 
 export function AddMarketplaceItemButton({ className = '' }: { className?: string }) {
   const router = useRouter();
@@ -292,7 +292,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   {photos.length >= MAX_PHOTOS
                     ? `Maximum of ${MAX_PHOTOS} photos added. Remove one to replace it.`
-                    : `Add up to ${MAX_PHOTOS} photos, one at a time. Each is cropped to a ${PHOTO_SIZE}×${PHOTO_SIZE} square.`}
+                    : `Add up to ${MAX_PHOTOS} photos, one at a time. Choose a photo, then crop to a square. We save ${MARKETPLACE_PHOTO_SIZE}×${MARKETPLACE_PHOTO_SIZE} WebP (or PNG).`}
                 </p>
               </div>
 
@@ -324,7 +324,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
         <ProviderLogoCropDialog
           imageSrc={imageToCrop}
           title="Crop photo"
-          outputSize={PHOTO_SIZE}
+          outputSize={MARKETPLACE_PHOTO_SIZE}
           fileBaseName="marketplace-photo"
           onCancel={revokeCropUrl}
           onComplete={handleCropComplete}
