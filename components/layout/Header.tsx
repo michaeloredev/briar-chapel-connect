@@ -1,11 +1,31 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import RoleGate from '@/components/auth/RoleGate';
 
+const NAV_LINKS = [
+  { href: '/services', label: 'Services' },
+  { href: '/marketplace', label: 'Marketplace' },
+  { href: '/events', label: 'Events' },
+  { href: '/groups', label: 'Groups' },
+] as const;
+
+function navLinkClass(active: boolean) {
+  return active
+    ? 'text-blue-600 dark:text-blue-400 font-medium'
+    : 'text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors';
+}
+
 //this is the header component for the app
 export function Header() {
+  const pathname = usePathname() ?? '';
+
+  function isActive(href: string) {
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
   return (
     <header className="border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -15,21 +35,13 @@ export function Header() {
           </Link>
           <div className="flex items-center gap-6">
             <div className="hidden md:flex gap-4">
-              {/* this is a test */}
-              <Link href="/services" className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
-                Services
-              </Link>
-              <Link href="/marketplace" className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
-                Marketplace
-              </Link>
-              <Link href="/events" className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
-                Events
-              </Link>
-              <Link href="/groups" className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
-                Groups
-              </Link>
+              {NAV_LINKS.map((link) => (
+                <Link key={link.href} href={link.href} className={navLinkClass(isActive(link.href))}>
+                  {link.label}
+                </Link>
+              ))}
               <RoleGate minimum="superadmin">
-                <Link href="/members" className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
+                <Link href="/members" className={navLinkClass(isActive('/members'))}>
                   Members
                 </Link>
               </RoleGate>
