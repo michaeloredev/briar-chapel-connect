@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
+import { removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
 
 type Payload = {
   title?: string;
@@ -68,6 +70,51 @@ export async function DELETE(req: Request) {
     if (!id) return apiBadRequest('Missing id');
 
     const { supabase, userId } = await requireAuthSupabase();
+    type Row = Database['public']['Tables']['marketplace_items']['Row'];
+    const { data: item, error: fetchError } = await supabase
+      .from('marketplace_items')
+      .select('id, user_id, images')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .maybeSingle<Pick<Row, 'id' | 'user_id' | 'images'>>();
+
+    if (fetchError) {
+      console.error('[MarketplaceItems][DELETE] fetch error:', fetchError.message);
+      return apiError(fetchError, 'Failed to delete item');
+    }
+    if (!item) {
+      return NextResponse.json({ error: 'Item not found or not owned by user' }, { status: 404 });
+    }
+
+    const listingImagePaths = (item.images ?? [])
+      .map((ref) => storageObjectPath(String(ref), 'marketplace-images'))
+      .filter((path): path is string => Boolean(path && path.startsWith(`${userId}/`)));
+
+    const admin = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+      ? createAdminClient()
+      : null;
+
+    let commentImagePaths: string[] = [];
+    if (admin) {
+      type CommentRow = Database['public']['Tables']['comments']['Row'];
+      const { data: comments, error: commentsFetchError } = await admin
+        .from('comments')
+        .select('images')
+        .eq('entity_type', 'marketplace_item')
+        .eq('entity_id', id)
+        .returns<Pick<CommentRow, 'images'>[]>();
+
+      if (commentsFetchError) {
+        console.error('[MarketplaceItems][DELETE] comments fetch error:', commentsFetchError.message);
+      } else {
+        commentImagePaths = (comments ?? []).flatMap((comment) =>
+          (comment.images ?? [])
+            .map((ref) => storageObjectPath(String(ref), 'comment-images'))
+            .filter((path): path is string => Boolean(path)),
+        );
+      }
+    }
+
     const { data: deleted, error } = await supabase
       .from('marketplace_items')
       .delete()
@@ -82,6 +129,21 @@ export async function DELETE(req: Request) {
     if (!deleted || deleted.length === 0) {
       return NextResponse.json({ error: 'Item not found or not owned by user' }, { status: 404 });
     }
+
+    if (admin) {
+      const { error: commentsDeleteError } = await admin
+        .from('comments')
+        .delete()
+        .eq('entity_type', 'marketplace_item')
+        .eq('entity_id', id);
+
+      if (commentsDeleteError) {
+        console.error('[MarketplaceItems][DELETE] comments delete error:', commentsDeleteError.message);
+      }
+    }
+
+    await removeStorageObjects('marketplace-images', listingImagePaths);
+    await removeStorageObjects('comment-images', commentImagePaths);
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {

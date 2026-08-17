@@ -51,3 +51,45 @@ export async function handleFileUpload(req: Request, bucket: string): Promise<Ne
     return apiError(err, 'Failed to upload file');
   }
 }
+
+/**
+ * Turns a stored public URL or raw object path into a storage object path.
+ * Returns null when the value does not belong to the given bucket.
+ */
+export function storageObjectPath(ref: string, bucket: string): string | null {
+  const value = (ref || '').trim();
+  if (!value) return null;
+
+  const publicPrefix = `/storage/v1/object/public/${bucket}/`;
+  const publicIdx = value.indexOf(publicPrefix);
+  if (publicIdx !== -1) {
+    const raw = value.slice(publicIdx + publicPrefix.length).split('?')[0];
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  }
+
+  if (!value.includes('://') && !value.startsWith('/')) {
+    return value;
+  }
+
+  return null;
+}
+
+/** Best-effort delete of storage objects. Logs and continues on failure. */
+export async function removeStorageObjects(bucket: string, paths: string[]): Promise<void> {
+  const unique = [...new Set(paths.map((p) => p.trim()).filter(Boolean))];
+  if (unique.length === 0) return;
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+    console.error(`[Storage][${bucket}] skip remove: SUPABASE_SERVICE_ROLE_KEY is not set`);
+    return;
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin.storage.from(bucket).remove(unique);
+  if (error) {
+    console.error(`[Storage][${bucket}] remove error:`, error.message);
+  }
+}
