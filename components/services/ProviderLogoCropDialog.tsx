@@ -9,9 +9,19 @@ type Props = {
   imageSrc: string;
   onCancel: () => void;
   onComplete: (file: File) => void;
+  title?: string;
+  outputSize?: number;
+  fileBaseName?: string;
 };
 
-export function ProviderLogoCropDialog({ imageSrc, onCancel, onComplete }: Props) {
+export function ProviderLogoCropDialog({
+  imageSrc,
+  onCancel,
+  onComplete,
+  title = 'Crop logo',
+  outputSize = 512,
+  fileBaseName = 'provider-logo',
+}: Props) {
   const [crop, setCrop] = React.useState({ x: 0, y: 0 });
   const [zoom, setZoom] = React.useState(1);
   const croppedPixelsRef = React.useRef<Area | null>(null);
@@ -31,10 +41,10 @@ export function ProviderLogoCropDialog({ imageSrc, onCancel, onComplete }: Props
     setApplying(true);
     setError(null);
     try {
-      const blob = await cropImageToSquareWebp(imageSrc, pixels, 512, 0.9);
+      const blob = await cropImageToSquareWebp(imageSrc, pixels, outputSize, 0.9);
       const mime = blob.type || 'image/webp';
       const ext = mime.includes('png') ? 'png' : 'webp';
-      const file = new File([blob], `provider-logo.${ext}`, { type: mime });
+      const file = new File([blob], `${fileBaseName}.${ext}`, { type: mime });
       onComplete(file);
     } catch {
       setError('Could not process the image. Try a different file.');
@@ -54,7 +64,7 @@ export function ProviderLogoCropDialog({ imageSrc, onCancel, onComplete }: Props
       <div className="relative z-10 w-full max-w-md rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
           <h2 id="logo-crop-title" className="text-base font-semibold text-slate-900 dark:text-white">
-            Crop logo
+            {title}
           </h2>
           <button
             type="button"
@@ -68,7 +78,8 @@ export function ProviderLogoCropDialog({ imageSrc, onCancel, onComplete }: Props
 
         <div className="px-4 pt-4">
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-            Drag to reposition. Pinch or scroll to zoom. Output is a 512×512 square for crisp thumbnails.
+            Drag to reposition. Pinch or scroll to zoom. Output is a {outputSize}×{outputSize} square for crisp
+            thumbnails.
           </p>
           <div className="relative h-64 w-full rounded-lg overflow-hidden bg-slate-900">
             <Cropper

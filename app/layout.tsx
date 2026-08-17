@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import BreadcrumbsBar from "@/components/common/BreadcrumbsBar";
+import BreadcrumbTitleProvider from "@/components/common/BreadcrumbTitleProvider";
 import RoleProvider from "@/components/auth/RoleProvider";
 
 const geistSans = Geist({
@@ -40,13 +42,17 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
         >
           <RoleProvider>
-            <Header />
-            <div className="bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <BreadcrumbsBar />
+            <BreadcrumbTitleProvider>
+              <Header />
+              <div className="bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <Suspense fallback={null}>
+                    <BreadcrumbsBar />
+                  </Suspense>
+                </div>
               </div>
-            </div>
-            {children}
+              {children}
+            </BreadcrumbTitleProvider>
           </RoleProvider>
         </body>
       </html>

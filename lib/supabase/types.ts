@@ -29,6 +29,7 @@ export interface Database {
           website: string | null;
           status: 'active' | 'inactive';
           image_url: string | null;
+          tags: string[];
         };
         Insert: {
           user_id: string;
@@ -43,6 +44,7 @@ export interface Database {
           website: string | null;
           status: 'active' | 'inactive';
           image_url: string | null;
+          tags?: string[]; // optional when inserting; defaults to empty array
         };
         Update: Partial<Database['public']['Tables']['services']['Insert']>;
       };

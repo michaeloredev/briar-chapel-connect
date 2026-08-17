@@ -41,6 +41,15 @@ export function ProviderList({
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editInitial, setEditInitial] = React.useState<ProviderFormInitial | null>(null);
 
+  const sortedProviders = React.useMemo(() => {
+    return [...providers].sort((a, b) => {
+      const ra = Number.isFinite(a.rating) ? a.rating : 0;
+      const rb = Number.isFinite(b.rating) ? b.rating : 0;
+      if (rb !== ra) return rb - ra;
+      return a.name.localeCompare(b.name);
+    });
+  }, [providers]);
+
   function openCreate() {
     setFormMode('create');
     setEditingId(null);
@@ -112,7 +121,7 @@ export function ProviderList({
         </div>
       ) : null}
       <div className="grid gap-4">
-        {providers.map((p) => (
+        {sortedProviders.map((p) => (
           <ProviderCard
             key={p.id}
             id={p.id}

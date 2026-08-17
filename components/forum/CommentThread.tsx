@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignInButton, useAuth } from '@clerk/nextjs';
+import { useRole } from '@/components/auth/RoleProvider';
 import CommentComposer from './CommentComposer';
 import CommentItem, { Comment } from './CommentItem';
 
@@ -12,6 +13,8 @@ type Props = {
 };
 
 export default function CommentThread({ entityType, entityId, className = '' }: Props) {
+  const { userId } = useAuth();
+  const { hasRole } = useRole();
   const [comments, setComments] = React.useState<Comment[] | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -84,22 +87,45 @@ export default function CommentThread({ entityType, entityId, className = '' }: 
     await load();
   }
 
-  function canDelete(_c: Comment) {
-    // Let the server enforce ownership via RLS; optionally show/hide if we had current user
-    return true;
+  function canDelete(c: Comment) {
+    if (!userId) return false;
+    return c.user_id === userId || hasRole('admin');
   }
 
   function buildTree(list: Comment[]): { roots: Comment[]; childrenByParent: Map<string, Comment[]> } {
+    const byId = new Map(list.map((c) => [c.id, c]));
     const childrenByParent = new Map<string, Comment[]>();
     const roots: Comment[] = [];
-    for (const c of list) {
-      if (c.parent_id) {
-        const arr = childrenByParent.get(c.parent_id) || [];
-        arr.push(c);
-        childrenByParent.set(c.parent_id, arr);
-      } else {
-        roots.push(c);
+
+    // Only two levels are rendered, so a reply stored deeper than that is grouped
+    // under its top-level ancestor instead of being left out of the thread.
+    function findRootId(comment: Comment): string {
+      const seen = new Set<string>([comment.id]);
+      let current = comment;
+      while (current.parent_id) {
+        const parent = byId.get(current.parent_id);
+        if (!parent || seen.has(parent.id)) break;
+        seen.add(parent.id);
+        current = parent;
       }
+      return current.id;
+    }
+
+    for (const c of list) {
+      if (!c.parent_id) {
+        roots.push(c);
+        continue;
+      }
+      const rootId = findRootId(c);
+      const root = rootId === c.id ? null : byId.get(rootId);
+      if (!root || root.parent_id) {
+        // No reachable top-level ancestor: show the reply on its own rather than drop it.
+        roots.push(c);
+        continue;
+      }
+      const arr = childrenByParent.get(rootId) || [];
+      arr.push(c);
+      childrenByParent.set(rootId, arr);
     }
     return { roots, childrenByParent };
   }
@@ -108,7 +134,7 @@ export default function CommentThread({ entityType, entityId, className = '' }: 
 
   return (
     <div className={className}>
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Discussion</h2>
+      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Comments</h2>
       {loading ? <p className="mt-2 text-sm text-slate-500">Loading…</p> : null}
       {error ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <div className="mt-3">

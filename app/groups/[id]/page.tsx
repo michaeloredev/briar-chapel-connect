@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 import AddEventButton from '@/components/events/AddEventButton';
 import RoleGate from '@/components/auth/RoleGate';
+import SetBreadcrumbTitle from '@/components/common/SetBreadcrumbTitle';
 
 export const metadata: Metadata = {
   title: 'Group • Briar Chapel Connect',
@@ -28,6 +29,7 @@ export default async function GroupDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <SetBreadcrumbTitle value={group.title} />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{group.title}</h1>

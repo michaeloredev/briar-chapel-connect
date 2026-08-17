@@ -19,14 +19,18 @@ export type Comment = {
 type Props = {
   comment: Comment;
   replies: Comment[];
+  /** Top-level comment that replies attach to. Omitted for top-level comments. */
+  rootId?: string;
   onReply: (parentId: string, content: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   canDelete: (c: Comment) => boolean;
 };
 
-export default function CommentItem({ comment, replies, onReply, onDelete, canDelete }: Props) {
+export default function CommentItem({ comment, replies, rootId, onReply, onDelete, canDelete }: Props) {
   const [showReply, setShowReply] = React.useState(false);
   const created = new Date(comment.created_at).toLocaleString();
+  // Threads are capped at two levels: replies to a reply attach to its top-level comment.
+  const replyTargetId = rootId ?? comment.id;
 
   return (
     <li className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
@@ -75,7 +79,7 @@ export default function CommentItem({ comment, replies, onReply, onDelete, canDe
             <CommentComposer
               placeholder="Write a reply…"
               onSubmit={async (text) => {
-                await onReply(comment.id, text);
+                await onReply(replyTargetId, text);
                 setShowReply(false);
               }}
             />
@@ -89,6 +93,7 @@ export default function CommentItem({ comment, replies, onReply, onDelete, canDe
               key={r.id}
               comment={r}
               replies={[]}
+              rootId={replyTargetId}
               onReply={onReply}
               onDelete={onDelete}
               canDelete={canDelete}

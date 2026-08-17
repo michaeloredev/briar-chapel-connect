@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import RoleGate from '@/components/auth/RoleGate';
 
+//this is the header component for the app
 export function Header() {
   return (
     <header className="border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
@@ -14,6 +15,7 @@ export function Header() {
           </Link>
           <div className="flex items-center gap-6">
             <div className="hidden md:flex gap-4">
+              {/* this is a test */}
               <Link href="/services" className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
                 Services
               </Link>

@@ -24,12 +24,21 @@ type PatchPayload = {
   name?: string;
   summary?: string;
   details?: string;
+  tags?: string[];
   contact_email?: string | null;
   contact_phone?: string | null;
   image_url?: string | null;
   location?: string | null;
   website?: string | null;
 };
+
+function normalizeTags(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .filter((t): t is string => typeof t === 'string')
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
 
 export async function POST(req: Request) {
   try {
@@ -63,6 +72,7 @@ export async function POST(req: Request) {
       website,
       status: 'active',
       image_url: body.image_url ?? null,
+      tags: normalizeTags(body.tags),
     };
 
     const { data, error } = await supabase
@@ -110,6 +120,7 @@ export async function PATCH(req: Request) {
       location,
       website,
       image_url: body.image_url === undefined ? undefined : body.image_url,
+      tags: body.tags === undefined ? undefined : normalizeTags(body.tags),
     };
 
     const { data, error } = await admin
