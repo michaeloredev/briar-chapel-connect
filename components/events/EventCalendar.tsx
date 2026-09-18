@@ -4,39 +4,71 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getCategoryMeta } from '@/lib/data/event-categories';
-import { formatLocalDate, parseYMD } from '@/lib/utils/date';
+import { eventDayKeys, formatLocalDate, formatLocalMonth, parseYM } from '@/lib/utils/date';
+import type { EventListItem } from './types';
 
 export default function EventCalendar({
-  initialDateYMD,
-  dayCategories,
+  selectedYMD,
+  viewedYM,
+  events,
 }: {
-  initialDateYMD: string;
-  dayCategories?: Record<string, string[]>;
+  selectedYMD: string;
+  viewedYM: string;
+  events: EventListItem[];
 }) {
   const router = useRouter();
   const params = useSearchParams();
-  const [viewYear, setViewYear] = React.useState(() => parseYMD(initialDateYMD).getFullYear());
-  const [viewMonth, setViewMonth] = React.useState(() => parseYMD(initialDateYMD).getMonth());
-  const [selectedISO, setSelectedISO] = React.useState(initialDateYMD);
+  const [pending, startTransition] = React.useTransition();
 
-  function prevMonth() {
-    const d = new Date(viewYear, viewMonth - 1, 1);
-    setViewYear(d.getFullYear());
-    setViewMonth(d.getMonth());
-  }
-  function nextMonth() {
-    const d = new Date(viewYear, viewMonth + 1, 1);
-    setViewYear(d.getFullYear());
-    setViewMonth(d.getMonth());
+  // Month on screen comes from the URL, not local state, so paging months
+  // refetches that month's events instead of showing an empty grid.
+  const { year: viewYear, month: viewMonth } = parseYM(viewedYM);
+
+  const navigate = React.useCallback(
+    (next: { date?: string; month?: string }, replace = false) => {
+      const sp = new URLSearchParams(params ?? undefined);
+      if (next.date) sp.set('date', next.date);
+      if (next.month) sp.set('month', next.month);
+      const href = `/events?${sp.toString()}`;
+      startTransition(() => {
+        if (replace) router.replace(href, { scroll: false });
+        else router.push(href, { scroll: false });
+      });
+    },
+    [params, router],
+  );
+
+  // The server defaults the selected day to *its* today. When the viewer is in
+  // a different timezone that can be the wrong day, so pin the URL to the
+  // browser's today on first paint if no day was explicitly requested.
+  React.useEffect(() => {
+    if (params.get('date')) return;
+    const now = new Date();
+    const today = formatLocalDate(now);
+    if (today === selectedYMD) return;
+    navigate({ date: today, month: formatLocalMonth(now) }, true);
+  }, [params, selectedYMD, navigate]);
+
+  // Bucketing happens here, in the viewer's timezone, and spans every day a
+  // multi-day event covers so the dots match what the day list shows.
+  const dayCategories = React.useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const e of events) {
+      const category = (e.category || 'other').trim() || 'other';
+      for (const key of eventDayKeys(e.date, e.endDate)) {
+        const cats = map[key] ?? (map[key] = []);
+        if (!cats.includes(category) && cats.length < 3) cats.push(category);
+      }
+    }
+    return map;
+  }, [events]);
+
+  function goToMonth(delta: number) {
+    navigate({ month: formatLocalMonth(new Date(viewYear, viewMonth + delta, 1)) });
   }
 
   function onSelect(day: number) {
-    const d = new Date(viewYear, viewMonth, day);
-    const iso = formatLocalDate(d);
-    setSelectedISO(iso);
-    const sp = new URLSearchParams(params ?? undefined);
-    sp.set('date', iso);
-    router.push(`/events?${sp.toString()}`);
+    navigate({ date: formatLocalDate(new Date(viewYear, viewMonth, day)), month: viewedYM });
   }
 
   const firstOfMonth = new Date(viewYear, viewMonth, 1);
@@ -56,14 +88,17 @@ export default function EventCalendar({
     weeks.push(week);
   }
 
-  const monthName = new Date(viewYear, viewMonth, 1).toLocaleString(undefined, { month: 'long', year: 'numeric' });
+  const monthName = firstOfMonth.toLocaleString(undefined, { month: 'long', year: 'numeric' });
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+    <div
+      className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4"
+      aria-busy={pending}
+    >
       <div className="flex items-center justify-between">
         <button
           type="button"
-          onClick={prevMonth}
+          onClick={() => goToMonth(-1)}
           className="p-2 rounded-md text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
           aria-label="Previous month"
         >
@@ -72,7 +107,7 @@ export default function EventCalendar({
         <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{monthName}</div>
         <button
           type="button"
-          onClick={nextMonth}
+          onClick={() => goToMonth(1)}
           className="p-2 rounded-md text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
           aria-label="Next month"
         >
@@ -89,15 +124,15 @@ export default function EventCalendar({
         <div>Fri</div>
         <div>Sat</div>
       </div>
-      <div className="mt-1 grid grid-cols-7 gap-1">
+      <div className={['mt-1 grid grid-cols-7 gap-1 transition-opacity', pending ? 'opacity-60' : ''].join(' ')}>
         {weeks.map((w, wi) =>
           w.map((d, di) => {
             if (d === null) {
               return <div key={`${wi}-${di}`} className="h-12" />;
             }
             const iso = formatLocalDate(new Date(viewYear, viewMonth, d));
-            const isSelected = selectedISO === iso;
-            const cats = (dayCategories?.[iso] || []).slice(0, 3);
+            const isSelected = selectedYMD === iso;
+            const cats = dayCategories[iso] ?? [];
             return (
               <div key={`${wi}-${di}`} className="flex flex-col items-center">
                 <button
@@ -130,5 +165,3 @@ export default function EventCalendar({
     </div>
   );
 }
-
-

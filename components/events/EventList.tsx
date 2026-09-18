@@ -1,34 +1,21 @@
 'use client';
 
 import { getCategoryMeta } from '@/lib/data/event-categories';
-import { parseYMD, formatDateRange } from '@/lib/utils/date';
-import * as React from 'react';
-import { useSearchParams } from 'next/navigation';
+import { eventDayKeys, formatDateRange, parseYMD } from '@/lib/utils/date';
+import type { EventListItem } from './types';
 
-type EventListItem = {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  endDate: string | null;
-  location: string;
-  status: string;
-  category?: string;
-};
-
-export default function EventList({ initialDateYMD, events }: { initialDateYMD: string; events: EventListItem[] }) {
-  const params = useSearchParams();
-  const selected = params.get('date') || initialDateYMD;
-  const selectedDate = parseYMD(selected);
-  const filtered = events.filter((e) => {
-    const start = new Date(e.date);
-    const end = e.endDate ? new Date(e.endDate) : start;
-    // Compare by date (ignore time)
-    const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-    const ed = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-    const sel = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-    return sel >= s && sel <= ed;
-  });
+export default function EventList({
+  selectedYMD,
+  events,
+}: {
+  selectedYMD: string;
+  events: EventListItem[];
+}) {
+  // The selected day arrives already validated from the page, and day
+  // bucketing runs through the same helper the calendar dots use, so a day
+  // with a dot always has matching entries here.
+  const selectedDate = parseYMD(selectedYMD);
+  const filtered = events.filter((e) => eventDayKeys(e.date, e.endDate).includes(selectedYMD));
 
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
@@ -65,5 +52,3 @@ export default function EventList({ initialDateYMD, events }: { initialDateYMD: 
     </div>
   );
 }
-
-

@@ -7,25 +7,30 @@ import { SignedIn } from '@clerk/nextjs';
 import AddEventButton from '@/components/events/AddEventButton';
 import { PageHeader } from '@/components/common/PageHeader';
 import RoleGate from '@/components/auth/RoleGate';
-import { toLocalYMD } from '@/lib/utils/date';
+import { formatLocalDate, isValidYM, isValidYMD, parseYM } from '@/lib/utils/date';
 
 export const metadata: Metadata = {
   title: 'Events • Briar Chapel Connect',
   description: 'Discover community events in Briar Chapel',
 };
 
-type SearchParams = Promise<{ date?: string }>;
+type SearchParams = Promise<{ date?: string; month?: string }>;
 
 export default async function EventsPage({ searchParams }: { searchParams: SearchParams }) {
-  const { date } = await searchParams;
-  const initialDate = (() => {
-    const d = date ? new Date(date) : new Date();
-    return isNaN(d.getTime()) ? new Date() : d;
-  })();
+  const { date, month } = await searchParams;
 
-  // Fetch events in a reasonable window around the current month
-  const start = new Date(initialDate.getFullYear(), initialDate.getMonth() - 1, 1);
-  const end = new Date(initialDate.getFullYear(), initialDate.getMonth() + 2, 0, 23, 59, 59, 999);
+  // The URL is the single source of truth for both the selected day and the
+  // month on screen, so the calendar and the list can never disagree.
+  // These server-side defaults only cover the first paint; EventCalendar
+  // rewrites the URL on mount when the viewer's "today" differs from ours.
+  const selectedYMD = isValidYMD(date) ? date : formatLocalDate(new Date());
+  const viewedYM = isValidYM(month) ? month : selectedYMD.slice(0, 7);
+
+  // Fetch a window around the month on screen so its dots are populated.
+  const { year, month: monthIndex } = parseYM(viewedYM);
+  const start = new Date(year, monthIndex - 1, 1);
+  const end = new Date(year, monthIndex + 2, 0, 23, 59, 59, 999);
+
   const supabase = await createClient();
   type Row = Database['public']['Tables']['events']['Row'];
   const { data: rows, error } = await supabase
@@ -40,32 +45,16 @@ export default async function EventsPage({ searchParams }: { searchParams: Searc
     console.error('Failed to load events:', error.message);
   }
 
-  const events =
-    (rows ?? []).map((e) => ({
-      id: e.id,
-      title: e.title,
-      description: e.description,
-      date: e.event_date,
-      endDate: e.end_date ?? null,
-      location: e.location,
-      status: e.status,
-      category: e.category,
-    })) ?? [];
-
-  
-
-  const initialYMD = toLocalYMD(initialDate.toISOString());
-
-  const dayCategories: Record<string, string[]> = {};
-  for (const e of events) {
-    const iso = toLocalYMD(e.date);
-    const cats = dayCategories[iso] || [];
-    const val = (e.category || 'other').trim() || 'other';
-    if (!cats.includes(val)) {
-      if (cats.length < 3) cats.push(val);
-      dayCategories[iso] = cats;
-    }
-  }
+  const events = (rows ?? []).map((e) => ({
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    date: e.event_date,
+    endDate: e.end_date ?? null,
+    location: e.location,
+    status: e.status,
+    category: e.category,
+  }));
 
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -83,10 +72,10 @@ export default async function EventsPage({ searchParams }: { searchParams: Searc
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <EventCalendar initialDateYMD={initialYMD} dayCategories={dayCategories} />
+            <EventCalendar selectedYMD={selectedYMD} viewedYM={viewedYM} events={events} />
           </div>
           <div>
-            <EventList initialDateYMD={initialYMD} events={events} />
+            <EventList selectedYMD={selectedYMD} events={events} />
           </div>
         </div>
       </div>
