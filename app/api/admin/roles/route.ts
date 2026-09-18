@@ -50,6 +50,11 @@ export async function POST(req: Request) {
     if (!VALID_ROLES.includes(role)) {
       return apiBadRequest(`role must be one of: ${VALID_ROLES.join(', ')}`);
     }
+    // Same lockout as PATCH /api/admin/members: demoting yourself here would
+    // strip the only role that can restore it. DELETE below already guards it.
+    if (targetUserId === userId) {
+      return apiBadRequest('Cannot change your own role');
+    }
 
     const admin = createAdminClient();
     const { data, error } = await admin
