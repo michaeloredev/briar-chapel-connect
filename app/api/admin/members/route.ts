@@ -82,16 +82,26 @@ export async function PATCH(req: Request) {
     if (!validRoles.includes(role)) {
       return apiBadRequest(`role must be one of: ${validRoles.join(', ')}`);
     }
+    // Demoting yourself removes the only role that can hand it back, which
+    // locks every admin surface for good if you are the last superadmin.
+    // Another superadmin has to do it, as with DELETE below.
+    if (targetId === userId) {
+      return apiBadRequest('Cannot change your own role');
+    }
 
     const admin = createAdminClient();
 
-    if (role === 'client') {
-      // 'client' is the default — just remove the row
-      await admin.from('user_roles').delete().eq('user_id', targetId);
-    } else {
-      await admin
-        .from('user_roles')
-        .upsert({ user_id: targetId, role } as never, { onConflict: 'user_id' });
+    const { error } =
+      role === 'client'
+        ? // 'client' is the default — just remove the row
+          await admin.from('user_roles').delete().eq('user_id', targetId)
+        : await admin
+            .from('user_roles')
+            .upsert({ user_id: targetId, role } as never, { onConflict: 'user_id' });
+
+    if (error) {
+      console.error('[AdminMembers][PATCH] role write error:', error.message);
+      return apiError(error, 'Failed to update role');
     }
 
     return NextResponse.json({ user_id: targetId, role });
@@ -113,13 +123,18 @@ export async function DELETE(req: Request) {
     if (!targetId) return apiBadRequest('Missing user_id');
     if (targetId === userId) return apiBadRequest('Cannot delete yourself');
 
-    // Remove role row
-    const admin = createAdminClient();
-    await admin.from('user_roles').delete().eq('user_id', targetId);
-
-    // Delete the user from Clerk
+    // Delete from Clerk first. Dropping the role row up front meant a failed
+    // Clerk delete left the account alive with its privileges silently gone.
     const client = await clerkClient();
     await client.users.deleteUser(targetId);
+
+    // The account is gone, so a leftover role row grants nothing. Log a failed
+    // cleanup rather than reporting the delete itself as failed.
+    const admin = createAdminClient();
+    const { error } = await admin.from('user_roles').delete().eq('user_id', targetId);
+    if (error) {
+      console.error('[AdminMembers][DELETE] role cleanup error:', error.message);
+    }
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {

@@ -64,12 +64,17 @@ export default function MembersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, role: newRole }),
       });
-      if (!res.ok) throw new Error('Failed to update role');
+      if (!res.ok) {
+        // Surface the server's reason — it explains refusals the UI can't
+        // predict, such as a superadmin trying to change their own role.
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || 'Failed to update role');
+      }
       setMembers((prev) =>
         prev.map((m) => (m.id === userId ? { ...m, role: newRole } : m)),
       );
-    } catch {
-      setError('Failed to update role');
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to update role');
     } finally {
       setUpdatingId(null);
     }
