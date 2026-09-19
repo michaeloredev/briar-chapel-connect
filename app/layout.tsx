@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
-// @ts-expect-error Global CSS import is allowed in Next.js app directory
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
-import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { defaultLabelOverrides } from "@/components/common/Breadcrumbs";
+import BreadcrumbsBar from "@/components/common/BreadcrumbsBar";
+import BreadcrumbTitleProvider from "@/components/common/BreadcrumbTitleProvider";
+import RoleProvider from "@/components/auth/RoleProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,9 +19,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Brirar Chapel Connect - Your Neighborhood Hub",
+  title: "Briar Chapel Connect - Your Neighborhood Hub",
   description:
-    "Find local services, buy and sell items, discover community events in Brirar Chapel",
+    "Find local services, buy and sell items, discover community events in Briar Chapel",
 };
 
 export default function RootLayout({
@@ -29,18 +30,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      signInUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL}
+      signUpUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL}
+      afterSignInUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
+      afterSignUpUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
+    >
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
         >
-          <Header />
-          <div className="bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <Breadcrumbs labelOverrides={defaultLabelOverrides} />
-            </div>
-          </div>
-          {children}
+          <RoleProvider>
+            <BreadcrumbTitleProvider>
+              <Header />
+              <div className="bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <Suspense fallback={null}>
+                    <BreadcrumbsBar />
+                  </Suspense>
+                </div>
+              </div>
+              {children}
+            </BreadcrumbTitleProvider>
+          </RoleProvider>
         </body>
       </html>
     </ClerkProvider>

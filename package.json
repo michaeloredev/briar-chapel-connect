@@ -1,8 +1,8 @@
 {
-  "name": "brirar-chapel-connect",
+  "name": "briar-chapel-connect",
   "version": "0.1.0",
   "private": true,
-  "description": "Brirar Chapel Connect - Neighborhood hub for local services, marketplace, and community events",
+  "description": "Briar Chapel Connect - Neighborhood hub for local services, marketplace, and community events",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
@@ -15,7 +15,8 @@
     "lucide-react": "^0.546.0",
     "next": "15.5.6",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "react-easy-crop": "^5.5.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

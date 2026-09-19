@@ -1,8 +1,10 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import { useBreadcrumbTitle } from "@/components/common/BreadcrumbTitleProvider";
 
 type BreadcrumbsProps = {
   className?: string;
@@ -10,6 +12,9 @@ type BreadcrumbsProps = {
   hideHome?: boolean;
   separator?: React.ReactNode;
 };
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function toTitle(segment: string, overrides?: Record<string, string>) {
   if (overrides && overrides[segment]) return overrides[segment];
@@ -24,13 +29,28 @@ export function Breadcrumbs({
   separator,
 }: BreadcrumbsProps) {
   const pathname = usePathname();
+  const { title: pageTitle } = useBreadcrumbTitle();
+  // The page publishes its title after hydration, so an id is shown as a
+  // placeholder on the server render rather than as a raw UUID.
+  const [hydrated, setHydrated] = React.useState(false);
+  React.useEffect(() => setHydrated(true), []);
+
   if (!pathname || pathname === "/") return null;
 
   const parts = pathname.split("/").filter(Boolean);
   const crumbs = parts.map((part, idx) => {
     const href = "/" + parts.slice(0, idx + 1).join("/");
-    const label = toTitle(part, labelOverrides);
     const isLast = idx === parts.length - 1;
+    const isOpaqueId = UUID_PATTERN.test(decodeURIComponent(part));
+
+    let label: string;
+    if (isLast && pageTitle) {
+      label = pageTitle;
+    } else if (isOpaqueId && !hydrated) {
+      label = "…";
+    } else {
+      label = toTitle(part, labelOverrides);
+    }
     return { href, label, isLast };
   });
 
@@ -52,7 +72,11 @@ export function Breadcrumbs({
           <li key={c.href} className="flex items-center gap-2">
             {idx > 0 || !hideHome ? (separator ?? Sep) : null}
             {c.isLast ? (
-              <span aria-current="page" className="text-slate-700 dark:text-slate-200">
+              <span
+                aria-current="page"
+                title={c.label}
+                className="inline-block max-w-56 sm:max-w-xs truncate align-bottom text-slate-700 dark:text-slate-200"
+              >
                 {c.label}
               </span>
             ) : (

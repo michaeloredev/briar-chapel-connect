@@ -1,19 +1,123 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/lib/supabase/types';
+import { PageHeader } from '@/components/common/PageHeader';
+import { AddMarketplaceItemButton } from '@/components/marketplace/AddMarketplaceItem';
+import MarketplaceItemCard from '@/components/marketplace/MarketplaceItemCard';
+import MarketplaceCategoryFilter from '@/components/marketplace/MarketplaceCategoryFilter';
+import { isMarketplaceCategory } from '@/lib/data/marketplace-categories';
 
 export const metadata: Metadata = {
-  title: 'Marketplace • Brirar Chapel Connect',
-  description: 'Browse items for sale in Brirar Chapel',
+  title: 'Marketplace • Briar Chapel Connect',
+  description: 'Browse items for sale in Briar Chapel',
 };
 
-export default function MarketplacePage() {
+type SearchParams = Promise<{
+  q?: string;
+  category?: string;
+  condition?: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
+  min?: string;
+  max?: string;
+}>;
+
+export default async function MarketplacePage({ searchParams }: { searchParams: SearchParams }) {
+  const { q = '', category = '', condition = '', min = '', max = '' } = await searchParams;
+
+  const supabase = await createClient();
+  type Row = Database['public']['Tables']['marketplace_items']['Row'];
+  let query = supabase
+    .from('marketplace_items')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (q) {
+    // Search title OR description
+    const escaped = q.replace(/%/g, '\\%').replace(/_/g, '\\_');
+    query = query.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
+  }
+  const categoryFilter = isMarketplaceCategory(category) ? category : '';
+  if (categoryFilter) {
+    query = query.eq('category', categoryFilter);
+  }
+  if (condition) {
+    query = query.eq('condition', condition);
+  }
+  const minNum = Number(min);
+  const maxNum = Number(max);
+  if (Number.isFinite(minNum)) {
+    query = query.gte('price', minNum);
+  }
+  if (Number.isFinite(maxNum) && maxNum > 0) {
+    query = query.lte('price', maxNum);
+  }
+
+  const { data: items, error } = await query.returns<Row[]>();
+  if (error) {
+    // Non-fatal: show empty with error text
+    console.error('Marketplace query error:', error.message);
+  }
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Marketplace</h1>
-      <p className="text-slate-600 dark:text-slate-300 mb-8">
-        Buy and sell with neighbors.
-      </p>
-      <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-8 bg-white dark:bg-slate-800">
-        <p className="text-slate-600 dark:text-slate-300">Scaffold placeholder. List marketplace items here.</p>
+    <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <PageHeader
+          title="Marketplace"
+          description="Buy and sell with neighbors."
+          actions={
+            <>
+              <SignedIn>
+                <AddMarketplaceItemButton />
+              </SignedIn>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    List an item
+                  </button>
+                </SignInButton>
+              </SignedOut>
+            </>
+          }
+        />
+
+        <div className="mb-6">
+          <MarketplaceCategoryFilter
+            q={q}
+            category={categoryFilter}
+            condition={condition}
+            min={min}
+            max={max}
+          />
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {(items ?? []).map((item) => (
+            <Link
+              key={item.id}
+              href={`/marketplace/${item.id}`}
+              className="block rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <MarketplaceItemCard
+                id={item.id}
+                title={item.title}
+                price={item.price}
+                condition={item.condition}
+                location={item.location}
+                createdAt={item.created_at}
+                imageUrl={(item.images?.[0] as string | undefined) ?? undefined}
+              />
+            </Link>
+          ))}
+        </div>
+
+        {!items?.length ? (
+          <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-700 p-8 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            {q || categoryFilter || condition || min || max
+              ? 'No items match your filters.'
+              : 'No items listed yet.'}
+          </div>
+        ) : null}
       </div>
     </div>
   );

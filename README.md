@@ -1,4 +1,4 @@
-# Brirar Chapel Connect
+# Briar Chapel Connect
 
 A modern neighborhood hub built with Next.js 15.5.6, connecting neighbors through local services, marketplace, and community events.
 
@@ -66,7 +66,7 @@ npm run dev
 ## Project Structure
 
 ```
-brirar-chapel-connect/
+briar-chapel-connect/
 ├── app/
 │   ├── layout.tsx              # Root layout with Clerk provider
 │   ├── page.tsx                # Home page
@@ -98,4 +98,4 @@ The app can be deployed to:
 
 ## License
 
-Private - Brirar Chapel Connect © 2025
+Private - Briar Chapel Connect © 2025

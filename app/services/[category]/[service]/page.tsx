@@ -3,8 +3,10 @@ import { notFound } from 'next/navigation';
 import { serviceSections } from '@/lib/data/services';
 import { PageHeader } from '@/components/common/PageHeader';
 import ProviderList from '@/components/services/ProviderList';
-
-import { AddProviderButton } from '@/components/ui/AddProvider';
+import { auth } from '@clerk/nextjs/server';
+import { getUserRole, hasRole } from '@/lib/auth/roles';
+import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/lib/supabase/types';
 
 export const metadata: Metadata = {
   title: 'Service • Briar Chapel Connect',
@@ -20,18 +22,82 @@ export default async function ServiceDetailListPage({ params }: PageProps) {
   const item = section?.items.find((i) => i.slug === service);
   if (!section || !item) return notFound();
 
-  // Placeholder for future DB fetch based on category/service
-  const providers = [
-    { id: '1', name: 'Example Provider LLC', rating: 4.6, tags: ['Local', 'Insured', 'Family-owned'] },
-    { id: '2', name: 'Neighborhood Pros', rating: 4.2, tags: ['Verified', 'Eco-friendly'] },
-  ];
+  const { userId } = await auth();
+  const appRole = userId ? await getUserRole(userId) : 'client';
+  const canManageProviders = hasRole(appRole, 'superadmin');
+
+  // Fetch providers from Supabase filtered by category/service
+  const supabase = await createClient();
+  type ServiceRow = Pick<
+    Database['public']['Tables']['services']['Row'],
+    'id' | 'title' | 'summary' | 'details' | 'website' | 'contact_email' | 'contact_phone' | 'location' | 'category' | 'status' | 'image_url' | 'tags'
+  >;
+  const { data: rows, error } = await supabase
+    .from('services')
+    .select('id, title, summary, details, website, contact_email, contact_phone, location, category, status, image_url, tags')
+    .eq('category', `${category}/${service}`)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .returns<ServiceRow[]>();
+
+  if (error) {
+    console.error('Failed to load providers:', error.message);
+  }
+
+  // Compute average ratings for all listed services in one query
+  const serviceIds = (rows ?? []).map((r) => r.id);
+  let avgByServiceId = new Map<string, { sum: number; count: number }>();
+  if (serviceIds.length > 0) {
+    type RatingRow = { service_id: string; rating: number };
+    const { data: ratingsRows, error: ratingsError } = await supabase
+      .from('service_reviews')
+      .select('service_id, rating')
+      .in('service_id', serviceIds)
+      .returns<RatingRow[]>();
+    if (ratingsError) {
+      console.error('Failed to load service review ratings:', ratingsError.message);
+    } else {
+      avgByServiceId = ratingsRows.reduce((map, row) => {
+        const key = row.service_id;
+        const current = map.get(key) || { sum: 0, count: 0 };
+        current.sum += Number(row.rating || 0);
+        current.count += 1;
+        map.set(key, current);
+        return map;
+      }, new Map<string, { sum: number; count: number }>());
+    }
+  }
+
+  const providers =
+    (rows ?? []).map((r) => {
+      const stats = avgByServiceId.get(r.id);
+      const rating = stats && stats.count > 0 ? stats.sum / stats.count : 0;
+      return {
+        id: r.id,
+        name: r.title,
+        summary: r.summary ?? undefined,
+        details: r.details ?? undefined,
+        tags: r.tags ?? undefined,
+        imageUrl: r.image_url ?? undefined,
+        website: r.website ?? undefined,
+        phone: r.contact_phone ?? undefined,
+        contactEmail: r.contact_email ?? undefined,
+        location: r.location ?? undefined,
+        rating,
+        reviewCount: stats?.count ?? 0,
+      };
+    }) ?? [];
 
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <PageHeader title={item.title} description={item.description} />
-        <ProviderList providers={providers} />
-        <AddProviderButton categorySlug={category} serviceSlug={service} className="mt-6" />
+        <ProviderList
+          providers={providers}
+          categorySlug={category}
+          serviceSlug={service}
+          canManageProviders={canManageProviders}
+        />
       </div>
     </div>
   );

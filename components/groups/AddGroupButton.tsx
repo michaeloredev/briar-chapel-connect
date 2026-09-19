@@ -2,56 +2,50 @@
 
 import * as React from 'react';
 import { Plus, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { GROUP_TYPES } from '@/lib/data/group-types';
 
-type Props = {
-  categorySlug: string;
-  serviceSlug: string;
-  className?: string;
-};
-
-export function AddProviderButton({ categorySlug, serviceSlug, className = '' }: Props) {
+export default function AddGroupButton({ className = '' }: { className?: string }) {
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const [name, setName] = React.useState('');
-  const [summary, setSummary] = React.useState('');
-  const [details, setDetails] = React.useState('');
-  const [tags, setTags] = React.useState('');
-  const [contactEmail, setContactEmail] = React.useState('');
-  const [contactPhone, setContactPhone] = React.useState('');
+  const [title, setTitle] = React.useState('');
+  const [description, setDescription] = React.useState('');
+  const [type, setType] = React.useState(GROUP_TYPES[0].value);
+  const [location, setLocation] = React.useState('');
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/services/providers', {
+      if (!title.trim() || !description.trim()) {
+        setError('Title and description are required.');
+        setLoading(false);
+        return;
+      }
+      const res = await fetch('/api/groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          category: categorySlug,
-          service: serviceSlug,
-          name,
-          summary,
-          details,
-          tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
-          contact_email: contactEmail || null,
-          contact_phone: contactPhone || null,
+          title: title.trim(),
+          description: description.trim(),
+          type,
+          location: location.trim() || null,
         }),
       });
       if (!res.ok) {
         const msg = await res.text();
-        throw new Error(msg || 'Failed to create provider');
+        throw new Error(msg || 'Failed to create group');
       }
-      // Clear form and close
-      setName('');
-      setSummary('');
-      setDetails('');
-      setTags('');
-      setContactEmail('');
-      setContactPhone('');
+      setTitle('');
+      setDescription('');
+      setType(GROUP_TYPES[0].value);
+      setLocation('');
       setOpen(false);
+      router.refresh();
     } catch (err: any) {
       setError(err?.message ?? 'Something went wrong');
     } finally {
@@ -67,10 +61,10 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        title="Add provider"
+        title="Create group"
       >
         <Plus className="h-4 w-4" aria-hidden />
-        Add
+        Create Group
       </button>
 
       {open && (
@@ -85,7 +79,7 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
           />
           <div className="relative z-10 w-full max-w-lg rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Add Provider</h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Create Group</h2>
               <button
                 type="button"
                 className="p-1 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -98,69 +92,56 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
 
             <form onSubmit={onSubmit} className="px-5 py-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Name</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Title <span className="text-red-600 dark:text-red-400" aria-hidden>*</span>
+                </label>
                 <input
                   required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Business or person name"
+                  placeholder="Group name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Summary</label>
-                <input
-                  value={summary}
-                  onChange={(e) => setSummary(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Short one-line summary"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Details</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
                 <textarea
                   rows={4}
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Longer description of services"
+                  placeholder="What is this group about?"
                 />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Tags</label>
-                  <input
-                    value={tags}
-                    onChange={(e) => setTags(e.target.value)}
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Type</label>
+                  <select
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g. insured, local, eco-friendly"
-                  />
+                  >
+                    {GROUP_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Contact Email</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Location</label>
                   <input
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="name@example.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Contact Phone</label>
-                  <input
-                    value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="(555) 123-4567"
+                    placeholder="Neighborhood or venue"
                   />
                 </div>
               </div>
 
-              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+              {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
 
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
@@ -174,7 +155,7 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
                 <button
                   type="submit"
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
-                  disabled={loading}
+                  disabled={loading || !title.trim() || !description.trim()}
                 >
                   {loading ? 'Saving…' : 'Save'}
                 </button>
@@ -186,3 +167,5 @@ export function AddProviderButton({ categorySlug, serviceSlug, className = '' }:
     </>
   );
 }
+
+
