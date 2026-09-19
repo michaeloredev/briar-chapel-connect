@@ -70,6 +70,10 @@ Events use `lib/utils/date.ts` throughout. Multi-day events are expanded into lo
 
 `supabase-schema.sql` is the full schema, applied by pasting into the Supabase SQL editor — there is no migration runner. Incremental changes live as standalone scripts in `supabase/` and must be run by hand; a merge that touches those files is not deployed until they are applied. New tables need RLS enabled and policies written against `auth.jwt() ->> 'sub'` following the existing pattern.
 
+**`user_roles` has RLS enabled and no policies, on purpose.** The anon key is public and Supabase accepts any valid Clerk JWT, so a permissive policy there lets a `client` upsert themselves `superadmin` via PostgREST and bypass every `requireRole()` check. All legitimate access uses the service-role client, which bypasses RLS anyway. Do not add a policy to that table.
+
+More generally, RLS is the real authorization boundary for anything a browser can reach — app-level `requireRole()` only covers traffic that goes through the route. Where the two disagree, the weaker one wins.
+
 ## Conventions
 
 - Import via the `@/*` alias rather than relative paths.
