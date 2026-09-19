@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start"
+    "start": "next start",
+    "db:pull": "supabase db pull",
+    "db:push": "supabase db push",
+    "db:diff": "supabase db diff"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.34.0",
@@ -23,6 +26,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "supabase": "^2.117.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
