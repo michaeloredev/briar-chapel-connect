@@ -408,12 +408,16 @@ CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
 
 ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
 
--- Anyone can read roles (needed for UI role checks)
-CREATE POLICY "Anyone can view user roles" ON user_roles
-    FOR SELECT USING (true);
-
--- Only superadmins can manage roles (enforced at application level;
--- RLS allows the JWT owner to insert/update/delete their own row as a fallback)
-CREATE POLICY "Superadmins can manage roles" ON user_roles
-    FOR ALL USING (true) WITH CHECK (true);
+-- No policies, deliberately. RLS is enabled with nothing granted, so
+-- anon/authenticated callers -- including anyone using the public anon key
+-- against PostgREST directly -- cannot read or write this table at all.
+--
+-- Every legitimate access path uses the service role key, which bypasses RLS:
+-- getUserRole() in lib/auth/roles.ts, /api/admin/roles, /api/admin/members,
+-- and scripts/seed-*.mjs. A caller that needs its own role asks /api/me/role.
+--
+-- Do NOT add a permissive policy here. Granting write access to the JWT owner
+-- lets any signed-in user upsert themselves a 'superadmin' row and defeats
+-- requireRole() everywhere, since that helper trusts this table.
+REVOKE ALL ON user_roles FROM anon, authenticated;
 
