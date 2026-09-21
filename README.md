@@ -42,7 +42,7 @@ A modern neighborhood hub built with Next.js 15.5.6, connecting neighbors throug
 
 2. **Set up the database**
    - Go to your Supabase SQL Editor
-   - Run the SQL from `supabase-schema.sql`
+   - Apply the schema with `npm run db:push`
 
 3. **Configure Clerk**
    - Create a Clerk account at https://dashboard.clerk.com
@@ -78,7 +78,7 @@ briar-chapel-connect/
 │       └── types.ts            # Database type definitions
 ├── middleware.ts               # Clerk authentication middleware
 ├── public/                     # Static assets
-├── supabase-schema.sql        # Database schema
+├── supabase/migrations/       # Database schema (Supabase CLI)
 ├── SETUP.md                    # Detailed setup instructions
 ├── package.json                # Dependencies and scripts
 └── README.md                   # Project documentation
