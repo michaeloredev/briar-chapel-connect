@@ -50,7 +50,7 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
 2. Select your project (utmmtfxjnkwwaxvtzkjg)
 3. Navigate to **SQL Editor** in the left sidebar
 4. Create a new query
-5. Copy the contents of `supabase-schema.sql` file
+5. Apply the schema with `npm run db:push` (see `supabase/migrations/`)
 6. Paste it into the SQL Editor
 7. Click **Run** to execute the schema
 

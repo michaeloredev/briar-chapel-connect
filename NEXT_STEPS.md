@@ -31,7 +31,7 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
 1. Open https://app.supabase.com
 2. Select your project
 3. Go to **SQL Editor**
-4. Copy contents from `supabase-schema.sql`
+4. Apply the schema with `npm run db:push`
 5. Paste and **Run**
 
 ### 4. Start Development Server

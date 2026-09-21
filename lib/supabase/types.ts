@@ -22,7 +22,6 @@ export interface Database {
           summary: string | null;
           details: string | null;
           category: string;
-          price_range: string | null;
           contact_email: string | null;
           contact_phone: string | null;
           location: string | null;
@@ -37,7 +36,6 @@ export interface Database {
           summary: string | null;
           details: string | null;
           category: string;
-          price_range?: string | null; // optional when inserting
           contact_email: string | null;
           contact_phone: string | null;
           location: string | null;

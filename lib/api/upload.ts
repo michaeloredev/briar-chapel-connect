@@ -91,7 +91,7 @@ export async function handleFileUpload(req: Request, bucket: string): Promise<Ne
       const hint =
         uploadError.message?.toLowerCase().includes('bucket') ||
         uploadError.message?.toLowerCase().includes('not found')
-          ? ' Create the bucket in Supabase (Dashboard → Storage, or run the provider-logos / marketplace-images section in supabase-schema.sql).'
+          ? ' Create the bucket in Supabase (Dashboard → Storage, or run `npm run db:push` — the baseline migration creates all three buckets).'
           : '';
       const detail = `${uploadError.message || 'Unknown storage error'}${hint}`;
       return apiError(new Error(detail), `Failed to upload file: ${detail}`);
