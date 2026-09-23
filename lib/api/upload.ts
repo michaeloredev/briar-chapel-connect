@@ -145,3 +145,36 @@ export async function removeStorageObjects(bucket: string, paths: string[]): Pro
     console.error(`[Storage][${bucket}] remove error:`, error.message);
   }
 }
+
+/**
+ * Delete an object the caller uploaded.
+ *
+ * Exists so a client can undo its own upload: the provider form uploads the
+ * logo before writing the row, so a failed write would otherwise leave the file
+ * in the bucket with nothing referencing it and no way to reach it.
+ *
+ * Deletes are confined to the caller's own `${userId}/` prefix, which is the
+ * same boundary the storage policies enforce, so this cannot be used to remove
+ * another user's file even though it runs under the service role.
+ */
+export async function handleFileDelete(req: Request, bucket: string): Promise<NextResponse> {
+  try {
+    const { userId } = await requireAuthSupabase();
+
+    const url = new URL(req.url);
+    const ref = (url.searchParams.get('url') || url.searchParams.get('path') || '').trim();
+    if (!ref) return apiBadRequest('Missing url');
+
+    const path = storageObjectPath(ref, bucket);
+    if (!path) return apiBadRequest('Not an object in this bucket');
+    if (!path.startsWith(`${userId}/`)) {
+      // Matches the storage policies: a caller owns only their own prefix.
+      throw new Error('Forbidden');
+    }
+
+    await removeStorageObjects(bucket, [path]);
+    return new NextResponse(null, { status: 204 });
+  } catch (err) {
+    return apiError(err, 'Failed to delete upload');
+  }
+}

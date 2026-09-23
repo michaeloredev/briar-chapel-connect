@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 // Define public routes that don't require authentication
@@ -20,17 +21,21 @@ export default clerkMiddleware(async (auth, request) => {
     return;
   }
   if (!isPublicRoute(request)) {
-    // Bare auth.protect() rewrites to a 404 for signed-out visitors, which
-    // leaves them on a dead page with no way to sign in. Send page requests
-    // to the sign-in route instead, but leave API routes alone so their
-    // callers keep getting a JSON 401 rather than a sign-in page as HTML.
+    // auth.protect() rewrites to a 404 for signed-out visitors, which is wrong
+    // in both directions: a page request lands on a dead end with no way to
+    // sign in, and an API call gets an HTML error page where its caller is
+    // parsing JSON. Handle each explicitly instead.
     if (pathname.startsWith('/api/')) {
-      await auth.protect();
-    } else {
-      await auth.protect({
-        unauthenticatedUrl: new URL('/sign-in', request.url).toString(),
-      });
+      const { userId } = await auth();
+      if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      return;
     }
+
+    await auth.protect({
+      unauthenticatedUrl: new URL('/sign-in', request.url).toString(),
+    });
   }
 });
 
