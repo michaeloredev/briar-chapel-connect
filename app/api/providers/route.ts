@@ -4,6 +4,8 @@ import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { requireRole } from '@/lib/auth/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
+import { removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
+import { serviceSections } from '@/lib/data/services';
 
 type Payload = {
   category?: string;
@@ -32,6 +34,16 @@ type PatchPayload = {
   website?: string | null;
 };
 
+/**
+ * `/services/[category]/[service]` filters on an exact "<section>/<service>"
+ * match and 404s unknown slugs, so a provider stored under a slug that is not
+ * in the taxonomy is created successfully and then invisible on every page.
+ */
+function isKnownCategory(section: string, service: string): boolean {
+  const found = serviceSections.find((s) => s.slug === section);
+  return Boolean(found && found.items.some((item) => item.slug === service));
+}
+
 function normalizeTags(tags: unknown): string[] {
   if (!Array.isArray(tags)) return [];
   return tags
@@ -56,9 +68,15 @@ export async function POST(req: Request) {
     if (!category || !service || !name) {
       return apiBadRequest('category, service, and name are required');
     }
+    if (!isKnownCategory(category, service)) {
+      return apiBadRequest(`Unknown service category: ${category}/${service}`);
+    }
 
-    const { supabase, userId } = await requireAuthSupabase();
+    const { userId } = await requireAuthSupabase();
     await requireRole(userId, 'superadmin');
+    // RLS grants no write on this table to anon or authenticated, so the
+    // insert goes through the service role -- authorized by the check above.
+    const admin = createAdminClient();
     type ServiceInsert = Database['public']['Tables']['services']['Insert'];
     const insert: ServiceInsert = {
       user_id: userId,
@@ -75,7 +93,7 @@ export async function POST(req: Request) {
       tags: normalizeTags(body.tags),
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from('services')
       .insert(insert as any)
       .select('*')
@@ -101,38 +119,71 @@ export async function PATCH(req: Request) {
     const { userId } = await requireAuthSupabase();
     await requireRole(userId, 'superadmin');
 
-    const name = (body.name ?? '').trim();
-    if (!name) return apiBadRequest('name is required');
+    // Only write the keys the caller actually sent. Coercing absent fields to
+    // null meant a partial edit -- anything other than the full form -- blanked
+    // the provider's contact details, location and website.
+    type ServiceUpdate = Database['public']['Tables']['services']['Update'];
+    const update: ServiceUpdate = {};
 
-    const summary = (body.summary ?? '').trim();
-    const details = (body.details ?? '').trim();
-    const website = (body.website ?? '')?.trim() || null;
-    const location = (body.location ?? '')?.trim() || null;
+    if (body.name !== undefined) {
+      const name = body.name.trim();
+      if (!name) return apiBadRequest('name is required');
+      update.title = name;
+    }
+    if (body.summary !== undefined) update.summary = body.summary.trim() || null;
+    if (body.details !== undefined) update.details = body.details.trim() || null;
+    if (body.contact_email !== undefined) update.contact_email = body.contact_email?.trim() || null;
+    if (body.contact_phone !== undefined) update.contact_phone = body.contact_phone?.trim() || null;
+    if (body.location !== undefined) update.location = body.location?.trim() || null;
+    if (body.website !== undefined) update.website = body.website?.trim() || null;
+    if (body.image_url !== undefined) update.image_url = body.image_url;
+    if (body.tags !== undefined) update.tags = normalizeTags(body.tags);
+
+    if (Object.keys(update).length === 0) return apiBadRequest('No fields to update');
 
     const admin = createAdminClient();
-    type ServiceUpdate = Database['public']['Tables']['services']['Update'];
-    const update: ServiceUpdate = {
-      title: name,
-      summary: summary || null,
-      details: details || null,
-      contact_email: body.contact_email ?? null,
-      contact_phone: body.contact_phone ?? null,
-      location,
-      website,
-      image_url: body.image_url === undefined ? undefined : body.image_url,
-      tags: body.tags === undefined ? undefined : normalizeTags(body.tags),
-    };
+
+    // Read the logo being replaced before overwriting it, so the old object can
+    // be removed once the row is updated. Skipped unless image_url is changing.
+    let previousImageUrl: string | null = null;
+    if (body.image_url !== undefined) {
+      const { data: current, error: readError } = await admin
+        .from('services')
+        .select('image_url')
+        .eq('id', id)
+        .maybeSingle<{ image_url: string | null }>();
+
+      if (readError) {
+        if (readError.code === '22P02') return apiBadRequest('invalid id');
+        console.error('[Providers][PATCH] read error:', readError.message);
+        return apiError(readError, 'Failed to update provider');
+      }
+      if (!current) return NextResponse.json({ error: 'Provider not found' }, { status: 404 });
+      previousImageUrl = current.image_url;
+    }
 
     const { data, error } = await admin
       .from('services')
       .update(update as never)
       .eq('id', id)
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (error) {
+      // An unparseable uuid is the caller's mistake, not a server fault.
+      if (error.code === '22P02') return apiBadRequest('invalid id');
       console.error('[Providers][PATCH] error:', error.message);
       return apiError(error, 'Failed to update provider');
+    }
+    if (!data) return NextResponse.json({ error: 'Provider not found' }, { status: 404 });
+
+    // Best-effort, and only after the row is committed: a failed cleanup must
+    // not fail the edit. Covers replacing a logo and clearing it (image_url
+    // null), both of which previously left the file behind forever.
+    const nextImageUrl = (data as { image_url: string | null }).image_url;
+    if (previousImageUrl && previousImageUrl !== nextImageUrl) {
+      const path = storageObjectPath(previousImageUrl, 'provider-logos');
+      if (path) await removeStorageObjects('provider-logos', [path]);
     }
 
     return NextResponse.json(data);
@@ -150,19 +201,29 @@ export async function DELETE(req: Request) {
     const { userId } = await requireAuthSupabase();
     await requireRole(userId, 'superadmin');
     const admin = createAdminClient();
+
+    // Return image_url so the logo can be cleaned up. Reviews cascade through
+    // the foreign key; storage has no such thing, so a deleted provider used to
+    // leave its logo in the bucket permanently.
     const { data: deleted, error } = await admin
       .from('services')
       .delete()
       .eq('id', id)
-      .select('id');
+      .select('id, image_url');
 
     if (error) {
+      if (error.code === '22P02') return apiBadRequest('invalid id');
       console.error('[Providers][DELETE] error:', error.message);
       return apiError(error, 'Failed to delete provider');
     }
     if (!deleted || deleted.length === 0) {
-      return NextResponse.json({ error: 'Provider not found or not owned by user' }, { status: 404 });
+      return NextResponse.json({ error: 'Provider not found' }, { status: 404 });
     }
+
+    const paths = deleted
+      .map((row) => storageObjectPath(String((row as { image_url: string | null }).image_url ?? ''), 'provider-logos'))
+      .filter((path): path is string => Boolean(path));
+    if (paths.length > 0) await removeStorageObjects('provider-logos', paths);
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {

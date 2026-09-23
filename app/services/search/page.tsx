@@ -14,6 +14,26 @@ interface SearchPageProps {
   searchParams?: Promise<{ q?: string }>;
 }
 
+/**
+ * Build an ilike pattern that matches the query literally.
+ *
+ * `%` and `_` are LIKE wildcards, so an unescaped query like "100%" matched
+ * every title containing "100" followed by anything, and "a_b" matched "axb".
+ * Backslash is Postgres's default LIKE escape character, so it has to be
+ * escaped first or it would escape the character after it.
+ */
+function likePattern(query: string): string {
+  return `%${query.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
+}
+
+/**
+ * Quote a value for a PostgREST `or(...)` filter, which is comma-separated and
+ * would otherwise treat a comma, period or parenthesis in the query as syntax.
+ */
+function orFilterValue(pattern: string): string {
+  return `"${pattern.replace(/["\\]/g, (ch) => `\\${ch}`)}"`;
+}
+
 export default async function ServicesSearchPage(props: SearchPageProps) {
   const { q } = (await props.searchParams) || {};
   const query = (q || '').trim();
@@ -56,7 +76,14 @@ export default async function ServicesSearchPage(props: SearchPageProps) {
   const { data: rows, error } = await supabase
     .from('services')
     .select('id, title, summary, details, website, location, category, status, image_url, contact_phone')
-    .ilike('title', `%${query}%`)
+    // Title or summary: the topic search above covers title and description,
+    // so a provider whose summary matched never showed up here.
+    .or(
+      [
+        `title.ilike.${orFilterValue(likePattern(query))}`,
+        `summary.ilike.${orFilterValue(likePattern(query))}`,
+      ].join(','),
+    )
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .returns<ServiceRow[]>();

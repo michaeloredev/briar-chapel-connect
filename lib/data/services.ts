@@ -1,4 +1,4 @@
-import type { ServiceSection } from '@/lib/types/services';
+import type { LucideIcon } from 'lucide-react';
 import {
   Leaf,
   Wrench,
@@ -28,6 +28,21 @@ import {
 const serviceAccent = {
   bg: 'bg-slate-100 dark:bg-slate-600',
 } as const;
+
+export type ServiceItem = {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  colorClasses: { bg: string; icon: string };
+  href?: string;
+  slug: string;
+};
+
+export type ServiceSection = {
+  title: string;
+  slug: string;
+  items: ServiceItem[];
+};
 
 export const serviceSections: ServiceSection[] = [
   {

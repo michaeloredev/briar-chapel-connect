@@ -18,8 +18,10 @@ export async function POST(req: Request) {
     const comment = (body.comment || '').trim();
 
     if (!service_id) return apiBadRequest('Missing service_id');
-    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
-      return apiBadRequest('rating must be between 1 and 5');
+    // Integer, not just finite: the rating column is an integer, so a value
+    // like 4.6 was silently rounded up on insert.
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return apiBadRequest('rating must be a whole number between 1 and 5');
     }
     if (comment && comment.length > 2000) {
       return apiBadRequest('comment too long (max 2000 chars)');
