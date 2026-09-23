@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import RoleGate from '@/components/auth/RoleGate';
 import EventFormDialog from '@/components/events/EventFormDialog';
 import { getCategoryMeta } from '@/lib/data/event-categories';
@@ -31,7 +32,12 @@ export default function EventList({
           {filtered.map((e) => (
             <li key={e.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{e.title}</div>
+                <Link
+                  href={`/events/${e.id}`}
+                  className="text-sm font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded truncate"
+                >
+                  {e.title}
+                </Link>
                 <div className="flex items-center gap-2">
                   {(() => {
                     const meta = getCategoryMeta(e.category || 'other');
