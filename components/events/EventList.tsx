@@ -1,5 +1,7 @@
 'use client';
 
+import RoleGate from '@/components/auth/RoleGate';
+import EventFormDialog from '@/components/events/EventFormDialog';
 import { getCategoryMeta } from '@/lib/data/event-categories';
 import { eventDayKeys, formatDateRange, parseYMD } from '@/lib/utils/date';
 import type { EventListItem } from './types';
@@ -30,14 +32,31 @@ export default function EventList({
             <li key={e.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{e.title}</div>
-                {(() => {
-                  const meta = getCategoryMeta(e.category || 'other');
-                  return (
-                    <span className={['text-xs px-2 py-0.5 rounded-full', meta.badgeClasses].join(' ')}>
-                      {meta.label}
-                    </span>
-                  );
-                })()}
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const meta = getCategoryMeta(e.category || 'other');
+                    return (
+                      <span className={['text-xs px-2 py-0.5 rounded-full', meta.badgeClasses].join(' ')}>
+                        {meta.label}
+                      </span>
+                    );
+                  })()}
+                  {/* Hides the control only -- PATCH /api/events enforces admin. */}
+                  <RoleGate minimum="admin">
+                    <EventFormDialog
+                      event={{
+                        id: e.id,
+                        title: e.title,
+                        description: e.description,
+                        category: e.category ?? null,
+                        event_date: e.date,
+                        end_date: e.endDate,
+                        location: e.location,
+                        address: e.address ?? null,
+                      }}
+                    />
+                  </RoleGate>
+                </div>
               </div>
               <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">
                 {formatDateRange(e.date, e.endDate)} • {e.location}

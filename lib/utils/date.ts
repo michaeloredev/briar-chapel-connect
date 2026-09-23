@@ -103,3 +103,17 @@ export function eventDayKeys(startISO: string, endISO: string | null): string[] 
   }
   return keys;
 }
+
+/**
+ * Format an ISO timestamp for a `datetime-local` input, which takes a *local*
+ * `YYYY-MM-DDTHH:mm` and has no timezone of its own. Slicing the ISO string
+ * would feed it UTC and shift the displayed time, which is the same class of
+ * bug that made the calendar and list views disagree across day boundaries.
+ */
+export function toDateTimeLocalValue(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}

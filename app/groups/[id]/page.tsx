@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
-import AddEventButton from '@/components/events/AddEventButton';
+import EventFormDialog from '@/components/events/EventFormDialog';
+import GroupFormDialog from '@/components/groups/GroupFormDialog';
 import RoleGate from '@/components/auth/RoleGate';
 import SetBreadcrumbTitle from '@/components/common/SetBreadcrumbTitle';
 
@@ -34,13 +35,24 @@ export default async function GroupDetailPage({ params }: PageProps) {
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{group.title}</h1>
           <RoleGate minimum="admin">
-            <AddEventButton
-              buttonLabel="Schedule Event"
-              dialogTitle="Schedule Meetup"
-              defaultLocation={group.location ?? 'Briar Chapel'}
-              fixedCategory="group"
-              groupId={group.id}
-            />
+            <div className="flex items-center gap-2">
+              <GroupFormDialog
+                group={{
+                  id: group.id,
+                  title: group.title,
+                  description: group.description,
+                  type: group.type,
+                  location: group.location,
+                }}
+              />
+              <EventFormDialog
+                buttonLabel="Schedule Event"
+                dialogTitle="Schedule Meetup"
+                defaultLocation={group.location ?? 'Briar Chapel'}
+                fixedCategory="group"
+                groupId={group.id}
+              />
+            </div>
           </RoleGate>
         </div>
         <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">

@@ -9,4 +9,5 @@ export type EventListItem = {
   location: string;
   status: string;
   category?: string;
+  address?: string | null;
 };
