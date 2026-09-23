@@ -15,11 +15,15 @@ There is no test suite, no linter config, and no `lint` script. `npx tsc --noEmi
 
 `next build` writes to `.next`, which is the same directory the dev server serves from — building while `npm run dev` is running will break the live server. Next 15 has no `--distDir` build flag, so to build in isolation use a detached git worktree and hardlink the deps into it (`cp -al ../node_modules node_modules`); a *symlinked* `node_modules` makes Turbopack panic with "points out of the filesystem root".
 
-Seed scripts load env themselves and are safe to re-run (they skip a provider when the same title already exists in the category):
+One seed runner covers every service category. It loads env itself and is safe to re-run (a provider is skipped when the same title already exists in the category):
 
 ```bash
-node --env-file=.env.local scripts/seed-cleaning-providers.mjs
+node --env-file=.env.local scripts/seed-providers.mjs                   # all categories
+node --env-file=.env.local scripts/seed-providers.mjs cleaning-services # one
+node --env-file=.env.local scripts/seed-providers.mjs --list
 ```
+
+Provider data is one module per category in `scripts/providers/`, each exporting `CATEGORY` and `PROVIDERS`. Adding a category means adding a file there; the runner discovers it. It warns when a module's `CATEGORY` has no counterpart in `lib/data/services.ts`, since rows seeded under an unknown slug are invisible to every page.
 
 ## Architecture
 
@@ -52,7 +56,7 @@ Because `requireAuthSupabase()` and `requireRole()` signal by throwing, a handle
 
 ### Services taxonomy
 
-The services catalog is **static data, not database rows**: `lib/data/services.ts` declares sections and items with `slug` and a Lucide icon. Providers stored in the `services` table join to it through a composite `category` string of the form `"<section-slug>/<service-slug>"` (e.g. `home-property-services/cleaning-services`), which is what `/services/[category]/[service]` and the seed scripts key off. Adding a service category means editing that file *and* using its slugs in any seeded rows.
+The services catalog is **static data, not database rows**: `lib/data/services.ts` declares sections and items with `slug` and a Lucide icon. Providers stored in the `services` table join to it through a composite `category` string of the form `"<section-slug>/<service-slug>"` (e.g. `home-property-services/cleaning-services`), which is what `/services/[category]/[service]` and the seed data key off. Adding a service category means editing that file *and* using its slugs in any seeded rows.
 
 ### Comments
 

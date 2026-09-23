@@ -79,11 +79,8 @@ These are missing pieces in shipped features, roughly in priority order.
   development. Create a separate production project **before** the first
   deploy — once real neighbors post to the current one it becomes production
   by default, and splitting afterwards means migrating live data instead of
-  running the seed scripts.
+  running the seed runner.
 - **Not deployed anywhere.** No hosting configuration in the repo.
-- **The 22 seed scripts share a byte-identical 60-line tail** — about 1,300
-  duplicated lines. One runner plus per-category data modules would collapse
-  them.
 - **No tests and no linter.** `npx tsc --noEmit` plus a build is the whole
   verification path.
 
