@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { requireRole } from '@/lib/auth/roles';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 
 type Payload = {
@@ -25,8 +26,11 @@ export async function POST(req: Request) {
       return apiBadRequest('Missing required fields');
     }
 
-    const { supabase, userId } = await requireAuthSupabase();
+    const { userId } = await requireAuthSupabase();
     await requireRole(userId, 'admin');
+    // RLS grants no write on this table to anon or authenticated, so the
+    // insert goes through the service role -- authorized by the check above.
+    const admin = createAdminClient();
     type Insert = Database['public']['Tables']['groups']['Insert'];
     const insert: Insert = {
       user_id: userId,
@@ -38,7 +42,7 @@ export async function POST(req: Request) {
       image_url,
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from('groups')
       .insert(insert as any)
       .select('*')

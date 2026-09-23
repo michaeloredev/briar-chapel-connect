@@ -57,8 +57,11 @@ export async function POST(req: Request) {
       return apiBadRequest('category, service, and name are required');
     }
 
-    const { supabase, userId } = await requireAuthSupabase();
+    const { userId } = await requireAuthSupabase();
     await requireRole(userId, 'superadmin');
+    // RLS grants no write on this table to anon or authenticated, so the
+    // insert goes through the service role -- authorized by the check above.
+    const admin = createAdminClient();
     type ServiceInsert = Database['public']['Tables']['services']['Insert'];
     const insert: ServiceInsert = {
       user_id: userId,
@@ -75,7 +78,7 @@ export async function POST(req: Request) {
       tags: normalizeTags(body.tags),
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from('services')
       .insert(insert as any)
       .select('*')
