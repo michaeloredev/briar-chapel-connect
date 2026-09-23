@@ -4,7 +4,7 @@ import type { Database } from '@/lib/supabase/types';
 import EventCalendar from '@/components/events/EventCalendar';
 import EventList from '@/components/events/EventList';
 import { SignedIn } from '@clerk/nextjs';
-import AddEventButton from '@/components/events/AddEventButton';
+import EventFormDialog from '@/components/events/EventFormDialog';
 import { PageHeader } from '@/components/common/PageHeader';
 import RoleGate from '@/components/auth/RoleGate';
 import { formatLocalDate, isValidYM, isValidYMD, parseYM } from '@/lib/utils/date';
@@ -54,6 +54,9 @@ export default async function EventsPage({ searchParams }: { searchParams: Searc
     location: e.location,
     status: e.status,
     category: e.category,
+    // Carried so the edit form can round-trip it; without it an edit from the
+    // day list would submit a blank address and wipe the stored one.
+    address: e.address ?? null,
   }));
 
   return (
@@ -65,7 +68,7 @@ export default async function EventsPage({ searchParams }: { searchParams: Searc
           actions={
             <SignedIn>
               <RoleGate minimum="admin">
-                <AddEventButton />
+                <EventFormDialog />
               </RoleGate>
             </SignedIn>
           }

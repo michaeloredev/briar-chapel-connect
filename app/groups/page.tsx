@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 import { GROUP_TYPES } from '@/lib/data/group-types';
-import AddGroupButton from '@/components/groups/AddGroupButton';
+import GroupFormDialog from '@/components/groups/GroupFormDialog';
 import { SignedIn, SignInButton } from '@clerk/nextjs';
 import RoleGate from '@/components/auth/RoleGate';
 import GroupCard from '@/components/groups/GroupCard';
@@ -95,7 +95,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
         <div className="flex">
           <SignedIn>
             <RoleGate minimum="admin">
-              <AddGroupButton />
+              <GroupFormDialog />
             </RoleGate>
           </SignedIn>
         </div>
