@@ -1,8 +1,26 @@
 @import "tailwindcss";
 
+/* Tailwind 4 resolves `dark:` against prefers-color-scheme by default, which no
+   toggle can override. Bind it to a class on <html> instead so the user's choice
+   wins; the inline script in app/layout.tsx sets that class before first paint. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+/* No-JS fallback: follow the OS unless the user has explicitly chosen light. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+:root.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -10,13 +28,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
