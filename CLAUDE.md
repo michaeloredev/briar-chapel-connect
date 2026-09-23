@@ -89,4 +89,10 @@ More generally, RLS is the real authorization boundary for anything a browser ca
 
 - Import via the `@/*` alias rather than relative paths.
 - `lib/supabase/types.ts` holds generated `Database` types; derive row shapes from it (`Database['public']['Tables']['services']['Row'|'Insert'|'Update']`) instead of redeclaring them.
+- **Where a type lives** follows what it is used by, not what kind of thing it is:
+  - used by one module → export it from that module (`GroupCardProps` in `GroupCard.tsx`, `AppRole` in `lib/auth/roles.ts`). This is the default and covers most types.
+  - shared by several files in one feature folder → a `types.ts` in that folder (`components/events/types.ts` holds `EventListItem`, used by both the calendar and the day list).
+  - shared across unrelated areas → `lib/types/`. Nothing qualifies today, so the folder does not exist; create it only when something genuinely does.
+
+  There is no separate types file for a type with a single consumer.
 - Dark mode is supported everywhere via Tailwind `dark:` variants — new UI should carry both.
