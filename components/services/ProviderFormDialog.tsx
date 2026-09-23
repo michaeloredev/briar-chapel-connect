@@ -5,6 +5,20 @@ import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ProviderLogoCropDialog } from '@/components/services/ProviderLogoCropDialog';
 
+/**
+ * Remove a logo that was uploaded moments ago but whose provider write then
+ * failed. Without this the file stays in the bucket with no row referencing it
+ * and no way to reach it. Best-effort: the save has already failed, and the
+ * user sees that error rather than this one.
+ */
+async function discardUploadedLogo(url: string): Promise<void> {
+  try {
+    await fetch(`/api/uploads/provider-logo?url=${encodeURIComponent(url)}`, { method: 'DELETE' });
+  } catch {
+    // Nothing useful to do here; the save error is what matters to the user.
+  }
+}
+
 export type ProviderFormInitial = {
   name: string;
   summary: string;
@@ -144,8 +158,9 @@ export function ProviderFormDialog({
     e.preventDefault();
     setLoading(true);
     setError(null);
+    let newUploadedUrl: string | null = null;
+    let savedOk = false;
     try {
-      let newUploadedUrl: string | null = null;
       if (logoFile) {
         setLogoUploading(true);
         try {
@@ -215,12 +230,16 @@ export function ProviderFormDialog({
         }
       }
 
+      savedOk = true;
       clearLocalAfterSuccess();
       router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Something went wrong';
       setError(msg);
     } finally {
+      // The upload happens before the provider write, so a failed write leaves
+      // an object in the bucket that nothing points at.
+      if (!savedOk && newUploadedUrl) await discardUploadedLogo(newUploadedUrl);
       setLoading(false);
     }
   }

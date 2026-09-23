@@ -7,6 +7,23 @@ import { supabase } from '@/lib/supabase/client';
 import type { Database } from '@/lib/supabase/types';
 import StarRatingInput from '@/components/ui/StarRatingInput';
 import { useRouter } from 'next/navigation';
+import { SignInButton, useAuth } from '@clerk/nextjs';
+
+/** Routes answer with `{ error }` JSON; surface that rather than the raw body. */
+async function readFailedResponse(res: Response, fallback: string): Promise<string> {
+  try {
+    const text = await res.text();
+    if (!text) return fallback;
+    try {
+      const parsed = JSON.parse(text) as { error?: string };
+      return parsed?.error || fallback;
+    } catch {
+      return text;
+    }
+  } catch {
+    return fallback;
+  }
+}
 
 export type ProviderCardProps = {
   id: string;
@@ -45,6 +62,7 @@ export function ProviderCard({
   phone,
 }: ProviderCardProps) {
   const router = useRouter();
+  const { isSignedIn, isLoaded } = useAuth();
   const [deleting, setDeleting] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [loadingRecord, setLoadingRecord] = React.useState(false);
@@ -417,15 +435,30 @@ export function ProviderCard({
               </div>
               {!showReviewForm ? (
                 <div className="mt-6 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowReviewForm(true);
-                    }}
-                    className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    Rate
-                  </button>
+                  {/* Service pages are public, but posting a review requires a
+                      signed-in user. Offering "Rate" to everyone meant a
+                      signed-out visitor filled in stars and got a 401 back. */}
+                  {isLoaded && !isSignedIn ? (
+                    <SignInButton mode="modal">
+                      <button
+                        type="button"
+                        className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        Sign in to rate
+                      </button>
+                    </SignInButton>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!isLoaded}
+                      onClick={() => {
+                        setShowReviewForm(true);
+                      }}
+                      className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      Rate
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
@@ -484,8 +517,7 @@ export function ProviderCard({
                             }),
                           });
                           if (!res.ok) {
-                            const msg = await res.text();
-                            throw new Error(msg || 'Failed to submit review');
+                            throw new Error(await readFailedResponse(res, 'Failed to submit review'));
                           }
                           const saved = (await res.json()) as ReviewRow;
                           // Merge into list if already loaded (one row per user after upsert)

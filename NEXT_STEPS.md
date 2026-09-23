@@ -41,29 +41,14 @@ These are missing pieces in shipped features, roughly in priority order.
 - **Events and groups cannot be deleted.** No route exists for either, so a
   mistaken entry can only be removed from the database directly.
 - **Marketplace listings cannot be edited**, only created and deleted.
-- **A failed provider save orphans its logo.** `ProviderFormDialog` uploads
-  the image before writing the row, so if the write fails the file is left in
-  the bucket with nothing referencing it. Cleaning it up needs a DELETE on
-  `/api/uploads/provider-logo`, which does not exist yet.
 - **RSVP is not implemented.** `event_attendees` has a table, policies and
   increment/decrement triggers, but nothing writes to it, so
   `events.current_attendees` is always 0.
 
 ## Known bugs
 
-- `middleware.ts` rewrites signed-out `/api/*` requests to an **HTML 404**
-  rather than a JSON 401, despite the comment there stating the opposite.
-  Client code that expects `{ error }` JSON gets a Next error page.
-- `POST /api/providers` does not validate `category` against the taxonomy, so a
-  typo creates a provider no page can ever query.
-- The rating control is shown to signed-out visitors on public service pages;
-  submitting surfaces a raw JSON error.
-- Half stars render in the inherited slate color instead of amber, and every
-  rating emits a duplicate `id="half"` gradient.
-- Provider search does not escape `%` or `_`, so a query like `100%` matches
-  almost everything. It also searches only `title`, not `summary`.
-- `POST /api/service-reviews` accepts non-integer ratings and Postgres rounds
-  them, so a crafted request can nudge an average.
+None outstanding. The findings from the services review have all been
+fixed; anything new belongs here.
 
 ## Infrastructure
 
@@ -86,7 +71,9 @@ These are missing pieces in shipped features, roughly in priority order.
 - [x] Uploads sniff magic bytes rather than trusting the client MIME type,
       capped at 2MB in the route *and* on the bucket
 - [x] Secrets kept out of `NEXT_PUBLIC_*` and out of git
-- [ ] Input validation across all routes (partial — see gaps above)
+- [x] Input validation across all routes — rating bounds and integers,
+      provider categories checked against the taxonomy, search input escaped
+      before it reaches a LIKE pattern
 - [ ] Rate limiting on API routes
 - [ ] Content moderation beyond admin comment deletion
 - [ ] Terms of service and privacy policy

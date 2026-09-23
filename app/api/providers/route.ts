@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/auth/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 import { removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
+import { serviceSections } from '@/lib/data/services';
 
 type Payload = {
   category?: string;
@@ -33,6 +34,16 @@ type PatchPayload = {
   website?: string | null;
 };
 
+/**
+ * `/services/[category]/[service]` filters on an exact "<section>/<service>"
+ * match and 404s unknown slugs, so a provider stored under a slug that is not
+ * in the taxonomy is created successfully and then invisible on every page.
+ */
+function isKnownCategory(section: string, service: string): boolean {
+  const found = serviceSections.find((s) => s.slug === section);
+  return Boolean(found && found.items.some((item) => item.slug === service));
+}
+
 function normalizeTags(tags: unknown): string[] {
   if (!Array.isArray(tags)) return [];
   return tags
@@ -56,6 +67,9 @@ export async function POST(req: Request) {
 
     if (!category || !service || !name) {
       return apiBadRequest('category, service, and name are required');
+    }
+    if (!isKnownCategory(category, service)) {
+      return apiBadRequest(`Unknown service category: ${category}/${service}`);
     }
 
     const { userId } = await requireAuthSupabase();
