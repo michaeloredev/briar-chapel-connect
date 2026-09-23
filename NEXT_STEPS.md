@@ -3,7 +3,7 @@
 What exists, what is missing, and what is known to be broken. Setup lives in
 [SETUP.md](./SETUP.md); this file is only about what to build next.
 
-Last reviewed: 2026-09-22.
+Last reviewed: 2026-09-23.
 
 ## Built
 
@@ -41,27 +41,19 @@ These are missing pieces in shipped features, roughly in priority order.
 - **Events and groups cannot be deleted.** No route exists for either, so a
   mistaken entry can only be removed from the database directly.
 - **Marketplace listings cannot be edited**, only created and deleted.
-- **The event detail page is a placeholder.** `app/events/[id]/page.tsx`
-  renders "Scaffold placeholder" and nothing links to it. Events are the only
-  major entity with no detail view — and since comments are polymorphic, that
-  page is where event discussion would live.
+- **A failed provider save orphans its logo.** `ProviderFormDialog` uploads
+  the image before writing the row, so if the write fails the file is left in
+  the bucket with nothing referencing it. Cleaning it up needs a DELETE on
+  `/api/uploads/provider-logo`, which does not exist yet.
 - **RSVP is not implemented.** `event_attendees` has a table, policies and
   increment/decrement triggers, but nothing writes to it, so
   `events.current_attendees` is always 0.
-- **Provider images leak.** Deleting a provider does not remove its logo from
-  the `provider-logos` bucket, and replacing a logo orphans the old file.
-  `removeStorageObjects()` already exists and the marketplace route uses it.
-- **`PATCH /api/providers` nulls optional fields on a partial update** —
-  sending only `{id, name}` blanks the provider's email, phone, location and
-  website. The events and groups PATCH routes show the pattern that avoids it.
 
 ## Known bugs
 
 - `middleware.ts` rewrites signed-out `/api/*` requests to an **HTML 404**
   rather than a JSON 401, despite the comment there stating the opposite.
   Client code that expects `{ error }` JSON gets a Next error page.
-- `PATCH /api/providers` returns 500 for an unknown or malformed id; DELETE on
-  the same resource correctly returns 404.
 - `POST /api/providers` does not validate `category` against the taxonomy, so a
   typo creates a provider no page can ever query.
 - The rating control is shown to signed-out visitors on public service pages;
