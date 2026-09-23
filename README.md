@@ -94,7 +94,7 @@ briar-chapel-connect/
 │   ├── data/                 # Static taxonomies (services, categories, types)
 │   ├── images/               # Client-side crop/downscale before upload
 │   └── utils/date.ts         # All event date handling
-├── scripts/                  # One-off provider seed scripts
+├── scripts/                  # Provider seed runner + per-category data
 ├── supabase/migrations/      # Schema, applied with the Supabase CLI
 ├── middleware.ts             # Clerk route protection
 ├── SETUP.md                  # First-time setup walkthrough

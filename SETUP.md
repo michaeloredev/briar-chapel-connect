@@ -154,17 +154,19 @@ avatar and that **Members** appears in the nav (superadmin only).
 
 ## 7. Seed the provider directory (optional)
 
-The service directory starts empty. The seed scripts add real local providers
-per category, and are safe to re-run — they skip a provider whose title already
-exists in that category.
+The service directory starts empty. The seed runner adds real local providers —
+110 across 22 categories — and is safe to re-run, skipping any provider whose
+title already exists in that category.
 
 ```bash
-node --env-file=.env.local scripts/seed-cleaning-providers.mjs
+node --env-file=.env.local scripts/seed-providers.mjs                   # all
+node --env-file=.env.local scripts/seed-providers.mjs cleaning-services # one
+node --env-file=.env.local scripts/seed-providers.mjs --list            # what's available
 ```
 
-Each script assigns the providers it creates to the **only** superadmin in
-`user_roles`, so step 5 has to be done first and there must be exactly one
-superadmin at that moment.
+Providers are assigned to the **only** superadmin in `user_roles`, so step 5
+has to be done first and there must be exactly one superadmin at that moment.
+Set `SEED_OWNER_USER_ID` to a Clerk user ID to choose explicitly.
 
 ## Troubleshooting
 
