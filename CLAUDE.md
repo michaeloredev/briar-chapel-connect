@@ -68,7 +68,14 @@ Events use `lib/utils/date.ts` throughout. Multi-day events are expanded into lo
 
 ## Database changes
 
-`supabase-schema.sql` is the full schema, applied by pasting into the Supabase SQL editor — there is no migration runner. Incremental changes live as standalone scripts in `supabase/` and must be run by hand; a merge that touches those files is not deployed until they are applied. New tables need RLS enabled and policies written against `auth.jwt() ->> 'sub'` following the existing pattern.
+Schema lives in `supabase/migrations/`, applied with the Supabase CLI — `npm run db:push`. The baseline `20260921002144_remote_schema.sql` was pulled from the live database and builds the whole schema from nothing; every later change is its own timestamped file from `npx supabase migration new <name>`. Never edit an applied migration, and never change the schema through the dashboard SQL editor: that is what silently drifted the old `supabase-schema.sql` away from reality.
+
+Two things `supabase db pull` will not capture, so they have to be written by hand when they change:
+
+- **Storage buckets** are rows in `storage.buckets`, not schema. A pull brings the policies on `storage.objects` and none of the buckets they reference.
+- **Revoked privileges.** A dump records the grants that exist, not the ones deliberately taken away.
+
+New tables need RLS enabled and policies written against `auth.jwt() ->> 'sub'` following the existing pattern.
 
 **`user_roles` has RLS enabled and no policies, on purpose.** The anon key is public and Supabase accepts any valid Clerk JWT, so a permissive policy there lets a `client` upsert themselves `superadmin` via PostgREST and bypass every `requireRole()` check. All legitimate access uses the service-role client, which bypasses RLS anyway. Do not add a policy to that table.
 
