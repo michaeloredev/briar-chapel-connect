@@ -1,101 +1,119 @@
 # Briar Chapel Connect
 
-A modern neighborhood hub built with Next.js 15.5.6, connecting neighbors through local services, marketplace, and community events.
+A neighborhood hub for the Briar Chapel community: a directory of local service
+providers, a marketplace for buying and selling with neighbors, a community
+events calendar, and neighborhood groups — with threaded discussion on all of
+them.
 
-## Features
+## Tech stack
 
-- **Local Services** - Find trusted neighborhood service providers (plumbers, electricians, tutors, cleaners)
-- **Marketplace** - Buy and sell items with neighbors
-- **Community Events** - Discover yard sales, block parties, meetups, and local happenings
-- **Authentication** - Secure user accounts with Clerk
-- **Modern UI** - Beautiful, responsive design with dark mode support
-- **Real-time Updates** - Powered by Supabase
-- **TypeScript** - Full type safety throughout the application
-- **Tailwind CSS** - Utility-first styling for rapid development
+| | |
+|---|---|
+| Framework | Next.js 15 (App Router) with React 19 |
+| Styling | Tailwind CSS 4, dark mode throughout |
+| Auth | Clerk |
+| Database & storage | Supabase (Postgres + Storage) |
+| Icons | lucide-react |
 
-## Tech Stack
+Clerk and Supabase are bridged by a Clerk JWT template named `supabase`, so
+Postgres row-level security authorizes against the Clerk user ID. Every
+`user_id` column holds a Clerk ID as `TEXT`, never a Supabase auth UUID.
 
-- **Framework:** Next.js 15.5.6 with App Router
-- **Language:** TypeScript 5
-- **Styling:** Tailwind CSS 4
-- **Runtime:** React 19.1.0
-- **Build Tool:** Turbopack (Next.js native)
-- **Authentication:** Clerk
-- **Database:** Supabase (PostgreSQL)
-- **Storage:** Supabase Storage
-
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
-- Node.js 18.17 or later
-- npm, yarn, or pnpm
-- Supabase account (database already created)
-- Clerk account (for authentication)
+- Node.js 18.18 or later (20 LTS recommended)
+- A Supabase project
+- A Clerk application
 
-### Quick Start
+### Quick start
 
-1. **Set up environment variables**
-   - Create `.env.local` file in the root directory
-   - Add your Supabase credentials (already configured)
-   - Add your Clerk API keys (see SETUP.md for details)
-
-2. **Set up the database**
-   - Go to your Supabase SQL Editor
-   - Apply the schema with `npm run db:push`
-
-3. **Configure Clerk**
-   - Create a Clerk account at https://dashboard.clerk.com
-   - Get your API keys and add them to `.env.local`
-
-4. **Run the development server**
 ```bash
+npm install
+cp .env.example .env.local     # then fill in your keys
+npm run db:push                # applies supabase/migrations to your database
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+Then open <http://localhost:3000>.
 
-📖 **For detailed setup instructions, see [SETUP.md](./SETUP.md)**
+`npm run db:push` needs the Supabase CLI linked to your project
+(`npx supabase link --project-ref <ref>`). Authentication will not work until
+the Clerk JWT template is registered with Supabase, and no one can manage
+content until a first superadmin row exists.
 
-### Available Scripts
+**Both of those steps, and the rest of the walkthrough, are in
+[SETUP.md](./SETUP.md).** Start there for a first-time setup.
 
-- `npm run dev` - Start development server with Turbopack
-- `npm run build` - Create production build
-- `npm start` - Start production server
+### Scripts
 
-## Project Structure
+| Command | What it does |
+|---|---|
+| `npm run dev` | Development server (Turbopack) on :3000 |
+| `npm run build` | Production build |
+| `npm start` | Serve the production build |
+| `npx tsc --noEmit` | Typecheck — the only standalone check in the repo |
+| `npm run db:push` | Apply pending migrations to the linked database |
+| `npm run db:pull` | Write the linked database's schema to a new migration |
+| `npm run db:diff` | Show the difference between migrations and the database |
+
+There is no test suite and no linter config. `npx tsc --noEmit` plus a build is
+the full verification path.
+
+> `next build` writes to `.next`, the same directory `npm run dev` serves from,
+> so building while the dev server runs will break it.
+
+## Project structure
 
 ```
 briar-chapel-connect/
 ├── app/
-│   ├── layout.tsx              # Root layout with Clerk provider
-│   ├── page.tsx                # Home page
-│   └── globals.css             # Global styles
+│   ├── api/                  # Route handlers (providers, events, groups,
+│   │                         #   marketplace, comments, reviews, uploads, admin)
+│   ├── services/             # Provider directory, by category and service
+│   ├── marketplace/          # Listings
+│   ├── events/               # Calendar and day list
+│   ├── groups/               # Groups and group detail
+│   ├── members/              # Member admin (role-gated)
+│   ├── sign-in/, sign-up/    # Clerk catch-all routes
+│   ├── layout.tsx            # Providers, header, theme no-flash script
+│   └── globals.css           # Tailwind entry and theme tokens
+├── components/
+│   ├── auth/                 # RoleProvider, RoleGate
+│   ├── common/               # App-specific composites (breadcrumbs, page header)
+│   ├── ui/                   # Generic primitives (cards, search, star rating)
+│   ├── layout/               # Header
+│   ├── theme/                # Light/dark toggle and provider
+│   ├── forum/                # Generic comment thread, reused by every entity
+│   └── events/, groups/, marketplace/, services/
 ├── lib/
-│   └── supabase/
-│       ├── client.ts           # Client-side Supabase client
-│       ├── server.ts           # Server-side Supabase client
-│       └── types.ts            # Database type definitions
-├── middleware.ts               # Clerk authentication middleware
-├── public/                     # Static assets
-├── supabase/migrations/       # Database schema (Supabase CLI)
-├── SETUP.md                    # Detailed setup instructions
-├── package.json                # Dependencies and scripts
-└── README.md                   # Project documentation
+│   ├── supabase/             # Four clients + generated Database types
+│   ├── auth/roles.ts         # superadmin > admin > client, requireRole()
+│   ├── api/                  # Shared response helpers and upload handling
+│   ├── data/                 # Static taxonomies (services, categories, types)
+│   ├── images/               # Client-side crop/downscale before upload
+│   └── utils/date.ts         # All event date handling
+├── scripts/                  # One-off provider seed scripts
+├── supabase/migrations/      # Schema, applied with the Supabase CLI
+├── middleware.ts             # Clerk route protection
+├── SETUP.md                  # First-time setup walkthrough
+├── NEXT_STEPS.md             # Roadmap and known gaps
+└── CLAUDE.md                 # Architecture notes and conventions
 ```
 
-## Development
-
-The application uses the Next.js App Router for routing and server components. Edit `app/page.tsx` to modify the home page, and changes will hot-reload automatically.
+`CLAUDE.md` is the most detailed description of how the pieces fit together —
+the Supabase client split, the role system, the services taxonomy and the
+database workflow. It is worth reading before making changes, whether or not
+you use Claude Code.
 
 ## Deployment
 
-The app can be deployed to:
-- **Vercel** (recommended) - Zero configuration deployment
-- **Any Node.js hosting** - Supports standard Node.js environments
-- **Docker** - Containerized deployment
-- **Static export** - For static hosting (if applicable)
+Not yet deployed. When you do deploy, create a **separate** Supabase project
+for production rather than pointing at your development database, and apply the
+schema to it with `npm run db:push`. See the deployment section of
+[NEXT_STEPS.md](./NEXT_STEPS.md).
 
 ## License
 
-Private - Briar Chapel Connect © 2025
+Private project. All rights reserved.

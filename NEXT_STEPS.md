@@ -1,220 +1,110 @@
-# Next Steps - Briar Chapel Connect
+# Roadmap and known gaps
 
-## Immediate Setup (Required to run the app)
+What exists, what is missing, and what is known to be broken. Setup lives in
+[SETUP.md](./SETUP.md); this file is only about what to build next.
 
-### 1. Create `.env.local` file
-Create this file in the root directory with:
+Last reviewed: 2026-09-22.
 
-```bash
-# Supabase - Already configured ✓
-NEXT_PUBLIC_SUPABASE_URL=https://utmmtfxjnkwwaxvtzkjg.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0bW10Znhqbmt3d2F4dnR6a2pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMTU5MTEsImV4cCI6MjA3Njc5MTkxMX0.upzxy11vlmS51RDF0TU1VPR_U9mSNEzZaBS64w-U7ww
+## Built
 
-# Clerk - Need to get these keys
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
+**Services** — directory driven by the static taxonomy in
+`lib/data/services.ts`, browsable by section and service, with cross-category
+search. Providers support logos (cropped and downscaled in the browser), tags,
+contact details and star ratings. Create, edit and delete are superadmin-only.
+130 providers are seeded across 22 categories.
 
-# Clerk URLs (keep as is)
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
-```
+**Marketplace** — listings with multiple images, category filter, and
+owner-only delete.
 
-### 2. Get Clerk API Keys
-1. Go to https://dashboard.clerk.com/sign-up
-2. Create a new application
-3. Go to **API Keys** section
-4. Copy your keys to `.env.local`
+**Events** — month calendar plus a day list sharing one bucketing helper.
+Admins can create and edit; events can be scoped to a group.
 
-### 3. Run Database Schema
-1. Open https://app.supabase.com
-2. Select your project
-3. Go to **SQL Editor**
-4. Apply the schema with `npm run db:push`
-5. Paste and **Run**
+**Groups** — list and detail pages, admin create and edit, member join/leave.
 
-### 4. Start Development Server
-```bash
-npm run dev
-```
+**Discussion** — one threaded `comments` table polymorphic over
+`(entity_type, entity_id)`, so marketplace items, events and groups all reuse
+the same components. Image attachments supported; admins can delete any
+comment.
 
-Visit http://localhost:3000
+**Roles** — `superadmin > admin > client`, enforced server-side by
+`requireRole()` and mirrored in the UI by `RoleGate`. Managed at `/members`.
 
----
+**Theme** — light/dark toggle in the header, remembered per browser, following
+the OS until the visitor chooses.
 
-## Feature Development Roadmap
+**Schema** — managed as Supabase CLI migrations in `supabase/migrations/`.
 
-### Phase 1: Core Pages (Week 1-2)
-- [ ] Create `/services` page - Browse local services
-- [ ] Create `/marketplace` page - Browse items for sale
-- [ ] Create `/events` page - Browse community events
-- [ ] Add search and filter functionality
-- [ ] Create listing detail pages
+## Gaps in what is already built
 
-### Phase 2: Create & Manage Listings (Week 3-4)
-- [ ] Service listing form with image upload
-- [ ] Marketplace item form with multiple images
-- [ ] Event creation form with date/time picker
-- [ ] User dashboard to manage their listings
-- [ ] Edit and delete functionality
+These are missing pieces in shipped features, roughly in priority order.
 
-### Phase 3: User Interaction (Week 5-6)
-- [ ] Contact service providers (email/phone)
-- [ ] Messaging system between users
-- [ ] Event RSVP functionality
-- [ ] Save/favorite items
-- [ ] User reviews and ratings
+- **Events and groups cannot be deleted.** No route exists for either, so a
+  mistaken entry can only be removed from the database directly.
+- **Marketplace listings cannot be edited**, only created and deleted.
+- **The event detail page is a placeholder.** `app/events/[id]/page.tsx`
+  renders "Scaffold placeholder" and nothing links to it. Events are the only
+  major entity with no detail view — and since comments are polymorphic, that
+  page is where event discussion would live.
+- **RSVP is not implemented.** `event_attendees` has a table, policies and
+  increment/decrement triggers, but nothing writes to it, so
+  `events.current_attendees` is always 0.
+- **Provider images leak.** Deleting a provider does not remove its logo from
+  the `provider-logos` bucket, and replacing a logo orphans the old file.
+  `removeStorageObjects()` already exists and the marketplace route uses it.
+- **`PATCH /api/providers` nulls optional fields on a partial update** —
+  sending only `{id, name}` blanks the provider's email, phone, location and
+  website. The events and groups PATCH routes show the pattern that avoids it.
 
-### Phase 4: Enhanced Features (Week 7-8)
-- [ ] User profiles with bio and contact info
-- [ ] Location-based filtering
-- [ ] Categories and tags
-- [ ] Notifications for new listings
-- [ ] Email alerts for saved searches
+## Known bugs
 
-### Phase 5: Polish & Launch (Week 9-10)
-- [ ] Mobile responsive optimization
-- [ ] Image optimization
-- [ ] SEO optimization
-- [ ] Analytics setup
+- `middleware.ts` rewrites signed-out `/api/*` requests to an **HTML 404**
+  rather than a JSON 401, despite the comment there stating the opposite.
+  Client code that expects `{ error }` JSON gets a Next error page.
+- `PATCH /api/providers` returns 500 for an unknown or malformed id; DELETE on
+  the same resource correctly returns 404.
+- `POST /api/providers` does not validate `category` against the taxonomy, so a
+  typo creates a provider no page can ever query.
+- The rating control is shown to signed-out visitors on public service pages;
+  submitting surfaces a raw JSON error.
+- Half stars render in the inherited slate color instead of amber, and every
+  rating emits a duplicate `id="half"` gradient.
+- Provider search does not escape `%` or `_`, so a query like `100%` matches
+  almost everything. It also searches only `title`, not `summary`.
+- `POST /api/service-reviews` accepts non-integer ratings and Postgres rounds
+  them, so a crafted request can nudge an average.
+
+## Infrastructure
+
+- **No production database.** One Supabase project exists and is treated as
+  development. Create a separate production project **before** the first
+  deploy — once real neighbors post to the current one it becomes production
+  by default, and splitting afterwards means migrating live data instead of
+  running the seed scripts.
+- **Not deployed anywhere.** No hosting configuration in the repo.
+- **The 22 seed scripts share a byte-identical 60-line tail** — about 1,300
+  duplicated lines. One runner plus per-category data modules would collapse
+  them.
+- **No tests and no linter.** `npx tsc --noEmit` plus a build is the whole
+  verification path.
+
+## Security checklist
+
+- [x] Row-level security enabled on all nine tables
+- [x] `user_roles` unreachable from the browser (RLS with no policies, plus
+      revoked grants), so a client cannot promote themselves
+- [x] Privileged writes enforced in the database, not only in the route —
+      creating providers, events and groups requires the service role
+- [x] Uploads sniff magic bytes rather than trusting the client MIME type,
+      capped at 2MB in the route *and* on the bucket
+- [x] Secrets kept out of `NEXT_PUBLIC_*` and out of git
+- [ ] Input validation across all routes (partial — see gaps above)
+- [ ] Rate limiting on API routes
+- [ ] Content moderation beyond admin comment deletion
 - [ ] Terms of service and privacy policy
-- [ ] Production deployment
+- [ ] Production deployment over HTTPS with its own Supabase project
 
----
+## Ideas not yet started
 
-## Suggested Component Structure
-
-```
-components/
-├── layout/
-│   ├── Header.tsx
-│   ├── Footer.tsx
-│   └── Sidebar.tsx
-├── services/
-│   ├── ServiceCard.tsx
-│   ├── ServiceForm.tsx
-│   ├── ServiceDetail.tsx
-│   └── ServiceFilters.tsx
-├── marketplace/
-│   ├── MarketplaceCard.tsx
-│   ├── MarketplaceForm.tsx
-│   ├── MarketplaceDetail.tsx
-│   └── MarketplaceFilters.tsx
-├── events/
-│   ├── EventCard.tsx
-│   ├── EventForm.tsx
-│   ├── EventDetail.tsx
-│   ├── EventFilters.tsx
-│   └── RSVPButton.tsx
-├── common/
-│   ├── SearchBar.tsx
-│   ├── CategoryPills.tsx
-│   ├── ImageUpload.tsx
-│   └── LoadingSpinner.tsx
-└── user/
-    ├── UserProfile.tsx
-    ├── UserDashboard.tsx
-    └── UserListings.tsx
-```
-
----
-
-## Recommended Libraries to Add
-
-### UI Components
-```bash
-npm install @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-select
-npm install lucide-react # Modern icons
-npm install react-hot-toast # Notifications
-```
-
-### Forms & Validation
-```bash
-npm install react-hook-form zod @hookform/resolvers
-```
-
-### Date/Time
-```bash
-npm install date-fns # Date formatting
-```
-
-### Image Upload
-```bash
-npm install react-dropzone # Drag & drop file upload
-```
-
-### Rich Text Editor (for descriptions)
-```bash
-npm install @tiptap/react @tiptap/starter-kit
-```
-
----
-
-## Database Tips
-
-### Querying with Supabase
-```typescript
-// Client-side example
-import { supabase } from '@/lib/supabase/client';
-
-// Get all active services
-const { data, error } = await supabase
-  .from('services')
-  .select('*')
-  .eq('status', 'active')
-  .order('created_at', { ascending: false });
-
-// Get marketplace items under $50
-const { data, error } = await supabase
-  .from('marketplace_items')
-  .select('*')
-  .lt('price', 50)
-  .eq('status', 'available');
-
-// Get upcoming events
-const { data, error } = await supabase
-  .from('events')
-  .select('*')
-  .gte('event_date', new Date().toISOString())
-  .eq('status', 'upcoming');
-```
-
-### Image Upload with Supabase Storage
-```typescript
-// Create buckets in Supabase dashboard first
-const { data, error } = await supabase.storage
-  .from('marketplace-images')
-  .upload(`${userId}/${fileName}`, file);
-
-// Get public URL
-const { data } = supabase.storage
-  .from('marketplace-images')
-  .getPublicUrl(filePath);
-```
-
----
-
-## Security Checklist
-
-- [x] Environment variables secured
-- [x] Row Level Security (RLS) enabled on all tables
-- [x] Authentication middleware configured
-- [ ] Input validation on all forms
-- [ ] Rate limiting for API routes
-- [ ] Image size/type validation
-- [ ] Content moderation for user-generated content
-- [ ] HTTPS in production
-- [ ] CORS configured properly
-
----
-
-## Ready to Start?
-
-1. ✅ Complete immediate setup (steps 1-4 above)
-2. ✅ Test authentication (sign up/sign in)
-3. ✅ Verify database connection
-4. 🚀 Start building Phase 1 features!
-
-See `SETUP.md` for detailed configuration instructions.
-
+Direct messaging between neighbors, saved/favorited listings, user profiles,
+notifications and email alerts, location-based filtering, and SEO and analytics
+for launch.
