@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clerkClient } from '@clerk/nextjs/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/server';
@@ -13,6 +14,38 @@ type PostBody = {
   content?: string;
   images?: string[];
 };
+
+/**
+ * Display names for comment authors, keyed by Clerk user ID.
+ *
+ * Resolved from Clerk on read rather than stored on the row, so existing
+ * comments get names too and a rename shows up everywhere. This endpoint is
+ * open to signed-out visitors, so the fallback stops at the person's name --
+ * never their email address. A Clerk failure degrades to unnamed comments
+ * rather than failing the whole thread.
+ */
+async function authorNames(userIds: string[]): Promise<Map<string, string>> {
+  const names = new Map<string, string>();
+  const unique = [...new Set(userIds)];
+  if (unique.length === 0) return names;
+
+  try {
+    const client = await clerkClient();
+    // getUserList caps both the id filter and the page at 100.
+    for (let i = 0; i < unique.length; i += 100) {
+      const batch = unique.slice(i, i + 100);
+      const { data: users } = await client.users.getUserList({ userId: batch, limit: batch.length });
+      for (const u of users) {
+        const fullName = [u.firstName, u.lastName].filter(Boolean).join(' ').trim();
+        const name = u.username || fullName;
+        if (name) names.set(u.id, name);
+      }
+    }
+  } catch (err) {
+    console.error('[Comments][GET] author lookup error:', err instanceof Error ? err.message : err);
+  }
+  return names;
+}
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -36,7 +69,10 @@ export async function GET(req: Request) {
     console.error('[Comments][GET] error:', error.message);
     return apiError(error, 'Failed to load comments');
   }
-  return NextResponse.json(data ?? [], { status: 200 });
+  const rows = data ?? [];
+  const names = await authorNames(rows.map((row) => row.user_id));
+  const withAuthors = rows.map((row) => ({ ...row, author_name: names.get(row.user_id) ?? null }));
+  return NextResponse.json(withAuthors, { status: 200 });
 }
 
 export async function POST(req: Request) {
