@@ -7,10 +7,11 @@ import RoleGate from '@/components/auth/RoleGate';
 import ThemeToggle from '@/components/theme/ThemeToggle';
 
 const NAV_LINKS = [
-  { href: '/services', label: 'Services' },
-  { href: '/marketplace', label: 'Marketplace' },
   { href: '/events', label: 'Events' },
   { href: '/groups', label: 'Groups' },
+  { href: '/marketplace', label: 'Marketplace' },
+  { href: '/services', label: 'Services' },
+  
 ] as const;
 
 function navLinkClass(active: boolean) {
