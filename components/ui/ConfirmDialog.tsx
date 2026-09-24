@@ -133,7 +133,7 @@ export default function ConfirmDialog({
           type="button"
           onClick={confirm}
           disabled={pending}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-70 dark:focus:ring-offset-slate-900"
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 hover:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-70 dark:border-red-800/60 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
           {pending ? pendingLabel : confirmLabel}
