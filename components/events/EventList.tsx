@@ -30,15 +30,21 @@ export default function EventList({
       ) : (
         <ul className="mt-3 space-y-3">
           {filtered.map((e) => (
-            <li key={e.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+            // The title link stretches over the whole card through its ::after,
+            // so the entire row is the click target; the admin controls sit
+            // above it (relative z-10) to stay clickable on their own.
+            <li
+              key={e.id}
+              className="group relative rounded-lg border border-slate-200 dark:border-slate-700 p-3 transition-colors hover:border-blue-300 hover:bg-blue-50/60 dark:hover:border-blue-700 dark:hover:bg-slate-700/50 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-blue-500"
+            >
               <div className="flex items-center justify-between gap-3">
                 <Link
                   href={`/events/${e.id}`}
-                  className="text-sm font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded truncate"
+                  className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 focus:outline-none truncate after:absolute after:inset-0 after:rounded-lg"
                 >
                   {e.title}
                 </Link>
-                <div className="flex items-center gap-2">
+                <div className="relative z-10 flex items-center gap-2">
                   {(() => {
                     const meta = getCategoryMeta(e.category || 'other');
                     return (

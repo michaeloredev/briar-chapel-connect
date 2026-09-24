@@ -8,6 +8,7 @@ import { getCategoryMeta } from '@/lib/data/event-categories';
 import { formatDateRange } from '@/lib/utils/date';
 import RoleGate from '@/components/auth/RoleGate';
 import EventFormDialog from '@/components/events/EventFormDialog';
+import AdminDeleteButton from '@/components/common/AdminDeleteButton';
 import CommentThread from '@/components/forum/CommentThread';
 import SetBreadcrumbTitle from '@/components/common/SetBreadcrumbTitle';
 
@@ -69,20 +70,30 @@ export default async function EventDetailPage({ params }: PageProps) {
             </h1>
           </div>
 
-          {/* Hides the control only -- PATCH /api/events enforces admin. */}
+          {/* Hides the controls only -- PATCH and DELETE /api/events enforce admin. */}
           <RoleGate minimum="admin">
-            <EventFormDialog
-              event={{
-                id: event.id,
-                title: event.title,
-                description: event.description,
-                category: event.category,
-                event_date: event.event_date,
-                end_date: event.end_date,
-                location: event.location,
-                address: event.address,
-              }}
-            />
+            <div className="flex items-start gap-2">
+              <EventFormDialog
+                event={{
+                  id: event.id,
+                  title: event.title,
+                  description: event.description,
+                  category: event.category,
+                  event_date: event.event_date,
+                  end_date: event.end_date,
+                  location: event.location,
+                  address: event.address,
+                }}
+              />
+              <AdminDeleteButton
+                endpoint="/api/events"
+                id={event.id}
+                redirectTo="/events"
+                noun="event"
+                name={event.title}
+                consequence="Its RSVPs and comments will be deleted too."
+              />
+            </div>
           </RoleGate>
         </div>
 

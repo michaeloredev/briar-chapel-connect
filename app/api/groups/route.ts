@@ -4,6 +4,7 @@ import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { requireRole } from '@/lib/auth/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
+import { deleteEntityComments } from '@/lib/api/comments';
 
 type Payload = {
   title?: string;
@@ -126,5 +127,45 @@ export async function PATCH(req: Request) {
     return NextResponse.json(data);
   } catch (err) {
     return apiError(err, 'Failed to update group');
+  }
+}
+
+/**
+ * Delete a group. Admin and above, any group -- the same people who can
+ * create and edit one. Memberships cascade through the foreign key. The
+ * group's events are kept -- that key is ON DELETE SET NULL, so they stay on
+ * the calendar as standalone events. Comments have no foreign key at all, so
+ * their thread is removed separately afterwards.
+ */
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const id = url.searchParams.get('id')?.trim();
+    if (!id) return apiBadRequest('Missing id');
+
+    const { userId } = await requireAuthSupabase();
+    await requireRole(userId, 'admin');
+    const admin = createAdminClient();
+
+    const { data: deleted, error } = await admin
+      .from('groups')
+      .delete()
+      .eq('id', id)
+      .select('id');
+
+    if (error) {
+      if (error.code === '22P02') return apiBadRequest('invalid id');
+      console.error('[Groups][DELETE] error:', error.message);
+      return apiError(error, 'Failed to delete group');
+    }
+    if (!deleted || deleted.length === 0) {
+      return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    }
+
+    await deleteEntityComments(admin, 'group', id);
+
+    return new NextResponse(null, { status: 204 });
+  } catch (err) {
+    return apiError(err, 'Failed to delete group');
   }
 }

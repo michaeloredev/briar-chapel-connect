@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { SignedIn } from '@clerk/nextjs';
 import CommentComposer from './CommentComposer';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 export type Comment = {
   id: string;
@@ -28,6 +29,7 @@ type Props = {
 
 export default function CommentItem({ comment, replies, rootId, onReply, onDelete, canDelete }: Props) {
   const [showReply, setShowReply] = React.useState(false);
+  const [confirmingDelete, setConfirmingDelete] = React.useState(false);
   const created = new Date(comment.created_at).toLocaleString();
   // Threads are capped at two levels: replies to a reply attach to its top-level comment.
   const replyTargetId = rootId ?? comment.id;
@@ -65,7 +67,7 @@ export default function CommentItem({ comment, replies, rootId, onReply, onDelet
           {canDelete(comment) ? (
             <button
               type="button"
-              onClick={() => onDelete(comment.id)}
+              onClick={() => setConfirmingDelete(true)}
               className="hover:underline text-red-600 dark:text-red-400"
             >
               Delete
@@ -73,6 +75,20 @@ export default function CommentItem({ comment, replies, rootId, onReply, onDelet
           ) : null}
         </SignedIn>
       </div>
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete this comment?"
+        description={
+          <p>
+            {replies.length > 0
+              ? `This comment and its ${replies.length === 1 ? 'reply' : `${replies.length} replies`} will be permanently deleted.`
+              : 'This comment will be permanently deleted.'}
+          </p>
+        }
+        confirmLabel="Delete comment"
+        onConfirm={() => onDelete(comment.id)}
+        onClose={() => setConfirmingDelete(false)}
+      />
       {showReply ? (
         <div className="mt-3">
           <SignedIn>
