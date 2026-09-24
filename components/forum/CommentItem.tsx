@@ -15,6 +15,8 @@ export type Comment = {
   parent_id: string | null;
   content: string;
   images?: string[];
+  /** Resolved from Clerk by GET /api/comments; null when the account has no name. */
+  author_name?: string | null;
 };
 
 type Props = {
@@ -36,7 +38,10 @@ export default function CommentItem({ comment, replies, rootId, onReply, onDelet
 
   return (
     <li className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-      <div className="text-sm text-slate-900 dark:text-slate-100 whitespace-pre-wrap">{comment.content}</div>
+      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        {comment.author_name || 'Community member'}
+      </div>
+      <div className="mt-1 text-sm text-slate-900 dark:text-slate-100 whitespace-pre-wrap">{comment.content}</div>
       {Array.isArray(comment.images) && comment.images.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-2">
           {comment.images.map((src, i) => (
