@@ -5,6 +5,7 @@ import { useRole } from '@/components/auth/RoleProvider';
 import { useRouter } from 'next/navigation';
 import type { MemberRow } from '@/app/api/admin/members/route';
 import type { AppRole } from '@/lib/auth/roles';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 const ROLE_LABELS: Record<AppRole, string> = {
   superadmin: 'Super Admin',
@@ -25,6 +26,7 @@ export default function MembersPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<MemberRow | null>(null);
   const [filters, setFilters] = useState<Record<AppRole, boolean>>({
     superadmin: true,
     admin: true,
@@ -80,22 +82,15 @@ export default function MembersPage() {
     }
   };
 
-  const handleDelete = async (userId: string, name: string) => {
-    if (!confirm(`Are you sure you want to permanently delete ${name}? This cannot be undone.`)) {
-      return;
+  const handleDelete = async (member: MemberRow) => {
+    const res = await fetch(`/api/admin/members?user_id=${encodeURIComponent(member.id)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.error || 'Failed to delete member');
     }
-    setUpdatingId(userId);
-    try {
-      const res = await fetch(`/api/admin/members?user_id=${encodeURIComponent(userId)}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error('Failed to delete member');
-      setMembers((prev) => prev.filter((m) => m.id !== userId));
-    } catch {
-      setError('Failed to delete member');
-    } finally {
-      setUpdatingId(null);
-    }
+    setMembers((prev) => prev.filter((m) => m.id !== member.id));
   };
 
   const toggleFilter = (role: AppRole) => {
@@ -222,7 +217,7 @@ export default function MembersPage() {
                         <button
                           type="button"
                           disabled={updatingId === m.id}
-                          onClick={() => handleDelete(m.id, m.name)}
+                          onClick={() => setPendingDelete(m)}
                           className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
                         >
                           Delete
@@ -239,6 +234,23 @@ export default function MembersPage() {
         <div className="mt-4 text-sm text-slate-500 dark:text-slate-400">
           Showing {visibleMembers.length} of {members.length} members
         </div>
+
+        <ConfirmDialog
+          open={pendingDelete !== null}
+          title="Delete this member?"
+          description={
+            pendingDelete ? (
+              <p>
+                <span className="font-medium text-slate-900 dark:text-white">{pendingDelete.name}</span>
+                {pendingDelete.email ? ` (${pendingDelete.email})` : null} will have their account
+                permanently deleted and lose access to Briar Chapel Connect.
+              </p>
+            ) : null
+          }
+          confirmLabel="Delete member"
+          onConfirm={() => handleDelete(pendingDelete!)}
+          onClose={() => setPendingDelete(null)}
+        />
       </div>
     </div>
   );

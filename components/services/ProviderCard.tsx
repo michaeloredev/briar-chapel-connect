@@ -6,6 +6,7 @@ import { Trash2, X, ChevronDown, Pencil } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import type { Database } from '@/lib/supabase/types';
 import StarRatingInput from '@/components/ui/StarRatingInput';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useRouter } from 'next/navigation';
 import { SignInButton, useAuth } from '@clerk/nextjs';
 
@@ -63,7 +64,7 @@ export function ProviderCard({
 }: ProviderCardProps) {
   const router = useRouter();
   const { isSignedIn, isLoaded } = useAuth();
-  const [deleting, setDeleting] = React.useState(false);
+  const [confirmingDelete, setConfirmingDelete] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [loadingRecord, setLoadingRecord] = React.useState(false);
   const [recordError, setRecordError] = React.useState<string | null>(null);
@@ -94,28 +95,14 @@ export function ProviderCard({
   }, [rating, reviewCount]);
 
   async function handleDelete() {
-    if (deleting) return;
-    const ok = window.confirm('Delete this provider? This action cannot be undone.');
-    if (!ok) return;
-    try {
-      setDeleting(true);
-      const res = await fetch(`/api/providers?id=${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg || 'Failed to delete provider');
-      }
-      if (onDeleted) {
-        onDeleted();
-      } else {
-        window.location.reload();
-      }
-    } catch (err) {
-      console.error('Delete failed', err);
-      alert('Failed to delete. Please try again.');
-    } finally {
-      setDeleting(false);
+    const res = await fetch(`/api/providers?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(await readFailedResponse(res, 'Failed to delete provider'));
+    if (onDeleted) {
+      onDeleted();
+    } else {
+      window.location.reload();
     }
   }
 
@@ -260,9 +247,8 @@ export function ProviderCard({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDelete();
+                  setConfirmingDelete(true);
                 }}
-                disabled={deleting}
                 className="p-2 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
                 title="Delete"
                 aria-label="Delete"
@@ -298,9 +284,8 @@ export function ProviderCard({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDelete();
+                  setConfirmingDelete(true);
                 }}
-                disabled={deleting}
                 className="p-2 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
                 title="Delete"
                 aria-label="Delete"
@@ -559,6 +544,21 @@ export function ProviderCard({
           </div>
         </div>
       </div>
+    ) : null}
+    {deletable ? (
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete this provider?"
+        description={
+          <p>
+            <span className="font-medium text-slate-900 dark:text-white">{name}</span> will be
+            permanently deleted, along with its reviews and logo.
+          </p>
+        }
+        confirmLabel="Delete provider"
+        onConfirm={handleDelete}
+        onClose={() => setConfirmingDelete(false)}
+      />
     ) : null}
     </>
   );
