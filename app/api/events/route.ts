@@ -24,9 +24,10 @@ export async function POST(req: Request) {
     const body: Payload = await req.json();
     const title = (body.title || '').trim();
     const description = (body.description || '').trim() || null;
-    const category = (body.category || 'general').trim() || 'general';
-    const event_date = (body.event_date || '').trim();
-    const end_date = (body.end_date || '')?.trim() || null;
+    // 'other' matches the form's default; 'general' is not a real category.
+    const category = (body.category || 'other').trim() || 'other';
+    const rawStart = (body.event_date || '').trim();
+    const rawEnd = (body.end_date || '')?.trim() || null;
     const location = (body.location || 'Briar Chapel').trim() || 'Briar Chapel';
     const address = (body.address || '')?.trim() || null;
     const max_attendees =
@@ -37,12 +38,21 @@ export async function POST(req: Request) {
     const group_id = (body.group_id || '')?.trim() || null;
 
     if (!title) return apiBadRequest('Missing title');
-    if (!event_date) return apiBadRequest('Missing event_date');
+    if (!rawStart) return apiBadRequest('Missing event_date');
+
+    // Parse here so a bad date is the caller's 400, not a Postgres 500 --
+    // matching what PATCH already does.
+    const start = new Date(rawStart);
+    if (Number.isNaN(start.getTime())) return apiBadRequest('invalid event_date');
+    const end = rawEnd ? new Date(rawEnd) : null;
+    if (end && Number.isNaN(end.getTime())) return apiBadRequest('invalid end_date');
+    const event_date = start.toISOString();
+    const end_date = end ? end.toISOString() : null;
 
     // An end before the start makes eventDayKeys() return an empty range, so
     // the event never appears on the calendar or in the day list. Rows created
     // before this check exist and have to be repaired by hand.
-    if (end_date && new Date(end_date) < new Date(event_date)) {
+    if (end && end < start) {
       return apiBadRequest('End date and time must be after the start');
     }
 

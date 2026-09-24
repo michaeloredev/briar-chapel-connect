@@ -7,7 +7,7 @@ import { SignedIn } from '@clerk/nextjs';
 import EventFormDialog from '@/components/events/EventFormDialog';
 import { PageHeader } from '@/components/common/PageHeader';
 import RoleGate from '@/components/auth/RoleGate';
-import { formatLocalDate, isValidYM, isValidYMD, parseYM } from '@/lib/utils/date';
+import { addDays, isValidYM, isValidYMD, parseYM, siteDayStart, siteToday } from '@/lib/utils/date';
 
 export const metadata: Metadata = {
   title: 'Events • Briar Chapel Connect',
@@ -16,28 +16,41 @@ export const metadata: Metadata = {
 
 type SearchParams = Promise<{ date?: string; month?: string }>;
 
+/** First day (YYYY-MM-DD) of the month `delta` months from `ym`. */
+function monthStart(ym: string, delta: number): string {
+  const { year, month } = parseYM(ym);
+  const d = new Date(Date.UTC(year, month + delta, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`;
+}
+
 export default async function EventsPage({ searchParams }: { searchParams: SearchParams }) {
   const { date, month } = await searchParams;
 
   // The URL is the single source of truth for both the selected day and the
-  // month on screen, so the calendar and the list can never disagree.
-  // These server-side defaults only cover the first paint; EventCalendar
-  // rewrites the URL on mount when the viewer's "today" differs from ours.
-  const selectedYMD = isValidYMD(date) ? date : formatLocalDate(new Date());
+  // month on screen, so the calendar and the list can never disagree. With
+  // no day in the URL, "today" is Briar Chapel's today -- the same on the
+  // server and in every browser, so nothing needs correcting after load.
+  const selectedYMD = isValidYMD(date) ? date : siteToday();
   const viewedYM = isValidYM(month) ? month : selectedYMD.slice(0, 7);
 
-  // Fetch a window around the month on screen so its dots are populated.
-  const { year, month: monthIndex } = parseYM(viewedYM);
-  const start = new Date(year, monthIndex - 1, 1);
-  const end = new Date(year, monthIndex + 2, 0, 23, 59, 59, 999);
+  // Load a window around the month on screen so its dots are populated,
+  // stretched to cover the selected day: paging months away from it must not
+  // leave its list reading "No events scheduled" for want of data.
+  // Keys are YYYY-MM-DD, so string order is date order.
+  const from = [monthStart(viewedYM, -1), selectedYMD].sort()[0];
+  const until = [monthStart(viewedYM, 2), addDays(selectedYMD, 1)].sort()[1];
+  const fromISO = siteDayStart(from).toISOString();
+  const untilISO = siteDayStart(until).toISOString();
 
+  // Overlap, not start date: an event that began before the window but is
+  // still running inside it belongs on these days too.
   const supabase = await createClient();
   type Row = Database['public']['Tables']['events']['Row'];
   const { data: rows, error } = await supabase
     .from('events')
     .select('*')
-    .gte('event_date', start.toISOString())
-    .lte('event_date', end.toISOString())
+    .lt('event_date', untilISO)
+    .or(`end_date.gte."${fromISO}",and(end_date.is.null,event_date.gte."${fromISO}")`)
     .order('event_date', { ascending: true })
     .returns<Row[]>();
   if (error) {

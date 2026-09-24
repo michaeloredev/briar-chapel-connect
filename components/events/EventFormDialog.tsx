@@ -1,10 +1,11 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { Pencil, Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { EVENT_CATEGORIES, getCategoryMeta } from '@/lib/data/event-categories';
-import { toDateTimeLocalValue } from '@/lib/utils/date';
+import { fromDateTimeLocalValue, toDateTimeLocalValue } from '@/lib/utils/date';
 
 /**
  * Moving the start of an event should carry its end along, the way a calendar
@@ -12,14 +13,13 @@ import { toDateTimeLocalValue } from '@/lib/utils/date';
  * pair inverts -- which reads to the user as the form rejecting a valid edit.
  */
 function shiftEndWithStart(prevStart: string, nextStart: string, end: string): string {
-  if (!end || !prevStart || !nextStart) return end;
-  const prev = new Date(prevStart);
-  const next = new Date(nextStart);
-  const endDate = new Date(end);
-  if ([prev, next, endDate].some((d) => Number.isNaN(d.getTime()))) return end;
+  const prev = fromDateTimeLocalValue(prevStart);
+  const next = fromDateTimeLocalValue(nextStart);
+  const endISO = fromDateTimeLocalValue(end);
+  if (!prev || !next || !endISO) return end;
 
-  const shifted = new Date(endDate.getTime() + (next.getTime() - prev.getTime()));
-  return toDateTimeLocalValue(shifted.toISOString());
+  const delta = new Date(next).getTime() - new Date(prev).getTime();
+  return toDateTimeLocalValue(new Date(new Date(endISO).getTime() + delta).toISOString());
 }
 
 /** Routes answer with `{ error }` JSON; surface that rather than the raw body. */
@@ -48,7 +48,18 @@ export type EditableEvent = {
   end_date?: string | null;
   location?: string | null;
   address?: string | null;
+  status?: string | null;
 };
+
+/**
+ * The form offers only these two. The table also allows 'ongoing' and
+ * 'completed', but nothing keeps them current -- whether an event is past
+ * follows from its date -- so they are never written from here.
+ */
+const STATUS_OPTIONS = [
+  { value: 'upcoming', label: 'Scheduled' },
+  { value: 'cancelled', label: 'Cancelled' },
+] as const;
 
 type Props = {
   className?: string;
@@ -90,6 +101,7 @@ export default function EventFormDialog({
   const [end, setEnd] = React.useState(toDateTimeLocalValue(event?.end_date));
   const [location, setLocation] = React.useState(event?.location ?? defaultLocation);
   const [address, setAddress] = React.useState(event?.address ?? '');
+  const [status, setStatus] = React.useState(event?.status === 'cancelled' ? 'cancelled' : 'upcoming');
 
   React.useEffect(() => {
     if (isEdit) return;
@@ -106,6 +118,19 @@ export default function EventFormDialog({
     setEnd(toDateTimeLocalValue(event?.end_date));
     setLocation(event?.location ?? defaultLocation);
     setAddress(event?.address ?? '');
+    setStatus(event?.status === 'cancelled' ? 'cancelled' : 'upcoming');
+  }
+
+  function openDialog() {
+    // In edit mode, always open on the stored row: this discards edits from
+    // a cancelled attempt and picks up changes that arrived since mount.
+    if (isEdit) resetForm();
+    setError(null);
+    setOpen(true);
+  }
+
+  function closeDialog() {
+    if (!loading) setOpen(false);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -115,13 +140,15 @@ export default function EventFormDialog({
     try {
       if (!title.trim()) { setError('Title is required.'); return; }
       if (!start) { setError('Start date/time is required.'); return; }
-      if (end && new Date(end) < new Date(start)) {
+      // Both inputs are read as Briar Chapel time, not the browser's zone.
+      const startISO = fromDateTimeLocalValue(start);
+      const endISO = end ? fromDateTimeLocalValue(end) : null;
+      if (!startISO) { setError('Start date/time is invalid.'); return; }
+      if (end && !endISO) { setError('End date/time is invalid.'); return; }
+      if (endISO && new Date(endISO) < new Date(startISO)) {
         setError('End date and time must be after the start.');
         return;
       }
-
-      const startISO = new Date(start).toISOString();
-      const endISO = end ? new Date(end).toISOString() : undefined;
 
       const payload: Record<string, unknown> = {
         title: title.trim(),
@@ -130,14 +157,20 @@ export default function EventFormDialog({
         event_date: startISO,
         // PATCH treats undefined as "leave alone", so an edit that clears the
         // end date has to send null explicitly.
-        end_date: isEdit ? (endISO ?? null) : endISO,
+        end_date: isEdit ? endISO : (endISO ?? undefined),
         location: location.trim() || 'Briar Chapel',
       };
       if (!fixedCategory) {
         payload.address = isEdit ? (address.trim() || null) : (address.trim() || undefined);
       }
       if (groupId) payload.group_id = groupId;
-      if (isEdit) payload.id = event!.id;
+      if (isEdit) {
+        payload.id = event!.id;
+        // Only when changed, so saving an unrelated field cannot overwrite a
+        // status this form does not offer.
+        const original = event!.status === 'cancelled' ? 'cancelled' : 'upcoming';
+        if (status !== original) payload.status = status;
+      }
 
       const res = await fetch('/api/events', {
         method: isEdit ? 'PATCH' : 'POST',
@@ -169,7 +202,7 @@ export default function EventFormDialog({
             ? `inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`
             : `inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`
         }
-        onClick={() => setOpen(true)}
+        onClick={openDialog}
         aria-haspopup="dialog"
         aria-expanded={open}
         title={isEdit ? `Edit ${event!.title}` : label}
@@ -178,7 +211,10 @@ export default function EventFormDialog({
         {label}
       </button>
 
-      {open && (
+      {/* Portalled to <body>: rendered in place, the dialog inherits the
+          stacking context of whatever holds the button -- in the day list,
+          that is a z-10 layer later rows paint over. */}
+      {open && createPortal(
         <div
           role="dialog"
           aria-modal="true"
@@ -186,7 +222,7 @@ export default function EventFormDialog({
         >
           <div
             className="absolute inset-0 bg-black/50"
-            onClick={() => !loading && setOpen(false)}
+            onClick={closeDialog}
           />
           <div className="relative z-10 w-full max-w-lg rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
@@ -194,7 +230,7 @@ export default function EventFormDialog({
               <button
                 type="button"
                 className="p-1 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onClick={() => !loading && setOpen(false)}
+                onClick={closeDialog}
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />
@@ -293,6 +329,23 @@ export default function EventFormDialog({
                   </div>
                 )}
 
+                {isEdit && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Status</label>
+                    <select
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value as typeof status)}
+                      className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {STATUS_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {showAddress && (
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Address</label>
@@ -312,7 +365,7 @@ export default function EventFormDialog({
                 <button
                   type="button"
                   className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-                  onClick={() => setOpen(false)}
+                  onClick={closeDialog}
                   disabled={loading}
                 >
                   Cancel
@@ -327,7 +380,8 @@ export default function EventFormDialog({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

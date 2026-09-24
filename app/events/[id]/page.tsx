@@ -83,6 +83,7 @@ export default async function EventDetailPage({ params }: PageProps) {
                   end_date: event.end_date,
                   location: event.location,
                   address: event.address,
+                  status: event.status,
                 }}
               />
               <AdminDeleteButton

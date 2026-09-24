@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getCategoryMeta } from '@/lib/data/event-categories';
-import { eventDayKeys, formatLocalDate, formatLocalMonth, parseYM } from '@/lib/utils/date';
+import { eventDayKeys, formatLocalDate, formatLocalMonth, formatMonthHeading, parseYM } from '@/lib/utils/date';
 import type { EventListItem } from './types';
 
 export default function EventCalendar({
@@ -38,26 +38,19 @@ export default function EventCalendar({
     [params, router],
   );
 
-  // The server defaults the selected day to *its* today. When the viewer is in
-  // a different timezone that can be the wrong day, so pin the URL to the
-  // browser's today on first paint if no day was explicitly requested.
-  React.useEffect(() => {
-    if (params.get('date')) return;
-    const now = new Date();
-    const today = formatLocalDate(now);
-    if (today === selectedYMD) return;
-    navigate({ date: today, month: formatLocalMonth(now) }, true);
-  }, [params, selectedYMD, navigate]);
-
-  // Bucketing happens here, in the viewer's timezone, and spans every day a
-  // multi-day event covers so the dots match what the day list shows.
+  // Bucketing runs through eventDayKeys, the same helper as the day list, and
+  // spans every day a multi-day event covers so the dots match the list. A
+  // category's dot is faded when every event of it that day is cancelled.
   const dayCategories = React.useMemo(() => {
-    const map: Record<string, string[]> = {};
+    const map: Record<string, Array<{ category: string; cancelled: boolean }>> = {};
     for (const e of events) {
       const category = (e.category || 'other').trim() || 'other';
+      const cancelled = e.status === 'cancelled';
       for (const key of eventDayKeys(e.date, e.endDate)) {
-        const cats = map[key] ?? (map[key] = []);
-        if (!cats.includes(category) && cats.length < 3) cats.push(category);
+        const dots = map[key] ?? (map[key] = []);
+        const existing = dots.find((dot) => dot.category === category);
+        if (existing) existing.cancelled &&= cancelled;
+        else if (dots.length < 3) dots.push({ category, cancelled });
       }
     }
     return map;
@@ -88,7 +81,7 @@ export default function EventCalendar({
     weeks.push(week);
   }
 
-  const monthName = firstOfMonth.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+  const monthName = formatMonthHeading(viewYear, viewMonth);
 
   return (
     <div
@@ -151,9 +144,14 @@ export default function EventCalendar({
                 </button>
                 {cats.length > 0 ? (
                   <div className="mt-1 flex gap-1">
-                    {cats.map((c, idx) => {
-                      const meta = getCategoryMeta(c);
-                      return <span key={c + idx} className={['w-2 h-2 rounded-full', meta.dotClasses].join(' ')} />;
+                    {cats.map(({ category, cancelled }) => {
+                      const meta = getCategoryMeta(category);
+                      return (
+                        <span
+                          key={category}
+                          className={['w-2 h-2 rounded-full', meta.dotClasses, cancelled ? 'opacity-30' : ''].join(' ')}
+                        />
+                      );
                     })}
                   </div>
                 ) : null}
