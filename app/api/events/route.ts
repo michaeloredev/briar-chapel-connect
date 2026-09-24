@@ -4,6 +4,7 @@ import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { requireRole } from '@/lib/auth/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
+import { deleteEntityComments } from '@/lib/api/comments';
 
 type Payload = {
   title?: string;
@@ -190,5 +191,44 @@ export async function PATCH(req: Request) {
     return NextResponse.json(data);
   } catch (err) {
     return apiError(err, 'Failed to update event');
+  }
+}
+
+/**
+ * Delete an event. Admin and above, any event -- the same people who can
+ * create and edit one. RSVPs in event_attendees cascade through the foreign
+ * key; comments have no foreign key, so their thread is removed separately
+ * afterwards.
+ */
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const id = url.searchParams.get('id')?.trim();
+    if (!id) return apiBadRequest('Missing id');
+
+    const { userId } = await requireAuthSupabase();
+    await requireRole(userId, 'admin');
+    const admin = createAdminClient();
+
+    const { data: deleted, error } = await admin
+      .from('events')
+      .delete()
+      .eq('id', id)
+      .select('id');
+
+    if (error) {
+      if (error.code === '22P02') return apiBadRequest('invalid id');
+      console.error('[Events][DELETE] error:', error.message);
+      return apiError(error, 'Failed to delete event');
+    }
+    if (!deleted || deleted.length === 0) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    }
+
+    await deleteEntityComments(admin, 'event', id);
+
+    return new NextResponse(null, { status: 204 });
+  } catch (err) {
+    return apiError(err, 'Failed to delete event');
   }
 }

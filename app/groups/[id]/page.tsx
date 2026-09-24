@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 import EventFormDialog from '@/components/events/EventFormDialog';
 import GroupFormDialog from '@/components/groups/GroupFormDialog';
+import AdminDeleteButton from '@/components/common/AdminDeleteButton';
 import RoleGate from '@/components/auth/RoleGate';
 import SetBreadcrumbTitle from '@/components/common/SetBreadcrumbTitle';
 
@@ -34,6 +35,7 @@ export default async function GroupDetailPage({ params }: PageProps) {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{group.title}</h1>
+          {/* Hides the controls only -- /api/groups enforces admin. */}
           <RoleGate minimum="admin">
             <div className="flex items-center gap-2">
               <GroupFormDialog
@@ -51,6 +53,14 @@ export default async function GroupDetailPage({ params }: PageProps) {
                 defaultLocation={group.location ?? 'Briar Chapel'}
                 fixedCategory="group"
                 groupId={group.id}
+              />
+              <AdminDeleteButton
+                endpoint="/api/groups"
+                id={group.id}
+                redirectTo="/groups"
+                noun="group"
+                name={group.title}
+                consequence="Its memberships will be removed; its events stay on the calendar without a group."
               />
             </div>
           </RoleGate>
