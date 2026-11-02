@@ -10,9 +10,16 @@ type Props = {
   entityType: string;
   entityId: string;
   className?: string;
+  /**
+   * False makes the thread read-only for a signed-in visitor who may not post
+   * here, showing `readOnlyNotice` in place of the composer. The API and RLS
+   * enforce the same rule; this only spares people a form that would fail.
+   */
+  canPost?: boolean;
+  readOnlyNotice?: React.ReactNode;
 };
 
-export default function CommentThread({ entityType, entityId, className = '' }: Props) {
+export default function CommentThread({ entityType, entityId, className = '', canPost = true, readOnlyNotice }: Props) {
   const { userId } = useAuth();
   const { hasRole } = useRole();
   const [comments, setComments] = React.useState<Comment[] | null>(null);
@@ -139,7 +146,11 @@ export default function CommentThread({ entityType, entityId, className = '' }: 
       {error ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <div className="mt-3">
         <SignedIn>
-          <CommentComposer onSubmit={(text, images) => postWithImages(text, images)} />
+          {canPost ? (
+            <CommentComposer onSubmit={(text, images) => postWithImages(text, images)} />
+          ) : (
+            readOnlyNotice ?? null
+          )}
         </SignedIn>
         <SignedOut>
           <SignInButton mode="modal">
@@ -162,6 +173,7 @@ export default function CommentThread({ entityType, entityId, className = '' }: 
                 onReply={(pid, text, images) => postWithImages(text, images, pid)}
                 onDelete={(id) => handleDelete(id)}
                 canDelete={canDelete}
+                canReply={canPost}
               />
             ))}
           </ul>

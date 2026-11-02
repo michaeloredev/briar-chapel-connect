@@ -27,9 +27,11 @@ type Props = {
   onReply: (parentId: string, content: string, images: string[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   canDelete: (c: Comment) => boolean;
+  /** False hides Reply, for read-only threads (e.g. a group you haven't joined). */
+  canReply?: boolean;
 };
 
-export default function CommentItem({ comment, replies, rootId, onReply, onDelete, canDelete }: Props) {
+export default function CommentItem({ comment, replies, rootId, onReply, onDelete, canDelete, canReply = true }: Props) {
   const [showReply, setShowReply] = React.useState(false);
   const [confirmingDelete, setConfirmingDelete] = React.useState(false);
   const created = new Date(comment.created_at).toLocaleString();
@@ -62,13 +64,15 @@ export default function CommentItem({ comment, replies, rootId, onReply, onDelet
       <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
         <span>{created}</span>
         <SignedIn>
-          <button
-            type="button"
-            onClick={() => setShowReply((v) => !v)}
-            className="hover:underline"
-          >
-            {showReply ? 'Cancel' : 'Reply'}
-          </button>
+          {canReply ? (
+            <button
+              type="button"
+              onClick={() => setShowReply((v) => !v)}
+              className="hover:underline"
+            >
+              {showReply ? 'Cancel' : 'Reply'}
+            </button>
+          ) : null}
           {canDelete(comment) ? (
             <button
               type="button"
@@ -118,6 +122,7 @@ export default function CommentItem({ comment, replies, rootId, onReply, onDelet
               onReply={onReply}
               onDelete={onDelete}
               canDelete={canDelete}
+              canReply={canReply}
             />
           ))}
         </ul>

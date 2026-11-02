@@ -151,6 +151,27 @@ export function formatDateRange(startISO: string, endISO: string | null): string
   return `${startStr} – ${(sameDay ? timeFormatter : dateTimeFormatter).format(end)}`;
 }
 
+/** "7:30 PM" for an instant, in Briar Chapel time. */
+export function formatTime(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : timeFormatter.format(d);
+}
+
+const dateTileFormatter = new Intl.DateTimeFormat(SITE_LOCALE, {
+  timeZone: SITE_TIME_ZONE,
+  weekday: 'short',
+  day: 'numeric',
+});
+
+/** Short weekday and day of month ("Sat", "6") for a compact date tile, in Briar Chapel time. */
+export function formatDateTile(iso: string): { weekday: string; day: string } | null {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const p: Record<string, string> = {};
+  for (const part of dateTileFormatter.formatToParts(d)) p[part.type] = part.value;
+  return { weekday: p.weekday, day: p.day };
+}
+
 /** "Wednesday, September 23" for a YYYY-MM-DD key. */
 export function formatDayHeading(ymd: string): string {
   const [y, m, d] = ymd.split('-').map(Number);

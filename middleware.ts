@@ -11,6 +11,10 @@ const isPublicRoute = createRouteMatcher([
   '/marketplace(.*)',
   '/events(.*)',
   '/groups(.*)',
+  // Support stays reachable signed out: a neighbor who can't sign in is
+  // exactly who needs it.
+  '/support',
+  '/api/support',
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

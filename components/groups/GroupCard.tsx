@@ -1,6 +1,7 @@
-import * as React from 'react';
 import Link from 'next/link';
-import type { LucideIcon } from 'lucide-react';
+import { ArrowRight, MapPin } from 'lucide-react';
+import { GROUP_TYPES } from '@/lib/data/group-types';
+import { groupIconMeta } from '@/lib/data/group-icon-meta';
 import JoinGroupButton from './JoinGroupButton';
 
 export type GroupCardProps = {
@@ -8,83 +9,86 @@ export type GroupCardProps = {
   title: string;
   description?: string;
   location?: string | null;
-  typeLabel?: string;
+  type: string;
   imageUrl?: string | null;
-  className?: string;
-  href?: string;
-  icon?: LucideIcon;
-  iconColorClass?: string;
-  iconBgClass?: string;
-  showJoinButton?: boolean;
+  /** Chosen icon key; falls back to the type's icon. */
+  icon?: string | null;
   isMember?: boolean;
 };
 
-export default function GroupCard({
-  id,
-  title,
-  description,
-  location,
-  typeLabel,
-  imageUrl,
-  className = '',
-  href,
-  icon: Icon,
-  iconColorClass,
-  iconBgClass,
-  showJoinButton = true,
-  isMember = false,
-}: GroupCardProps) {
+export default function GroupCard({ id, title, description, location, type, imageUrl, icon, isMember = false }: GroupCardProps) {
+  const meta = GROUP_TYPES.find((t) => t.value === type);
+  const avatar = groupIconMeta({ type, icon });
+  const Icon = avatar.icon;
+
   return (
-    <Link
-      href={href ?? `/groups/${id}`}
-      className={`block rounded-xl border border-slate-200 dark:border-slate-700 p-6 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
-      aria-label={`View group ${title}`}
-    >
+    // The title link stretches over the whole card through its ::after, so the
+    // card is one click target without wrapping the Join button in a link;
+    // the button sits above it (relative z-10) to stay clickable on its own.
+    <article className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-blue-500 dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-start gap-4">
         {imageUrl ? (
           <img
             src={imageUrl}
-            alt={`${title} logo`}
-            className="w-14 h-14 rounded-lg object-cover bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+            alt=""
+            className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 bg-slate-100 object-cover dark:border-slate-700 dark:bg-slate-900"
             width={56}
             height={56}
           />
-        ) : Icon ? (
-          <div
+        ) : (
+          <span
             className={[
-              'w-14 h-14 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700',
-              iconBgClass ?? 'bg-slate-100 dark:bg-slate-800',
+              'flex h-14 w-14 shrink-0 items-center justify-center rounded-xl',
+              avatar.bg,
             ].join(' ')}
           >
-            <Icon className={['w-7 h-7', iconColorClass ?? 'text-slate-600 dark:text-slate-300'].join(' ')} aria-hidden />
-          </div>
-        ) : null}
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
-          {description ? (
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{description}</p>
-          ) : null}
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-            {typeLabel ? (
-              <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-slate-700 dark:text-slate-200">
-                {typeLabel}
-              </span>
-            ) : null}
-            {location ? (
-              <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-slate-700 dark:text-slate-200">
-                {location}
+            <Icon className={['h-7 w-7', avatar.color].join(' ')} aria-hidden />
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <h3>
+            <Link
+              href={`/groups/${id}`}
+              className="text-lg font-semibold text-slate-900 group-hover:text-blue-600 focus:outline-none after:absolute after:inset-0 after:rounded-2xl dark:text-white dark:group-hover:text-blue-400"
+            >
+              {title}
+            </Link>
+          </h3>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <span
+              className={[
+                'rounded-full px-2 py-0.5 text-xs font-medium',
+                meta ? `${meta.colorClasses.bg} ${meta.colorClasses.icon}` : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+              ].join(' ')}
+            >
+              {meta?.label ?? type}
+            </span>
+            {isMember ? (
+              <span className="rounded-full border border-blue-400 px-2 py-0.5 text-xs font-medium text-blue-500 dark:border-blue-400 dark:text-blue-400">
+                Member
               </span>
             ) : null}
           </div>
         </div>
-        {showJoinButton ? (
-          <div className="ml-auto">
-            <JoinGroupButton groupId={id} isMember={isMember} />
-          </div>
-        ) : null}
       </div>
-    </Link>
+
+      {description ? (
+        <p className="mt-4 line-clamp-3 text-sm text-slate-600 dark:text-slate-300">{description}</p>
+      ) : null}
+      {location ? (
+        <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
+          <MapPin className="h-4 w-4 text-slate-400" aria-hidden />
+          {location}
+        </p>
+      ) : null}
+
+      <div className="mt-auto flex items-center justify-between gap-3 pt-5">
+        <JoinGroupButton groupId={id} isMember={isMember} className="relative z-10" />
+        <span className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400" aria-hidden>
+          View group
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div>
+    </article>
   );
 }
-
-

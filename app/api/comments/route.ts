@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { clerkClient } from '@clerk/nextjs/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getUserRole, hasRole } from '@/lib/auth/roles';
-import { apiError, apiBadRequest } from '@/lib/api/response';
+import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
+import { authorNames } from '@/lib/api/user-names';
+import { isGroupMember } from '@/lib/api/group-membership';
 
 type PostBody = {
   entity_type?: string;
@@ -14,38 +15,6 @@ type PostBody = {
   content?: string;
   images?: string[];
 };
-
-/**
- * Display names for comment authors, keyed by Clerk user ID.
- *
- * Resolved from Clerk on read rather than stored on the row, so existing
- * comments get names too and a rename shows up everywhere. This endpoint is
- * open to signed-out visitors, so the fallback stops at the person's name --
- * never their email address. A Clerk failure degrades to unnamed comments
- * rather than failing the whole thread.
- */
-async function authorNames(userIds: string[]): Promise<Map<string, string>> {
-  const names = new Map<string, string>();
-  const unique = [...new Set(userIds)];
-  if (unique.length === 0) return names;
-
-  try {
-    const client = await clerkClient();
-    // getUserList caps both the id filter and the page at 100.
-    for (let i = 0; i < unique.length; i += 100) {
-      const batch = unique.slice(i, i + 100);
-      const { data: users } = await client.users.getUserList({ userId: batch, limit: batch.length });
-      for (const u of users) {
-        const fullName = [u.firstName, u.lastName].filter(Boolean).join(' ').trim();
-        const name = u.username || fullName;
-        if (name) names.set(u.id, name);
-      }
-    }
-  } catch (err) {
-    console.error('[Comments][GET] author lookup error:', err instanceof Error ? err.message : err);
-  }
-  return names;
-}
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -89,6 +58,12 @@ export async function POST(req: Request) {
     }
 
     const { supabase, userId } = await requireAuthSupabase();
+
+    // Group discussion is members-only. The comments insert policy enforces
+    // this too; checking here turns the refusal into a message people can act on.
+    if (entity_type === 'group' && !(await isGroupMember(entity_id, userId))) {
+      return apiForbidden('Join the group to comment');
+    }
 
     if (parent_id) {
       type Row = Database['public']['Tables']['comments']['Row'];

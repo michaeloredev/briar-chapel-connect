@@ -29,6 +29,15 @@ export function apiError(
 }
 
 /**
+ * Forbidden response (403) with a message the UI can show as-is, for refusals
+ * the person can act on ("join the group first"). A bare permission failure
+ * should throw Error('Forbidden') and go through apiError instead.
+ */
+export function apiForbidden(message: string): NextResponse {
+  return NextResponse.json({ error: message }, { status: 403 });
+}
+
+/**
  * Validation-error response (400).
  */
 export function apiBadRequest(message: string): NextResponse {

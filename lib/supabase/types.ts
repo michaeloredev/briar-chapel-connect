@@ -165,6 +165,8 @@ export interface Database {
           location: string | null;
           status: 'active' | 'inactive';
           image_url: string | null;
+          /** Key from lib/data/group-icons.ts; null shows the type's icon. */
+          icon: string | null;
         };
         Insert: {
           user_id: string;
@@ -174,6 +176,7 @@ export interface Database {
           location?: string | null;
           status?: 'active' | 'inactive';
           image_url?: string | null;
+          icon?: string | null;
         };
         Update: Partial<Database['public']['Tables']['groups']['Insert']>;
       };
@@ -206,6 +209,81 @@ export interface Database {
           status?: 'active' | 'inactive';
         };
         Update: Partial<Database['public']['Tables']['group_members']['Insert']>;
+      };
+      group_polls: {
+        Row: {
+          id: string;
+          created_at: string;
+          group_id: string;
+          user_id: string;
+          question: string;
+          allow_multiple: boolean;
+          allow_member_options: boolean;
+          closes_at: string | null;
+          closed_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['group_polls']['Row'], 'id' | 'created_at' | 'closed_at'> & { closed_at?: string | null };
+        Update: Partial<Database['public']['Tables']['group_polls']['Insert']>;
+      };
+      group_poll_options: {
+        Row: {
+          id: string;
+          created_at: string;
+          poll_id: string;
+          user_id: string;
+          label: string;
+          position: number;
+        };
+        Insert: Omit<Database['public']['Tables']['group_poll_options']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['group_poll_options']['Insert']>;
+      };
+      group_poll_votes: {
+        Row: {
+          id: string;
+          created_at: string;
+          poll_id: string;
+          option_id: string;
+          user_id: string;
+        };
+        Insert: Omit<Database['public']['Tables']['group_poll_votes']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['group_poll_votes']['Insert']>;
+      };
+      group_signups: {
+        Row: {
+          id: string;
+          created_at: string;
+          group_id: string;
+          user_id: string;
+          title: string;
+          description: string | null;
+          closed_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['group_signups']['Row'], 'id' | 'created_at' | 'closed_at'> & { closed_at?: string | null };
+        Update: Partial<Database['public']['Tables']['group_signups']['Insert']>;
+      };
+      group_signup_slots: {
+        Row: {
+          id: string;
+          created_at: string;
+          signup_id: string;
+          label: string;
+          /** Null means unlimited. */
+          capacity: number | null;
+          position: number;
+        };
+        Insert: Omit<Database['public']['Tables']['group_signup_slots']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['group_signup_slots']['Insert']>;
+      };
+      group_signup_claims: {
+        Row: {
+          id: string;
+          created_at: string;
+          slot_id: string;
+          user_id: string;
+          note: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['group_signup_claims']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['group_signup_claims']['Insert']>;
       };
     };
     Views: {
