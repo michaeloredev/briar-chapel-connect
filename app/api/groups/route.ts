@@ -5,6 +5,30 @@ import { requireRole } from '@/lib/auth/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 import { deleteEntityComments } from '@/lib/api/comments';
+import { removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
+import { isGroupIcon } from '@/lib/data/group-icon-meta';
+
+const IMAGE_BUCKET = 'group-images';
+
+/**
+ * Normalize an incoming picture: null clears it, anything else must be an
+ * object in the group-images bucket (as /api/uploads/group-image returns), so
+ * a group can't be pointed at an arbitrary external URL.
+ */
+function parseImageUrl(value: string | null | undefined): { ok: true; value: string | null } | { ok: false } {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return { ok: true, value: null };
+  const projectUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/+$/, '');
+  const ours = Boolean(projectUrl) && trimmed.startsWith(`${projectUrl}/`);
+  return ours && storageObjectPath(trimmed, IMAGE_BUCKET) ? { ok: true, value: trimmed } : { ok: false };
+}
+
+/** null clears the chosen icon (back to the type's); anything else must be a known key. */
+function parseIcon(value: string | null | undefined): { ok: true; value: string | null } | { ok: false } {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return { ok: true, value: null };
+  return isGroupIcon(trimmed) ? { ok: true, value: trimmed } : { ok: false };
+}
 
 type Payload = {
   title?: string;
@@ -12,6 +36,7 @@ type Payload = {
   type?: string;
   location?: string | null;
   image_url?: string | null;
+  icon?: string | null;
 };
 
 export async function POST(req: Request) {
@@ -21,11 +46,14 @@ export async function POST(req: Request) {
     const description = (body.description || '').trim();
     const type = (body.type || '').trim();
     const location = (body.location || '')?.trim() || null;
-    const image_url = (body.image_url || '')?.trim() || null;
+    const image = parseImageUrl(body.image_url);
+    const icon = parseIcon(body.icon);
 
     if (!title || !description || !type) {
       return apiBadRequest('Missing required fields');
     }
+    if (!image.ok) return apiBadRequest('invalid image');
+    if (!icon.ok) return apiBadRequest('invalid icon');
 
     const { userId } = await requireAuthSupabase();
     await requireRole(userId, 'admin');
@@ -40,7 +68,8 @@ export async function POST(req: Request) {
       type,
       location,
       status: 'active',
-      image_url,
+      image_url: image.value,
+      icon: icon.value,
     };
 
     const { data, error } = await admin
@@ -97,7 +126,16 @@ export async function PATCH(req: Request) {
       update.type = type;
     }
     if (body.location !== undefined) update.location = body.location?.trim() || null;
-    if (body.image_url !== undefined) update.image_url = body.image_url;
+    if (body.image_url !== undefined) {
+      const image = parseImageUrl(body.image_url);
+      if (!image.ok) return apiBadRequest('invalid image');
+      update.image_url = image.value;
+    }
+    if (body.icon !== undefined) {
+      const icon = parseIcon(body.icon);
+      if (!icon.ok) return apiBadRequest('invalid icon');
+      update.icon = icon.value;
+    }
     if (body.status !== undefined) {
       const allowed = ['active', 'inactive'] as const;
       type GroupStatus = (typeof allowed)[number];
@@ -110,6 +148,15 @@ export async function PATCH(req: Request) {
     if (Object.keys(update).length === 0) return apiBadRequest('No fields to update');
 
     const admin = createAdminClient();
+
+    // Remember the current picture so a replaced or removed one can be
+    // deleted from storage once the update has gone through.
+    let previousImage: string | null = null;
+    if (update.image_url !== undefined) {
+      const { data: current } = await admin.from('groups').select('image_url').eq('id', id).maybeSingle<{ image_url: string | null }>();
+      previousImage = current?.image_url ?? null;
+    }
+
     const { data, error } = await admin
       .from('groups')
       .update(update as never)
@@ -123,6 +170,11 @@ export async function PATCH(req: Request) {
       return apiError(error, 'Failed to update group');
     }
     if (!data) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+
+    if (previousImage && previousImage !== update.image_url) {
+      const path = storageObjectPath(previousImage, IMAGE_BUCKET);
+      if (path) await removeStorageObjects(IMAGE_BUCKET, [path]);
+    }
 
     return NextResponse.json(data);
   } catch (err) {
@@ -147,11 +199,12 @@ export async function DELETE(req: Request) {
     await requireRole(userId, 'admin');
     const admin = createAdminClient();
 
+    // Return image_url so the picture can be removed from storage too.
     const { data: deleted, error } = await admin
       .from('groups')
       .delete()
       .eq('id', id)
-      .select('id');
+      .select('id, image_url');
 
     if (error) {
       if (error.code === '22P02') return apiBadRequest('invalid id');
@@ -163,6 +216,10 @@ export async function DELETE(req: Request) {
     }
 
     await deleteEntityComments(admin, 'group', id);
+    const imagePaths = deleted
+      .map((row) => storageObjectPath(String((row as { image_url: string | null }).image_url ?? ''), IMAGE_BUCKET))
+      .filter((path): path is string => Boolean(path));
+    await removeStorageObjects(IMAGE_BUCKET, imagePaths);
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {

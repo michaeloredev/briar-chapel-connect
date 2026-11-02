@@ -44,10 +44,10 @@ export default function JoinGroupButton({ groupId, isMember = false, className =
           }
         }}
         className={[
-          'inline-flex items-center rounded-md px-3 py-1.5 text-white text-sm font-medium focus:outline-none focus:ring-2',
+          'inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 disabled:opacity-60',
           isMember
-            ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
-            : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+            ? 'border border-slate-300 text-slate-700 hover:border-red-300 hover:bg-red-50 hover:text-red-700 focus:ring-red-500 dark:border-slate-600 dark:text-slate-200 dark:hover:border-red-800 dark:hover:bg-red-900/30 dark:hover:text-red-300'
+            : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
         ].join(' ')}
         disabled={joining}
       >
