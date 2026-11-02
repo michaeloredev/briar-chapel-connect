@@ -3,8 +3,8 @@
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { getCategoryMeta } from '@/lib/data/event-categories';
-import { eventDayKeys, formatLocalDate, formatLocalMonth, formatMonthHeading, parseYM } from '@/lib/utils/date';
+import { EVENT_CATEGORIES, getCategoryMeta } from '@/lib/data/event-categories';
+import { eventDayKeys, formatLocalDate, formatLocalMonth, formatMonthHeading, parseYM, siteToday } from '@/lib/utils/date';
 import type { EventListItem } from './types';
 
 export default function EventCalendar({
@@ -64,6 +64,12 @@ export default function EventCalendar({
     navigate({ date: formatLocalDate(new Date(viewYear, viewMonth, day)), month: viewedYM });
   }
 
+  // Briar Chapel's today, the same on the server and in the browser.
+  const today = siteToday();
+  function goToToday() {
+    navigate({ date: today, month: today.slice(0, 7) });
+  }
+
   const firstOfMonth = new Date(viewYear, viewMonth, 1);
   const startDay = firstOfMonth.getDay(); // 0..6
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -85,30 +91,39 @@ export default function EventCalendar({
 
   return (
     <div
-      className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4"
+      className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm"
       aria-busy={pending}
     >
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => goToMonth(-1)}
-          className="p-2 rounded-md text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
-          aria-label="Previous month"
-        >
-          <ChevronLeft className="w-5 h-5" aria-hidden />
-        </button>
-        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{monthName}</div>
-        <button
-          type="button"
-          onClick={() => goToMonth(1)}
-          className="p-2 rounded-md text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
-          aria-label="Next month"
-        >
-          <ChevronRight className="w-5 h-5" aria-hidden />
-        </button>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white">{monthName}</h2>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={goToToday}
+            className="mr-1 rounded-full border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => goToMonth(-1)}
+            className="p-2 rounded-full text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-700"
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="w-5 h-5" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => goToMonth(1)}
+            className="p-2 rounded-full text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-700"
+            aria-label="Next month"
+          >
+            <ChevronRight className="w-5 h-5" aria-hidden />
+          </button>
+        </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-7 text-center text-xs font-medium text-slate-500">
+      <div className="mt-4 grid grid-cols-7 text-center text-xs font-medium text-slate-500">
         <div>Sun</div>
         <div>Mon</div>
         <div>Tue</div>
@@ -125,6 +140,7 @@ export default function EventCalendar({
             }
             const iso = formatLocalDate(new Date(viewYear, viewMonth, d));
             const isSelected = selectedYMD === iso;
+            const isToday = today === iso;
             const cats = dayCategories[iso] ?? [];
             return (
               <div key={`${wi}-${di}`} className="flex flex-col items-center">
@@ -132,11 +148,14 @@ export default function EventCalendar({
                   type="button"
                   onClick={() => onSelect(d)}
                   className={[
-                    'h-9 w-9 rounded-md text-sm flex items-center justify-center',
+                    'h-9 w-9 rounded-full text-sm flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500',
                     isSelected
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700',
+                      ? 'bg-blue-600 font-semibold text-white'
+                      : isToday
+                        ? 'font-semibold text-blue-600 ring-1 ring-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:ring-blue-400 dark:hover:bg-slate-700'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700',
                   ].join(' ')}
+                  aria-current={isToday ? 'date' : undefined}
                   aria-pressed={isSelected}
                   aria-label={`Select ${iso}`}
                 >
@@ -160,6 +179,15 @@ export default function EventCalendar({
           })
         )}
       </div>
+
+      <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t border-slate-200 pt-4 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-300">
+        {EVENT_CATEGORIES.map((c) => (
+          <li key={c.value} className="inline-flex items-center gap-1.5">
+            <span className={['h-2 w-2 rounded-full', c.dotClasses].join(' ')} aria-hidden />
+            {c.label}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

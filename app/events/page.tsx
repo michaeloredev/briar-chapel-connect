@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 import EventCalendar from '@/components/events/EventCalendar';
 import EventList from '@/components/events/EventList';
+import UpcomingEvents from '@/components/events/UpcomingEvents';
 import { SignedIn } from '@clerk/nextjs';
 import EventFormDialog from '@/components/events/EventFormDialog';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -86,12 +87,13 @@ export default async function EventsPage({ searchParams }: { searchParams: Searc
             </SignedIn>
           }
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start">
+          <div className="lg:sticky lg:top-6">
             <EventCalendar selectedYMD={selectedYMD} viewedYM={viewedYM} events={events} />
           </div>
-          <div>
+          <div className="flex flex-col gap-6">
             <EventList selectedYMD={selectedYMD} events={events} />
+            <UpcomingEvents selectedYMD={selectedYMD} events={events} />
           </div>
         </div>
       </div>

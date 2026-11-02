@@ -3,6 +3,8 @@ export type EventCategory = {
   label: string;
   badgeClasses: string;
   dotClasses: string;
+  /** The date tile on event cards. */
+  tileClasses: string;
 };
 
 export const EVENT_CATEGORIES: EventCategory[] = [
@@ -11,36 +13,42 @@ export const EVENT_CATEGORIES: EventCategory[] = [
     label: 'Yard Sale',
     badgeClasses: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
     dotClasses: 'bg-amber-500',
+    tileClasses: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
   },
   {
     value: 'group',
     label: 'Group',
     badgeClasses: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
     dotClasses: 'bg-orange-500',
+    tileClasses: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300',
   },
   {
     value: 'meetup',
     label: 'Meetup',
     badgeClasses: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
     dotClasses: 'bg-blue-500',
+    tileClasses: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
   },
   {
     value: 'sports',
     label: 'Sports',
     badgeClasses: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
     dotClasses: 'bg-green-500',
+    tileClasses: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
   },
   {
     value: 'community',
     label: 'Community',
     badgeClasses: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
     dotClasses: 'bg-purple-500',
+    tileClasses: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300',
   },
   {
     value: 'other',
     label: 'Other',
     badgeClasses: 'bg-slate-100 text-slate-800 dark:bg-slate-700/50 dark:text-slate-200',
     dotClasses: 'bg-slate-400',
+    tileClasses: 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200',
   },
 ];
 
