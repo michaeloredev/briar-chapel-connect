@@ -182,8 +182,8 @@ export async function PATCH(req: Request) {
     // null), both of which previously left the file behind forever.
     const nextImageUrl = (data as { image_url: string | null }).image_url;
     if (previousImageUrl && previousImageUrl !== nextImageUrl) {
-      const path = storageObjectPath(previousImageUrl, 'provider-logos');
-      if (path) await removeStorageObjects('provider-logos', [path]);
+      const path = storageObjectPath(previousImageUrl, 'service-images');
+      if (path) await removeStorageObjects('service-images', [path]);
     }
 
     return NextResponse.json(data);
@@ -221,9 +221,9 @@ export async function DELETE(req: Request) {
     }
 
     const paths = deleted
-      .map((row) => storageObjectPath(String((row as { image_url: string | null }).image_url ?? ''), 'provider-logos'))
+      .map((row) => storageObjectPath(String((row as { image_url: string | null }).image_url ?? ''), 'service-images'))
       .filter((path): path is string => Boolean(path));
-    if (paths.length > 0) await removeStorageObjects('provider-logos', paths);
+    if (paths.length > 0) await removeStorageObjects('service-images', paths);
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {

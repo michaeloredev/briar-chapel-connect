@@ -5,7 +5,7 @@ import { requireRole } from '@/lib/auth/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 import { deleteEntityComments } from '@/lib/api/comments';
-import { removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
+import { publicImagePath, removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
 import { isGroupIcon } from '@/lib/data/group-icon-meta';
 
 const IMAGE_BUCKET = 'group-images';
@@ -18,9 +18,7 @@ const IMAGE_BUCKET = 'group-images';
 function parseImageUrl(value: string | null | undefined): { ok: true; value: string | null } | { ok: false } {
   const trimmed = (value || '').trim();
   if (!trimmed) return { ok: true, value: null };
-  const projectUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/+$/, '');
-  const ours = Boolean(projectUrl) && trimmed.startsWith(`${projectUrl}/`);
-  return ours && storageObjectPath(trimmed, IMAGE_BUCKET) ? { ok: true, value: trimmed } : { ok: false };
+  return publicImagePath(trimmed, IMAGE_BUCKET) ? { ok: true, value: trimmed } : { ok: false };
 }
 
 /** null clears the chosen icon (back to the type's); anything else must be a known key. */
