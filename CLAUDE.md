@@ -64,7 +64,7 @@ The services catalog is **static data, not database rows**: `lib/data/services.t
 
 ### Uploads
 
-All three upload routes delegate to `handleFileUpload(req, bucket)` in `lib/api/upload.ts`, targeting the `comment-images`, `marketplace-images` and `provider-logos` buckets. It caps files at 2MB and **sniffs magic bytes** to determine type rather than trusting the client's MIME type, accepting only JPEG/PNG/WebP. Client-side cropping/downscaling happens before upload via `lib/images/cropImageToSquareWebp.ts`. Deleting a parent record should also clean up its stored images.
+Images are stored in **Cloudflare R2**, not Supabase Storage. Every upload route delegates to `handleFileUpload(req, bucket)` in `lib/api/upload.ts`, where `bucket` is a folder in the single R2 bucket: `comment-images`, `marketplace-images`, `group-images` and `service-images` (provider logos). Objects are keyed `<folder>/<userId>/<uuid>.<ext>` and served from `R2_PUBLIC_URL` (`images.briarchapelconnect.com`); see `.env.example` for the `R2_*` vars. It caps files at 2MB and **sniffs magic bytes** to determine type rather than trusting the client's MIME type, accepting only JPEG/PNG/WebP. Client-side cropping/downscaling happens before upload via `lib/images/cropImageToSquareWebp.ts`. Validate a client-supplied image URL with `publicImagePath()` before storing it, so a record can't point at an arbitrary host. Deleting a parent record should also clean up its stored images.
 
 ### Dates
 
