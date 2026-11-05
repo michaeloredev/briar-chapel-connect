@@ -214,9 +214,19 @@ export function storageObjectPath(ref: string, bucket: string): string | null {
   return safePath(value);
 }
 
+/**
+ * Objects under this prefix are catalog assets (the provider logos the
+ * provider_catalog migration points at), shared by every environment that
+ * uses the bucket. They are never deleted, so removing a provider in dev
+ * cannot break the same provider's logo in production.
+ */
+const SHARED_PREFIX = 'catalog/';
+
 /** Best-effort delete of storage objects. Logs and continues on failure. */
 export async function removeStorageObjects(bucket: string, paths: string[]): Promise<void> {
-  const unique = [...new Set(paths.map((p) => p.trim()).filter(Boolean))];
+  const unique = [
+    ...new Set(paths.map((p) => p.trim()).filter((p) => p && !p.startsWith(SHARED_PREFIX))),
+  ];
   if (unique.length === 0) return;
 
   let config: R2Config;
