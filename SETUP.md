@@ -40,6 +40,10 @@ cp .env.example .env.local
 | `SUPABASE_SERVICE_ROLE_KEY` | Same page. **Secret — bypasses row-level security entirely** |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk → API Keys |
 | `CLERK_SECRET_KEY` | Clerk → API Keys. **Secret** |
+| `R2_ACCOUNT_ID` | Cloudflare → R2. The bare account ID or the "S3 API" endpoint URL |
+| `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | R2 → Manage API tokens (Object Read & Write, scoped to the bucket). **Secret** |
+| `R2_BUCKET` | `briar-chapel-images` |
+| `R2_PUBLIC_URL` | `https://images.briarchapelconnect.com`, no trailing slash |
 
 The `NEXT_PUBLIC_CLERK_*_URL` values in `.env.example` can stay as they are.
 
@@ -114,9 +118,10 @@ This creates nine tables:
 | `comments` | Threaded discussion, polymorphic across entities |
 | `user_roles` | `superadmin` / `admin` / `client` |
 
-It also creates the three storage buckets (`comment-images`,
-`marketplace-images`, `provider-logos`, each capped at 2MB), all row-level
-security policies, indexes, and the timestamp and attendee-count triggers.
+It also creates all row-level security policies, indexes, and the timestamp
+and attendee-count triggers, and fills the service directory with the provider
+catalog (130 local providers across 26 categories). Uploaded images are not in
+Supabase: they go to Cloudflare R2 (the `R2_*` variables in step 1).
 
 > Do not change the schema through the dashboard SQL editor. Use
 > `npx supabase migration new <name>` and `npm run db:push`, or the migrations
@@ -152,22 +157,6 @@ npm run dev
 Open <http://localhost:3000>, sign in, and check that the header shows your
 avatar and that **Members** appears in the nav (superadmin only).
 
-## 7. Seed the provider directory (optional)
-
-The service directory starts empty. The seed runner adds real local providers —
-110 across 22 categories — and is safe to re-run, skipping any provider whose
-title already exists in that category.
-
-```bash
-node --env-file=.env.local scripts/seed-providers.mjs                   # all
-node --env-file=.env.local scripts/seed-providers.mjs cleaning-services # one
-node --env-file=.env.local scripts/seed-providers.mjs --list            # what's available
-```
-
-Providers are assigned to the **only** superadmin in `user_roles`, so step 5
-has to be done first and there must be exactly one superadmin at that moment.
-Set `SEED_OWNER_USER_ID` to a Clerk user ID to choose explicitly.
-
 ## Troubleshooting
 
 **Everything loads but all lists are empty, or writes fail silently.**
@@ -180,8 +169,8 @@ Supabase.
 Working as intended — providers need `superadmin`, events and groups need
 `admin`. Check your row in `user_roles` (step 5).
 
-**Uploads fail with a missing bucket error.**
-The migrations were not applied, or only partly. Re-run `npm run db:push`.
+**Uploads fail with "File upload is not configured on the server".**
+One of the `R2_*` variables is missing from `.env.local` (step 1).
 
 **`supabase link` or `db:push` fails with a `cli_login_postgres` role error.**
 The CLI's passwordless flow does not work on some older projects. Supply the

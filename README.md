@@ -12,7 +12,8 @@ them.
 | Framework | Next.js 15 (App Router) with React 19 |
 | Styling | Tailwind CSS 4, dark mode throughout |
 | Auth | Clerk |
-| Database & storage | Supabase (Postgres + Storage) |
+| Database | Supabase (Postgres) |
+| Image storage | Cloudflare R2 |
 | Icons | lucide-react |
 
 Clerk and Supabase are bridged by a Clerk JWT template named `supabase`, so
@@ -94,7 +95,6 @@ briar-chapel-connect/
 │   ├── data/                 # Static taxonomies (services, categories, types)
 │   ├── images/               # Client-side crop/downscale before upload
 │   └── utils/date.ts         # All event date handling
-├── scripts/                  # Provider seed runner + per-category data
 ├── supabase/migrations/      # Schema, applied with the Supabase CLI
 ├── middleware.ts             # Clerk route protection
 ├── SETUP.md                  # First-time setup walkthrough
