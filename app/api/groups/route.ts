@@ -57,6 +57,8 @@ export async function POST(req: Request) {
     await requireRole(userId, 'admin');
     // RLS grants no write on this table to anon or authenticated, so the
     // insert goes through the service role -- authorized by the check above.
+    // The add_group_creator_as_owner trigger makes the creator the group's
+    // owner in the same transaction, so there is no membership insert here.
     const admin = createAdminClient();
     type Insert = Database['public']['Tables']['groups']['Insert'];
     const insert: Insert = {
