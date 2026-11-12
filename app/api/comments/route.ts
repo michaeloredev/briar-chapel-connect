@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/server';
+import { eventsReader } from '@/lib/api/event-reader';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getUserRole, hasRole } from '@/lib/auth/roles';
 import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
@@ -28,7 +29,9 @@ export async function GET(req: Request) {
   // A private group's thread is for its members (and site admins). This route
   // is public, so check here, then read through the service role -- the anon
   // client would be filtered by can_read_group() and see nothing.
-  let reader = await createClient();
+  // An event's thread follows the event: members-only for a private group's
+  // event, which eventsReader() and RLS work out between them.
+  let reader = entity_type === 'event' ? await eventsReader() : await createClient();
   if (entity_type === 'group') {
     const group = await loadGroupPrivacy(entity_id);
     if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });

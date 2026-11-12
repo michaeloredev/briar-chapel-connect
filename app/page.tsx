@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, ArrowUp, Briefcase, Calendar, LifeBuoy, ShoppingBag, Users, type LucideIcon } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { eventsReader } from '@/lib/api/event-reader';
 import type { Database } from '@/lib/supabase/types';
 import DateTile from '@/components/events/DateTile';
 import { formatTime } from '@/lib/utils/date';
@@ -55,7 +55,8 @@ export default async function Home() {
   // The next few events that haven't finished yet. Overlap, not start date,
   // so a multi-day event already under way still shows.
   const nowISO = new Date().toISOString();
-  const supabase = await createClient();
+  // Private groups' events show only to their members (and site admins).
+  const supabase = await eventsReader();
   type Row = Database['public']['Tables']['events']['Row'];
   const { data: upcoming, error } = await supabase
     .from('events')

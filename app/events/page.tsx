@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { eventsReader } from '@/lib/api/event-reader';
 import type { Database } from '@/lib/supabase/types';
 import EventCalendar from '@/components/events/EventCalendar';
 import EventList from '@/components/events/EventList';
@@ -45,7 +45,8 @@ export default async function EventsPage({ searchParams }: { searchParams: Searc
 
   // Overlap, not start date: an event that began before the window but is
   // still running inside it belongs on these days too.
-  const supabase = await createClient();
+  // Private groups' events show only to their members (and site admins).
+  const supabase = await eventsReader();
   type Row = Database['public']['Tables']['events']['Row'];
   const { data: rows, error } = await supabase
     .from('events')
