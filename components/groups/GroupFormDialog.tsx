@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ImagePlus, Pencil, Plus, Search, Users, X } from 'lucide-react';
+import { ImagePlus, Lock, Pencil, Plus, Search, Users, X } from 'lucide-react';
 import { DynamicIcon, type IconName } from 'lucide-react/dynamic';
 import { useRouter } from 'next/navigation';
 import { GROUP_TYPES } from '@/lib/data/group-types';
@@ -17,6 +17,7 @@ export type EditableGroup = {
   location?: string | null;
   image_url?: string | null;
   icon?: string | null;
+  is_private?: boolean;
 };
 
 /** How many icons the picker shows at once; a search narrows the rest. */
@@ -74,6 +75,7 @@ export default function GroupFormDialog({ className = '', group }: Props) {
   const [type, setType] = React.useState(group?.type ?? GROUP_TYPES[0].value);
   const [location, setLocation] = React.useState(group?.location ?? '');
   const [icon, setIcon] = React.useState(group?.icon ?? '');
+  const [isPrivate, setIsPrivate] = React.useState(group?.is_private ?? false);
   const [iconQuery, setIconQuery] = React.useState('');
 
   // Picture: a newly cropped file waiting to upload, or the saved one, or neither.
@@ -145,6 +147,7 @@ export default function GroupFormDialog({ className = '', group }: Props) {
           type,
           location: location.trim() || null,
           icon: icon || null,
+          is_private: isPrivate,
           // Only send the picture when it changed: a new upload, or removal.
           ...(uploadedUrl ? { image_url: uploadedUrl } : savedImage !== (group?.image_url ?? null) ? { image_url: savedImage } : {}),
         }),
@@ -159,6 +162,7 @@ export default function GroupFormDialog({ className = '', group }: Props) {
         setType(GROUP_TYPES[0].value);
         setLocation('');
         setIcon('');
+        setIsPrivate(false);
         setSavedImage(null);
       } else {
         setSavedImage(uploadedUrl ?? savedImage);
@@ -262,6 +266,41 @@ export default function GroupFormDialog({ className = '', group }: Props) {
                     placeholder="Neighborhood or venue"
                   />
                 </div>
+              </div>
+
+              {/* Privacy */}
+              <div className="flex items-start justify-between gap-4 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                <div>
+                  <p id="group-private-label" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <Lock className="h-4 w-4 text-slate-400" aria-hidden />
+                    Private group
+                  </p>
+                  <p id="group-private-help" className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {isPrivate
+                      ? 'Anyone can find the group, but only members see its discussion, polls and sign-ups. People request to join and the owner approves them.'
+                      : 'Anyone can join and see the discussion, polls and sign-ups.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isPrivate}
+                  aria-labelledby="group-private-label"
+                  aria-describedby="group-private-help"
+                  onClick={() => setIsPrivate((v) => !v)}
+                  className={[
+                    'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900',
+                    isPrivate ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600',
+                  ].join(' ')}
+                >
+                  <span
+                    aria-hidden
+                    className={[
+                      'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform',
+                      isPrivate ? 'translate-x-5' : 'translate-x-0.5',
+                    ].join(' ')}
+                  />
+                </button>
               </div>
 
               {/* Appearance */}

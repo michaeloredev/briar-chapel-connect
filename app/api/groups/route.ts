@@ -35,6 +35,8 @@ type Payload = {
   location?: string | null;
   image_url?: string | null;
   icon?: string | null;
+  /** Members-only content; joining takes an approved request. */
+  is_private?: boolean;
 };
 
 export async function POST(req: Request) {
@@ -52,6 +54,9 @@ export async function POST(req: Request) {
     }
     if (!image.ok) return apiBadRequest('invalid image');
     if (!icon.ok) return apiBadRequest('invalid icon');
+    if (body.is_private !== undefined && typeof body.is_private !== 'boolean') {
+      return apiBadRequest('is_private must be true or false');
+    }
 
     const { userId } = await requireAuthSupabase();
     await requireRole(userId, 'admin');
@@ -70,6 +75,7 @@ export async function POST(req: Request) {
       status: 'active',
       image_url: image.value,
       icon: icon.value,
+      is_private: body.is_private ?? false,
     };
 
     const { data, error } = await admin
@@ -135,6 +141,12 @@ export async function PATCH(req: Request) {
       const icon = parseIcon(body.icon);
       if (!icon.ok) return apiBadRequest('invalid icon');
       update.icon = icon.value;
+    }
+    if (body.is_private !== undefined) {
+      if (typeof body.is_private !== 'boolean') return apiBadRequest('is_private must be true or false');
+      // Existing members stay when a group goes private. Pending requests stay
+      // when it goes public, and can still be approved or declined.
+      update.is_private = body.is_private;
     }
     if (body.status !== undefined) {
       const allowed = ['active', 'inactive'] as const;

@@ -38,3 +38,63 @@ export function isOpen(row: { closed_at: string | null; closes_at?: string | nul
   if (row.closed_at) return false;
   return !row.closes_at || new Date(row.closes_at).getTime() > Date.now();
 }
+
+/** Whether `userId` is the group's active owner. */
+export async function isGroupOwner(groupId: string, userId: string): Promise<boolean> {
+  if (!UUID_PATTERN.test(groupId)) return false;
+  const { data, error } = await createAdminClient()
+    .from('group_members')
+    .select('id')
+    .eq('group_id', groupId)
+    .eq('user_id', userId)
+    .eq('role', 'owner')
+    .eq('status', 'active')
+    .limit(1);
+  if (error) throw new Error(error.message);
+  return (data ?? []).length > 0;
+}
+
+export type GroupAccess = {
+  isMember: boolean;
+  isOwner: boolean;
+  isSiteAdmin: boolean;
+  /** May see the discussion, polls and sign-ups. */
+  canRead: boolean;
+  /** May approve or decline join requests. */
+  canApprove: boolean;
+};
+
+/**
+ * What `userId` (null when signed out) may do in a group. Mirrors the
+ * database's can_read_group(), plus site admins, who moderate every group and
+ * read private content through the service role.
+ */
+export async function groupAccess(group: { id: string; is_private: boolean }, userId: string | null): Promise<GroupAccess> {
+  if (!userId) {
+    return { isMember: false, isOwner: false, isSiteAdmin: false, canRead: !group.is_private, canApprove: false };
+  }
+  const [isMember, isOwner, isSiteAdmin] = await Promise.all([
+    isGroupMember(group.id, userId),
+    isGroupOwner(group.id, userId),
+    getUserRole(userId).then((role) => hasRole(role, 'admin')),
+  ]);
+  return {
+    isMember,
+    isOwner,
+    isSiteAdmin,
+    canRead: !group.is_private || isMember || isSiteAdmin,
+    canApprove: isOwner || isSiteAdmin,
+  };
+}
+
+/** The group's privacy flag, or null when there is no such group. */
+export async function loadGroupPrivacy(groupId: string): Promise<{ id: string; is_private: boolean } | null> {
+  if (!UUID_PATTERN.test(groupId)) return null;
+  const { data, error } = await createAdminClient()
+    .from('groups')
+    .select('id, is_private')
+    .eq('id', groupId)
+    .maybeSingle<{ id: string; is_private: boolean }>();
+  if (error) throw new Error(error.message);
+  return data ?? null;
+}

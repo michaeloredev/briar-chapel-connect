@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import type { Database } from '@/lib/supabase/types';
-import { apiError, apiBadRequest } from '@/lib/api/response';
+import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
+import { loadGroupPrivacy } from '@/lib/api/group-membership';
 
 export async function POST(req: Request) {
   try {
@@ -10,6 +11,13 @@ export async function POST(req: Request) {
     if (!group_id) return apiBadRequest('Missing group_id');
 
     const { supabase, userId } = await requireAuthSupabase();
+
+    // RLS refuses a private group anyway; this turns that into a message the
+    // page can act on instead of a bare policy error.
+    const group = await loadGroupPrivacy(group_id);
+    if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    if (group.is_private) return apiForbidden('This group is private. Request to join instead.');
+
     type Insert = Database['public']['Tables']['group_members']['Insert'];
     const insert: Insert = {
       group_id,

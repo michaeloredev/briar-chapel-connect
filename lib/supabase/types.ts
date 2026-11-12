@@ -167,6 +167,8 @@ export interface Database {
           image_url: string | null;
           /** Key from lib/data/group-icons.ts; null shows the type's icon. */
           icon: string | null;
+          /** Content is members-only and joining takes an approved request. */
+          is_private: boolean;
         };
         Insert: {
           user_id: string;
@@ -177,6 +179,7 @@ export interface Database {
           status?: 'active' | 'inactive';
           image_url?: string | null;
           icon?: string | null;
+          is_private?: boolean;
         };
         Update: Partial<Database['public']['Tables']['groups']['Insert']>;
       };
@@ -209,6 +212,22 @@ export interface Database {
           status?: 'active' | 'inactive';
         };
         Update: Partial<Database['public']['Tables']['group_members']['Insert']>;
+      };
+      group_join_requests: {
+        Row: {
+          id: string;
+          created_at: string;
+          group_id: string;
+          user_id: string;
+          /** The requester's note about themselves, 1-500 characters. */
+          message: string;
+        };
+        Insert: {
+          group_id: string;
+          user_id: string;
+          message: string;
+        };
+        Update: Partial<Database['public']['Tables']['group_join_requests']['Insert']>;
       };
       group_polls: {
         Row: {

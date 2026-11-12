@@ -187,6 +187,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
                 imageUrl={g.image_url}
                 icon={g.icon}
                 isMember={memberIds.has(g.id)}
+                isPrivate={g.is_private}
               />
             ))}
           </div>
