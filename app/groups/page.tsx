@@ -39,15 +39,17 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
   // Every membership of the current user: drives both the Join/Leave state on
   // each card and the "My groups" filter.
   let memberIds = new Set<string>();
+  let ownedIds = new Set<string>();
   if (userId) {
     type MemRow = Database['public']['Tables']['group_members']['Row'];
     const { data: memberships, error: memErr } = await supabase
       .from('group_members')
-      .select('group_id')
+      .select('group_id, role')
       .eq('user_id', userId)
-      .returns<Pick<MemRow, 'group_id'>[]>();
+      .returns<Pick<MemRow, 'group_id' | 'role'>[]>();
     if (memErr) console.error('Failed to load memberships:', memErr.message);
     memberIds = new Set((memberships ?? []).map((m) => m.group_id));
+    ownedIds = new Set((memberships ?? []).filter((m) => m.role === 'owner').map((m) => m.group_id));
   }
 
   let groups: Row[] = [];
@@ -188,6 +190,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
                 icon={g.icon}
                 isMember={memberIds.has(g.id)}
                 isPrivate={g.is_private}
+                isOwner={ownedIds.has(g.id)}
               />
             ))}
           </div>

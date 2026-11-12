@@ -22,7 +22,6 @@ import SignupCard from '@/components/groups/SignupCard';
 import SignupFormDialog from '@/components/groups/SignupFormDialog';
 import type { PollView, SignupView } from '@/components/groups/types';
 import AdminDeleteButton from '@/components/common/AdminDeleteButton';
-import RoleGate from '@/components/auth/RoleGate';
 import SetBreadcrumbTitle from '@/components/common/SetBreadcrumbTitle';
 import CommentThread from '@/components/forum/CommentThread';
 
@@ -41,7 +40,7 @@ interface PageProps {
 const UNNAMED = 'Community member';
 
 /** Every poll in the group, newest first, with options, votes and voter names. */
-async function loadPolls(supabase: Supabase, groupId: string, userId: string | null, isAdmin: boolean): Promise<PollView[]> {
+async function loadPolls(supabase: Supabase, groupId: string, userId: string | null, canModerate: boolean): Promise<PollView[]> {
   const { data: polls, error } = await supabase
     .from('group_polls')
     .select('*')
@@ -71,7 +70,7 @@ async function loadPolls(supabase: Supabase, groupId: string, userId: string | n
       closesAt: p.closes_at,
       open: isOpen(p),
       creatorName: names.get(p.user_id) ?? UNNAMED,
-      canManage: Boolean(userId) && (userId === p.user_id || isAdmin),
+      canManage: Boolean(userId) && (userId === p.user_id || canModerate),
       voterCount: new Set(pollVotes.map((v) => v.user_id)).size,
       options: (options ?? [])
         .filter((o) => o.poll_id === p.id)
@@ -122,7 +121,7 @@ async function loadJoinRequests(admin: Supabase, groupId: string): Promise<JoinR
 }
 
 /** Every sign-up sheet in the group, newest first, with slots and who claimed them. */
-async function loadSignups(supabase: Supabase, groupId: string, userId: string | null, isAdmin: boolean): Promise<SignupView[]> {
+async function loadSignups(supabase: Supabase, groupId: string, userId: string | null, canModerate: boolean): Promise<SignupView[]> {
   const { data: signups, error } = await supabase
     .from('group_signups')
     .select('*')
@@ -158,7 +157,7 @@ async function loadSignups(supabase: Supabase, groupId: string, userId: string |
     description: s.description,
     open: isOpen(s),
     creatorName: names.get(s.user_id) ?? UNNAMED,
-    canManage: Boolean(userId) && (userId === s.user_id || isAdmin),
+    canManage: Boolean(userId) && (userId === s.user_id || canModerate),
     slots: (slots ?? [])
       .filter((slot) => slot.signup_id === s.id)
       .map((slot) => ({
@@ -183,7 +182,7 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
   if (error || !group) return notFound();
 
   const { userId } = await auth();
-  const { isMember, isSiteAdmin: isAdmin, canRead, canApprove } = await groupAccess(group, userId);
+  const { isMember, isOwner, isSiteAdmin: isAdmin, canRead, canModerate, canDelete } = await groupAccess(group, userId);
 
   // Memberships are only readable to their owner under RLS, so the head count
   // comes through the service role. Only the number leaves the server.
@@ -197,10 +196,10 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
     canRead
       ? reader.from('comments').select('id', { count: 'exact', head: true }).eq('entity_type', 'group').eq('entity_id', id).then((r) => r.count ?? 0)
       : Promise.resolve(0),
-    canRead ? loadPolls(reader, id, userId, isAdmin) : Promise.resolve([] as PollView[]),
-    canRead ? loadSignups(reader, id, userId, isAdmin) : Promise.resolve([] as SignupView[]),
+    canRead ? loadPolls(reader, id, userId, canModerate) : Promise.resolve([] as PollView[]),
+    canRead ? loadSignups(reader, id, userId, canModerate) : Promise.resolve([] as SignupView[]),
     userId && !isMember && group.is_private ? loadMyRequest(admin, id, userId) : Promise.resolve(null),
-    canApprove ? loadJoinRequests(admin, id) : Promise.resolve([] as JoinRequestView[]),
+    canModerate ? loadJoinRequests(admin, id) : Promise.resolve([] as JoinRequestView[]),
   ]);
 
   const meta = GROUP_TYPES.find((t) => t.value === group.type);
@@ -246,7 +245,7 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
                 ) : null}
                 {isMember ? (
                   <span className="rounded-full border border-blue-400 px-2.5 py-0.5 text-xs font-medium text-blue-500 dark:text-blue-400">
-                    Member
+                    {isOwner ? 'Owner' : 'Member'}
                   </span>
                 ) : null}
               </div>
@@ -267,9 +266,10 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
             </div>
             <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
               {/* Non-members join from the prompt below the header. */}
-              {isMember ? <JoinGroupButton groupId={group.id} isMember /> : null}
-              {/* Hides the controls only -- /api/groups enforces admin. */}
-              <RoleGate minimum="admin">
+              {/* The owner can't leave: the group would be left without one. */}
+              {isMember && !isOwner ? <JoinGroupButton groupId={group.id} isMember /> : null}
+              {/* Shown from the server's groupAccess(); the routes check the same rules. */}
+              {canModerate ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <GroupFormDialog
                     group={{
@@ -283,13 +283,17 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
                       is_private: group.is_private,
                     }}
                   />
-                  <EventFormDialog
-                    buttonLabel="Schedule Event"
-                    dialogTitle="Schedule Meetup"
-                    defaultLocation={group.location ?? 'Briar Chapel'}
-                    fixedCategory="group"
-                    groupId={group.id}
-                  />
+                  {/* Events are still created by site admins only. */}
+                  {isAdmin ? (
+                    <EventFormDialog
+                      buttonLabel="Schedule Event"
+                      dialogTitle="Schedule Meetup"
+                      defaultLocation={group.location ?? 'Briar Chapel'}
+                      fixedCategory="group"
+                      groupId={group.id}
+                    />
+                  ) : null}
+                  {canDelete ? (
                   <AdminDeleteButton
                     endpoint="/api/groups"
                     id={group.id}
@@ -298,13 +302,14 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
                     name={group.title}
                     consequence="Its memberships, polls and sign-ups will be removed; its events stay on the calendar without a group."
                   />
+                  ) : null}
                 </div>
-              </RoleGate>
+              ) : null}
             </div>
           </div>
         </section>
 
-        {canApprove && joinRequests.length > 0 ? <JoinRequestList requests={joinRequests} /> : null}
+        {canModerate && joinRequests.length > 0 ? <JoinRequestList requests={joinRequests} /> : null}
 
         {/* Private group: ask to join */}
         {!isMember && group.is_private ? (
@@ -370,6 +375,7 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
                   entityType="group"
                   entityId={group.id}
                   canPost={isMember}
+                  canModerate={canModerate}
                   readOnlyNotice={<p className="text-sm text-slate-600 dark:text-slate-300">Join the group to join the conversation.</p>}
                 />
               </div>

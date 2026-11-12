@@ -138,7 +138,21 @@ export async function DELETE(req: Request) {
 
     const { supabase, userId } = await requireAuthSupabase();
     const role = await getUserRole(userId);
-    const isModerator = hasRole(role, 'admin');
+    let isModerator = hasRole(role, 'admin');
+
+    // A group's owner and group admins moderate its own discussion, and only
+    // that: being a manager of one group gives nothing anywhere else.
+    if (!isModerator) {
+      const { data: target } = await createAdminClient()
+        .from('comments')
+        .select('entity_type, entity_id, user_id')
+        .eq('id', id)
+        .maybeSingle<{ entity_type: string; entity_id: string; user_id: string }>();
+      if (target && target.entity_type === 'group' && target.user_id !== userId) {
+        const group = await loadGroupPrivacy(target.entity_id);
+        isModerator = group !== null && (await groupAccess(group, userId)).canModerate;
+      }
+    }
 
     // The owner-only RLS policy blocks moderators from deleting other users'
     // comments, so moderation goes through the service-role client instead.

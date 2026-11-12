@@ -20,9 +20,9 @@ export interface AdminDeleteButtonProps {
 }
 
 /**
- * Delete control for admin-managed records. Render it inside a
- * `<RoleGate minimum="admin">` -- that only hides the button, so the route
- * behind `endpoint` must enforce the role itself.
+ * Delete control for managed records. Show it only to people allowed to
+ * delete (a `<RoleGate>`, or a permission computed on the server) -- that only
+ * hides the button, so the route behind `endpoint` must enforce the rule itself.
  */
 export default function AdminDeleteButton({
   endpoint,

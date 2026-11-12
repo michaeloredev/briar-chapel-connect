@@ -106,7 +106,7 @@ export async function PATCH(req: Request) {
       return apiError(error, 'Failed to close poll');
     }
     if (!poll) return NextResponse.json({ error: 'Poll not found' }, { status: 404 });
-    if (!(await canManage(userId, poll.user_id))) throw new Error('Forbidden');
+    if (!(await canManage(userId, poll.user_id, poll.group_id))) throw new Error('Forbidden');
 
     const { error: updateError } = await admin
       .from('group_polls')
@@ -135,7 +135,7 @@ export async function DELETE(req: Request) {
       return apiError(error, 'Failed to delete poll');
     }
     if (!poll) return NextResponse.json({ error: 'Poll not found' }, { status: 404 });
-    if (!(await canManage(userId, poll.user_id))) throw new Error('Forbidden');
+    if (!(await canManage(userId, poll.user_id, poll.group_id))) throw new Error('Forbidden');
 
     // Options and votes cascade with it.
     const { error: deleteError } = await admin.from('group_polls').delete().eq('id', id);

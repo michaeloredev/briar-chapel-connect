@@ -7,6 +7,7 @@ import { apiError, apiBadRequest } from '@/lib/api/response';
 import { deleteEntityComments } from '@/lib/api/comments';
 import { publicImagePath, removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
 import { isGroupIcon } from '@/lib/data/group-icon-meta';
+import { groupAccess, loadGroupPrivacy } from '@/lib/api/group-membership';
 
 const IMAGE_BUCKET = 'group-images';
 
@@ -98,8 +99,7 @@ export async function POST(req: Request) {
 type PatchPayload = Payload & { id?: string; status?: string };
 
 /**
- * Edit a group. Admin and above, any group -- same reasoning as events: only
- * admins can create one, so the same people can correct it.
+ * Edit a group: its owner or group admins, or any site admin.
  *
  * Only the keys present in the request body are written, so a partial edit
  * cannot blank the fields it does not carry.
@@ -111,10 +111,13 @@ export async function PATCH(req: Request) {
     if (!id) return apiBadRequest('Missing id');
 
     const { userId } = await requireAuthSupabase();
-    await requireRole(userId, 'admin');
+    const group = await loadGroupPrivacy(id);
+    if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    if (!(await groupAccess(group, userId)).canModerate) throw new Error('Forbidden');
 
     type GroupUpdate = Database['public']['Tables']['groups']['Update'];
     const update: GroupUpdate = {};
+    let newImage: string | null = null;
 
     if (body.title !== undefined) {
       const title = body.title.trim();
@@ -136,6 +139,7 @@ export async function PATCH(req: Request) {
       const image = parseImageUrl(body.image_url);
       if (!image.ok) return apiBadRequest('invalid image');
       update.image_url = image.value;
+      newImage = image.value;
     }
     if (body.icon !== undefined) {
       const icon = parseIcon(body.icon);
@@ -167,6 +171,11 @@ export async function PATCH(req: Request) {
     if (update.image_url !== undefined) {
       const { data: current } = await admin.from('groups').select('image_url').eq('id', id).maybeSingle<{ image_url: string | null }>();
       previousImage = current?.image_url ?? null;
+      // A new picture must be one the caller uploaded. Otherwise a group owner
+      // could point their group at another group's picture, then change it
+      // again and have the cleanup below delete that other group's file.
+      const newPath = newImage && newImage !== previousImage ? storageObjectPath(newImage, IMAGE_BUCKET) : null;
+      if (newPath && !newPath.startsWith(`${userId}/`)) return apiBadRequest('invalid image');
     }
 
     const { data, error } = await admin
@@ -195,8 +204,8 @@ export async function PATCH(req: Request) {
 }
 
 /**
- * Delete a group. Admin and above, any group -- the same people who can
- * create and edit one. Memberships cascade through the foreign key. The
+ * Delete a group: its owner, or any site admin. Group admins can edit but not
+ * delete. Memberships cascade through the foreign key. The
  * group's events are kept -- that key is ON DELETE SET NULL, so they stay on
  * the calendar as standalone events. Comments have no foreign key at all, so
  * their thread is removed separately afterwards.
@@ -208,7 +217,9 @@ export async function DELETE(req: Request) {
     if (!id) return apiBadRequest('Missing id');
 
     const { userId } = await requireAuthSupabase();
-    await requireRole(userId, 'admin');
+    const group = await loadGroupPrivacy(id);
+    if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    if (!(await groupAccess(group, userId)).canDelete) throw new Error('Forbidden');
     const admin = createAdminClient();
 
     // Return image_url so the picture can be removed from storage too.

@@ -16,9 +16,11 @@ export type GroupCardProps = {
   isMember?: boolean;
   /** Members-only; non-members ask to join from the group's page. */
   isPrivate?: boolean;
+  /** Owners can't leave, so they get no Leave button. */
+  isOwner?: boolean;
 };
 
-export default function GroupCard({ id, title, description, location, type, imageUrl, icon, isMember = false, isPrivate = false }: GroupCardProps) {
+export default function GroupCard({ id, title, description, location, type, imageUrl, icon, isMember = false, isPrivate = false, isOwner = false }: GroupCardProps) {
   const meta = GROUP_TYPES.find((t) => t.value === type);
   const avatar = groupIconMeta({ type, icon });
   const Icon = avatar.icon;
@@ -97,6 +99,10 @@ export default function GroupCard({ id, title, description, location, type, imag
           <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-600 px-4 py-1.5 text-sm font-semibold text-blue-600 dark:border-blue-400 dark:text-blue-400" aria-hidden>
             <Lock className="h-3.5 w-3.5" />
             Request to join
+          </span>
+        ) : isOwner ? (
+          <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+            Owner
           </span>
         ) : (
           <JoinGroupButton groupId={id} isMember={isMember} className="relative z-10" />

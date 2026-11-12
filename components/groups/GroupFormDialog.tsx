@@ -132,7 +132,9 @@ export default function GroupFormDialog({ className = '', group }: Props) {
       if (imageFile) {
         const fd = new FormData();
         fd.append('file', imageFile);
-        const up = await fetch('/api/uploads/group-image', { method: 'POST', body: fd });
+        // Editing names the group, so its owner can upload; creating is admin-only.
+        const uploadUrl = isEdit ? `/api/uploads/group-image?group_id=${encodeURIComponent(group!.id)}` : '/api/uploads/group-image';
+        const up = await fetch(uploadUrl, { method: 'POST', body: fd });
         if (!up.ok) throw new Error(await readFailedResponse(up, 'Failed to upload picture'));
         uploadedUrl = ((await up.json()) as { url?: string }).url ?? null;
       }

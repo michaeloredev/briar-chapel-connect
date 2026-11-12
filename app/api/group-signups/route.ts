@@ -96,7 +96,7 @@ export async function PATCH(req: Request) {
       return apiError(error, 'Failed to close sign-up');
     }
     if (!signup) return NextResponse.json({ error: 'Sign-up not found' }, { status: 404 });
-    if (!(await canManage(userId, signup.user_id))) throw new Error('Forbidden');
+    if (!(await canManage(userId, signup.user_id, signup.group_id))) throw new Error('Forbidden');
 
     const { error: updateError } = await admin
       .from('group_signups')
@@ -125,7 +125,7 @@ export async function DELETE(req: Request) {
       return apiError(error, 'Failed to delete sign-up');
     }
     if (!signup) return NextResponse.json({ error: 'Sign-up not found' }, { status: 404 });
-    if (!(await canManage(userId, signup.user_id))) throw new Error('Forbidden');
+    if (!(await canManage(userId, signup.user_id, signup.group_id))) throw new Error('Forbidden');
 
     // Slots and claims cascade with it.
     const { error: deleteError } = await admin.from('group_signups').delete().eq('id', id);

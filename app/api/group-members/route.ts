@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import type { Database } from '@/lib/supabase/types';
 import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
-import { loadGroupPrivacy } from '@/lib/api/group-membership';
+import { groupRole, loadGroupPrivacy } from '@/lib/api/group-membership';
 
 export async function POST(req: Request) {
   try {
@@ -48,6 +48,11 @@ export async function DELETE(req: Request) {
     if (!group_id) return apiBadRequest('Missing group_id');
 
     const { supabase, userId } = await requireAuthSupabase();
+    // Leaving would orphan the group. Ownership moves (or a site admin
+    // deletes the group) first.
+    if ((await groupRole(group_id, userId)) === 'owner') {
+      return apiBadRequest("The owner can't leave the group.");
+    }
     const { data: deleted, error } = await supabase
       .from('group_members')
       .delete()

@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 }
 
 /**
- * Approve or decline a request. The group's owner or a site admin.
+ * Approve or decline a request. The group's owner or admins, or a site admin.
  * Body: { id, action: 'approve' | 'decline' }. Approving adds the requester as
  * a member; either way the request is removed, so a declined person can ask
  * again.
@@ -75,7 +75,7 @@ export async function PATCH(req: Request) {
 
     const group = await loadGroupPrivacy(request.group_id);
     if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
-    if (!(await groupAccess(group, userId)).canApprove) throw new Error('Forbidden');
+    if (!(await groupAccess(group, userId)).canModerate) throw new Error('Forbidden');
 
     if (action === 'approve') {
       type MemberInsert = Database['public']['Tables']['group_members']['Insert'];

@@ -17,9 +17,14 @@ type Props = {
    */
   canPost?: boolean;
   readOnlyNotice?: React.ReactNode;
+  /**
+   * The viewer moderates this thread beyond their site role, e.g. a group's
+   * owner on its discussion. Only shows delete buttons; /api/comments checks.
+   */
+  canModerate?: boolean;
 };
 
-export default function CommentThread({ entityType, entityId, className = '', canPost = true, readOnlyNotice }: Props) {
+export default function CommentThread({ entityType, entityId, className = '', canPost = true, readOnlyNotice, canModerate = false }: Props) {
   const { userId } = useAuth();
   const { hasRole } = useRole();
   const [comments, setComments] = React.useState<Comment[] | null>(null);
@@ -96,7 +101,7 @@ export default function CommentThread({ entityType, entityId, className = '', ca
 
   function canDelete(c: Comment) {
     if (!userId) return false;
-    return c.user_id === userId || hasRole('admin');
+    return c.user_id === userId || canModerate || hasRole('admin');
   }
 
   function buildTree(list: Comment[]): { roots: Comment[]; childrenByParent: Map<string, Comment[]> } {
