@@ -163,7 +163,8 @@ export interface Database {
           description: string;
           type: string;
           location: string | null;
-          status: 'active' | 'inactive';
+          /** 'pending' is a proposal awaiting a superadmin. */
+          status: 'active' | 'inactive' | 'pending';
           image_url: string | null;
           /** Key from lib/data/group-icons.ts; null shows the type's icon. */
           icon: string | null;
@@ -176,7 +177,7 @@ export interface Database {
           description: string;
           type: string;
           location?: string | null;
-          status?: 'active' | 'inactive';
+          status?: 'active' | 'inactive' | 'pending';
           image_url?: string | null;
           icon?: string | null;
           is_private?: boolean;

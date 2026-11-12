@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     const { userId } = await requireAuthSupabase();
     const group = await loadGroupPrivacy(group_id);
-    if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    if (!group || group.status !== 'active') return NextResponse.json({ error: 'Group not found' }, { status: 404 });
     if (!group.is_private) return apiBadRequest('This group is open. Join it directly.');
     if (await isGroupMember(group_id, userId)) return apiBadRequest('You are already a member.');
 

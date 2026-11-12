@@ -6,6 +6,7 @@ import { BarChart3, ClipboardList, Lock, MapPin, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Database } from '@/lib/supabase/types';
+import { getUserRole, hasRole } from '@/lib/auth/roles';
 import { groupAccess, isOpen, memberActions, UUID_PATTERN, type GroupAccess, type GroupRole } from '@/lib/api/group-membership';
 import { authorNames } from '@/lib/api/user-names';
 import { GROUP_TYPES } from '@/lib/data/group-types';
@@ -13,6 +14,7 @@ import { groupIconMeta } from '@/lib/data/group-icon-meta';
 import EventFormDialog from '@/components/events/EventFormDialog';
 import GroupFormDialog from '@/components/groups/GroupFormDialog';
 import GroupMemberList, { type MemberView } from '@/components/groups/GroupMemberList';
+import GroupReviewButtons from '@/components/groups/GroupReviewButtons';
 import JoinGroupButton from '@/components/groups/JoinGroupButton';
 import JoinRequestList, { type JoinRequestView } from '@/components/groups/JoinRequestList';
 import RequestToJoinButton from '@/components/groups/RequestToJoinButton';
@@ -215,16 +217,23 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
   const tab: GroupTab = GROUP_TABS.some((t) => t.value === rawTab) ? (rawTab as GroupTab) : 'discussion';
 
   const supabase = await createClient();
-  const { data: group, error } = await supabase.from('groups').select('*').eq('id', id).single<Tables['groups']['Row']>();
-  if (error || !group) return notFound();
+  // Read through the service role so a pending proposal can be found; who may
+  // see it is decided just below. Public RLS on groups shows only live ones.
+  const admin = createAdminClient();
+  const { data: group, error } = await admin.from('groups').select('*').eq('id', id).maybeSingle<Tables['groups']['Row']>();
+  if (error || !group || group.status === 'inactive') return notFound();
 
   const { userId } = await auth();
-  const access = await groupAccess(group, userId);
+  const [access, siteRole] = await Promise.all([groupAccess(group, userId), userId ? getUserRole(userId) : Promise.resolve(null)]);
   const { isMember, isOwner, isSiteAdmin: isAdmin, canRead, canModerate, canDelete } = access;
+  const isSuperadmin = siteRole !== null && hasRole(siteRole, 'superadmin');
+  const isPending = group.status === 'pending';
+  // A proposal is seen only by the person who proposed it and the superadmins
+  // who review it; for anyone else it doesn't exist yet.
+  if (isPending && !isOwner && !isSuperadmin) return notFound();
 
   // Memberships are only readable to their owner under RLS, so the head count
   // comes through the service role. Only the number leaves the server.
-  const admin = createAdminClient();
   // A private group's content is authorized by groupAccess() above and read
   // through the service role; the anon client would be filtered out by
   // can_read_group(). Nothing is loaded for someone who can't read it.
@@ -349,10 +358,21 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
           </div>
         </section>
 
+        {isPending ? (
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 dark:border-amber-900/60 dark:bg-amber-950/30">
+            <p className="text-slate-700 dark:text-slate-200">
+              {isSuperadmin
+                ? 'This group was proposed and is waiting for your review. Nobody else can see it yet.'
+                : "Your group is waiting for approval. Only you and the site's superadmins can see it until then."}
+            </p>
+            {isSuperadmin ? <GroupReviewButtons groupId={group.id} title={group.title} redirectTo="/groups" /> : null}
+          </div>
+        ) : null}
+
         {canModerate && joinRequests.length > 0 ? <JoinRequestList requests={joinRequests} /> : null}
 
         {/* Private group: ask to join */}
-        {!isMember && group.is_private ? (
+        {!isMember && !isPending && group.is_private ? (
           <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-blue-50 px-6 py-4 dark:bg-slate-800">
             <p className="text-slate-700 dark:text-slate-200">
               <SignedOut>This is a private group. Sign in to ask to join.</SignedOut>
@@ -376,7 +396,7 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
         ) : null}
 
         {/* Join prompt for anyone who can read but not take part */}
-        {!isMember && !group.is_private ? (
+        {!isMember && !isPending && !group.is_private ? (
           <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-blue-50 px-6 py-4 dark:bg-slate-800">
             <p className="text-slate-700 dark:text-slate-200">
               <SignedOut>Sign in and join this group to comment, vote and sign up.</SignedOut>

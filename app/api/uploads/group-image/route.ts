@@ -1,5 +1,4 @@
 import { requireAuthSupabase } from '@/lib/supabase/auth';
-import { requireRole } from '@/lib/auth/roles';
 import { apiError } from '@/lib/api/response';
 import { handleFileDelete, handleFileUpload } from '@/lib/api/upload';
 import { groupAccess, loadGroupPrivacy } from '@/lib/api/group-membership';
@@ -7,8 +6,10 @@ import { groupAccess, loadGroupPrivacy } from '@/lib/api/group-membership';
 /**
  * Upload a group picture. With `?group_id=`, for editing that group: its owner
  * or group admins, or a site admin. Without it, for a group not created yet:
- * site admins only, since only they can create groups. The bucket has no
- * storage write policies, so this route is its only way in.
+ * any signed-in user, since anyone can propose one. Objects land under the
+ * uploader's own prefix, and /api/groups only accepts a picture from the
+ * caller's own prefix. The bucket has no storage write policies, so this route
+ * is its only way in.
  */
 export async function POST(req: Request) {
   try {
@@ -17,8 +18,6 @@ export async function POST(req: Request) {
     if (groupId) {
       const group = await loadGroupPrivacy(groupId);
       if (!group || !(await groupAccess(group, userId)).canModerate) throw new Error('Forbidden');
-    } else {
-      await requireRole(userId, 'admin');
     }
   } catch (err) {
     return apiError(err, 'Failed to upload file');

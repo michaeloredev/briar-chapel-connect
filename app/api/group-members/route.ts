@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     // RLS refuses a private group anyway; this turns that into a message the
     // page can act on instead of a bare policy error.
     const group = await loadGroupPrivacy(group_id);
-    if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    if (!group || group.status !== 'active') return NextResponse.json({ error: 'Group not found' }, { status: 404 });
     if (group.is_private) return apiForbidden('This group is private. Request to join instead.');
 
     type Insert = Database['public']['Tables']['group_members']['Insert'];

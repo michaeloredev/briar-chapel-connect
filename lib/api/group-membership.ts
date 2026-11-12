@@ -112,14 +112,16 @@ export async function groupAccess(group: { id: string; is_private: boolean }, us
   };
 }
 
-/** The group's privacy flag, or null when there is no such group. */
-export async function loadGroupPrivacy(groupId: string): Promise<{ id: string; is_private: boolean } | null> {
+export type GroupSummary = Pick<Database['public']['Tables']['groups']['Row'], 'id' | 'is_private' | 'status' | 'user_id'>;
+
+/** A group's privacy, status and creator, or null when there is no such group. */
+export async function loadGroupPrivacy(groupId: string): Promise<GroupSummary | null> {
   if (!UUID_PATTERN.test(groupId)) return null;
   const { data, error } = await createAdminClient()
     .from('groups')
-    .select('id, is_private')
+    .select('id, is_private, status, user_id')
     .eq('id', groupId)
-    .maybeSingle<{ id: string; is_private: boolean }>();
+    .maybeSingle<GroupSummary>();
   if (error) throw new Error(error.message);
   return data ?? null;
 }

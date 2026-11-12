@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { Resend } from 'resend';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 import { SUPPORT_CATEGORIES, type SupportCategory } from '@/lib/data/support-categories';
 
-const SUPPORT_INBOX = 'michael.ore.dev@gmail.com';
-// Shares the Resend account behind jdrock.com, so it sends from that verified
-// domain. Only the support inbox ever sees this address; replies go to the
-// neighbor through replyTo.
-const FROM = 'Briar Chapel Connect <support@jdrock.com>';
+import { sendAdminEmail } from '@/lib/email/admin';
 
 const MAX_NAME = 100;
 const MAX_EMAIL = 254;
@@ -68,11 +63,6 @@ export async function POST(req: Request) {
       return apiBadRequest('One of the fields is too long');
     }
 
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      throw new Error('RESEND_API_KEY is not set');
-    }
-
     const { userId } = await auth();
     const now = new Date();
     const ticket = ticketId(now);
@@ -93,18 +83,12 @@ export async function POST(req: Request) {
       '— Reply to this email to answer the neighbor directly.',
     ].join('\n');
 
-    const resend = new Resend(apiKey);
-    const { error } = await resend.emails.send({
-      from: FROM,
-      to: SUPPORT_INBOX,
-      replyTo: email,
-      subject: `[${ticket}] ${categoryLabel}: ${subject}`,
-      text,
-    });
-
-    if (error) {
-      console.error('[Support][POST] send error:', error.message);
-      return apiError(new Error(error.message), 'Failed to send your message');
+    // Replies go straight to the neighbor through replyTo.
+    try {
+      await sendAdminEmail({ subject: `[${ticket}] ${categoryLabel}: ${subject}`, text, replyTo: email });
+    } catch (sendError) {
+      console.error('[Support][POST] send error:', sendError instanceof Error ? sendError.message : sendError);
+      return apiError(sendError, 'Failed to send your message');
     }
 
     return NextResponse.json({ ticket }, { status: 201 });

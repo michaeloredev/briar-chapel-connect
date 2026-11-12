@@ -61,9 +61,15 @@ type Props = {
    * a PATCH for this row instead of creating a new group.
    */
   group?: EditableGroup;
+  /**
+   * Creating as someone whose group needs a superadmin's approval: the dialog
+   * says so, and opens the new group's page afterwards so they can see it's
+   * waiting. The route decides the status regardless.
+   */
+  proposal?: boolean;
 };
 
-export default function GroupFormDialog({ className = '', group }: Props) {
+export default function GroupFormDialog({ className = '', group, proposal = false }: Props) {
   const router = useRouter();
   const isEdit = Boolean(group);
   const [open, setOpen] = React.useState(false);
@@ -158,6 +164,7 @@ export default function GroupFormDialog({ className = '', group }: Props) {
         throw new Error(await readFailedResponse(res, isEdit ? 'Failed to update group' : 'Failed to create group'));
       }
       saved = true;
+      const created = isEdit ? null : ((await res.json()) as { id?: string; status?: string });
       if (!isEdit) {
         setTitle('');
         setDescription('');
@@ -171,6 +178,8 @@ export default function GroupFormDialog({ className = '', group }: Props) {
       }
       setImageFile(null);
       setOpen(false);
+      // A proposal isn't listed until it's approved, so go to its page.
+      if (created?.status === 'pending' && created.id) router.push(`/groups/${created.id}`);
       router.refresh();
     } catch (err: any) {
       setError(err?.message ?? 'Something went wrong');
@@ -194,10 +203,10 @@ export default function GroupFormDialog({ className = '', group }: Props) {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        title={isEdit ? `Edit ${group!.title}` : 'Create group'}
+        title={isEdit ? `Edit ${group!.title}` : proposal ? 'Propose a group' : 'Create group'}
       >
         {isEdit ? <Pencil className="h-3.5 w-3.5" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
-        {isEdit ? 'Edit' : 'Create Group'}
+        {isEdit ? 'Edit' : proposal ? 'Propose a Group' : 'Create Group'}
       </button>
 
       {open && (
@@ -212,7 +221,7 @@ export default function GroupFormDialog({ className = '', group }: Props) {
           />
           <div className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{isEdit ? 'Edit Group' : 'Create Group'}</h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{isEdit ? 'Edit Group' : proposal ? 'Propose a Group' : 'Create Group'}</h2>
               <button
                 type="button"
                 className="p-1 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -224,6 +233,11 @@ export default function GroupFormDialog({ className = '', group }: Props) {
             </div>
 
             <form onSubmit={onSubmit} className="px-5 py-4 space-y-4">
+              {proposal && !isEdit ? (
+                <p className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  A site superadmin reviews new groups before they appear to everyone. You&apos;ll be the group&apos;s owner.
+                </p>
+              ) : null}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Title <span className="text-red-600 dark:text-red-400" aria-hidden>*</span>
