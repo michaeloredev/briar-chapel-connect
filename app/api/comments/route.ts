@@ -6,7 +6,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getUserRole, hasRole } from '@/lib/auth/roles';
 import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
 import { authorNames } from '@/lib/api/user-names';
-import { isGroupMember } from '@/lib/api/group-membership';
+import { groupAccess, isGroupMember, loadGroupPrivacy } from '@/lib/api/group-membership';
+import { auth } from '@clerk/nextjs/server';
 
 type PostBody = {
   entity_type?: string;
@@ -24,9 +25,24 @@ export async function GET(req: Request) {
     return apiBadRequest('Missing entity_type or entity_id');
   }
 
-  const supabase = await createClient();
+  // A private group's thread is for its members (and site admins). This route
+  // is public, so check here, then read through the service role -- the anon
+  // client would be filtered by can_read_group() and see nothing.
+  let reader = await createClient();
+  if (entity_type === 'group') {
+    const group = await loadGroupPrivacy(entity_id);
+    if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    if (group.is_private) {
+      const { userId } = await auth();
+      if (!(await groupAccess(group, userId ?? null)).canRead) {
+        return apiForbidden('This group is private.');
+      }
+      reader = createAdminClient();
+    }
+  }
+
   type Row = Database['public']['Tables']['comments']['Row'];
-  const { data, error } = await supabase
+  const { data, error } = await reader
     .from('comments')
     .select('*')
     .eq('entity_type', entity_type)
@@ -122,7 +138,21 @@ export async function DELETE(req: Request) {
 
     const { supabase, userId } = await requireAuthSupabase();
     const role = await getUserRole(userId);
-    const isModerator = hasRole(role, 'admin');
+    let isModerator = hasRole(role, 'admin');
+
+    // A group's owner and group admins moderate its own discussion, and only
+    // that: being a manager of one group gives nothing anywhere else.
+    if (!isModerator) {
+      const { data: target } = await createAdminClient()
+        .from('comments')
+        .select('entity_type, entity_id, user_id')
+        .eq('id', id)
+        .maybeSingle<{ entity_type: string; entity_id: string; user_id: string }>();
+      if (target && target.entity_type === 'group' && target.user_id !== userId) {
+        const group = await loadGroupPrivacy(target.entity_id);
+        isModerator = group !== null && (await groupAccess(group, userId)).canModerate;
+      }
+    }
 
     // The owner-only RLS policy blocks moderators from deleting other users'
     // comments, so moderation goes through the service-role client instead.

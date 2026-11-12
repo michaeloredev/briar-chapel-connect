@@ -2,18 +2,22 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
-import { BarChart3, ClipboardList, MapPin, Users } from 'lucide-react';
+import { BarChart3, ClipboardList, Lock, MapPin, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Database } from '@/lib/supabase/types';
 import { getUserRole, hasRole } from '@/lib/auth/roles';
-import { isGroupMember, isOpen, UUID_PATTERN } from '@/lib/api/group-membership';
+import { groupAccess, isOpen, memberActions, UUID_PATTERN, type GroupAccess, type GroupRole } from '@/lib/api/group-membership';
 import { authorNames } from '@/lib/api/user-names';
 import { GROUP_TYPES } from '@/lib/data/group-types';
 import { groupIconMeta } from '@/lib/data/group-icon-meta';
 import EventFormDialog from '@/components/events/EventFormDialog';
 import GroupFormDialog from '@/components/groups/GroupFormDialog';
+import GroupMemberList, { type MemberView } from '@/components/groups/GroupMemberList';
+import GroupReviewButtons from '@/components/groups/GroupReviewButtons';
 import JoinGroupButton from '@/components/groups/JoinGroupButton';
+import JoinRequestList, { type JoinRequestView } from '@/components/groups/JoinRequestList';
+import RequestToJoinButton from '@/components/groups/RequestToJoinButton';
 import GroupTabs, { GROUP_TABS, type GroupTab } from '@/components/groups/GroupTabs';
 import PollCard from '@/components/groups/PollCard';
 import PollFormDialog from '@/components/groups/PollFormDialog';
@@ -21,7 +25,6 @@ import SignupCard from '@/components/groups/SignupCard';
 import SignupFormDialog from '@/components/groups/SignupFormDialog';
 import type { PollView, SignupView } from '@/components/groups/types';
 import AdminDeleteButton from '@/components/common/AdminDeleteButton';
-import RoleGate from '@/components/auth/RoleGate';
 import SetBreadcrumbTitle from '@/components/common/SetBreadcrumbTitle';
 import CommentThread from '@/components/forum/CommentThread';
 
@@ -40,7 +43,7 @@ interface PageProps {
 const UNNAMED = 'Community member';
 
 /** Every poll in the group, newest first, with options, votes and voter names. */
-async function loadPolls(supabase: Supabase, groupId: string, userId: string | null, isAdmin: boolean): Promise<PollView[]> {
+async function loadPolls(supabase: Supabase, groupId: string, userId: string | null, canModerate: boolean): Promise<PollView[]> {
   const { data: polls, error } = await supabase
     .from('group_polls')
     .select('*')
@@ -70,7 +73,7 @@ async function loadPolls(supabase: Supabase, groupId: string, userId: string | n
       closesAt: p.closes_at,
       open: isOpen(p),
       creatorName: names.get(p.user_id) ?? UNNAMED,
-      canManage: Boolean(userId) && (userId === p.user_id || isAdmin),
+      canManage: Boolean(userId) && (userId === p.user_id || canModerate),
       voterCount: new Set(pollVotes.map((v) => v.user_id)).size,
       options: (options ?? [])
         .filter((o) => o.poll_id === p.id)
@@ -87,8 +90,77 @@ async function loadPolls(supabase: Supabase, groupId: string, userId: string | n
   });
 }
 
+const ROLE_ORDER: Record<GroupRole, number> = { owner: 0, admin: 1, member: 2 };
+
+/**
+ * Active members, owner first, then admins, then by join date, with the
+ * actions this viewer may take on each. A member's Clerk ID only goes to the
+ * browser when the viewer has an action on them.
+ */
+async function loadMembers(admin: Supabase, groupId: string, userId: string | null, access: GroupAccess): Promise<MemberView[]> {
+  const { data, error } = await admin
+    .from('group_members')
+    .select('user_id, role, created_at')
+    .eq('group_id', groupId)
+    .eq('status', 'active')
+    .order('created_at')
+    .returns<Pick<Tables['group_members']['Row'], 'user_id' | 'role' | 'created_at'>[]>();
+  if (error) {
+    console.error('[GroupPage] members error:', error.message);
+    return [];
+  }
+  const names = await authorNames((data ?? []).map((m) => m.user_id));
+  return (data ?? [])
+    .map((m) => {
+      const isSelf = m.user_id === userId;
+      const actions = memberActions(access, m.role, isSelf);
+      return {
+        userId: actions.length ? m.user_id : null,
+        name: names.get(m.user_id) ?? UNNAMED,
+        role: m.role,
+        joinedAt: m.created_at,
+        isSelf,
+        actions,
+      };
+    })
+    .sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role]);
+}
+
+/** The signed-in user's pending request to join, as its note, or null. */
+async function loadMyRequest(admin: Supabase, groupId: string, userId: string): Promise<string | null> {
+  const { data, error } = await admin
+    .from('group_join_requests')
+    .select('message')
+    .eq('group_id', groupId)
+    .eq('user_id', userId)
+    .maybeSingle<Pick<Tables['group_join_requests']['Row'], 'message'>>();
+  if (error) console.error('[GroupPage] my request error:', error.message);
+  return data?.message ?? null;
+}
+
+/** Pending requests to join, oldest first, for the owner and site admins. */
+async function loadJoinRequests(admin: Supabase, groupId: string): Promise<JoinRequestView[]> {
+  const { data, error } = await admin
+    .from('group_join_requests')
+    .select('*')
+    .eq('group_id', groupId)
+    .order('created_at')
+    .returns<Tables['group_join_requests']['Row'][]>();
+  if (error) {
+    console.error('[GroupPage] join requests error:', error.message);
+    return [];
+  }
+  const names = await authorNames((data ?? []).map((r) => r.user_id));
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    name: names.get(r.user_id) ?? UNNAMED,
+    message: r.message,
+    createdAt: r.created_at,
+  }));
+}
+
 /** Every sign-up sheet in the group, newest first, with slots and who claimed them. */
-async function loadSignups(supabase: Supabase, groupId: string, userId: string | null, isAdmin: boolean): Promise<SignupView[]> {
+async function loadSignups(supabase: Supabase, groupId: string, userId: string | null, canModerate: boolean): Promise<SignupView[]> {
   const { data: signups, error } = await supabase
     .from('group_signups')
     .select('*')
@@ -124,7 +196,7 @@ async function loadSignups(supabase: Supabase, groupId: string, userId: string |
     description: s.description,
     open: isOpen(s),
     creatorName: names.get(s.user_id) ?? UNNAMED,
-    canManage: Boolean(userId) && (userId === s.user_id || isAdmin),
+    canManage: Boolean(userId) && (userId === s.user_id || canModerate),
     slots: (slots ?? [])
       .filter((slot) => slot.signup_id === s.id)
       .map((slot) => ({
@@ -145,23 +217,39 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
   const tab: GroupTab = GROUP_TABS.some((t) => t.value === rawTab) ? (rawTab as GroupTab) : 'discussion';
 
   const supabase = await createClient();
-  const { data: group, error } = await supabase.from('groups').select('*').eq('id', id).single<Tables['groups']['Row']>();
-  if (error || !group) return notFound();
+  // Read through the service role so a pending proposal can be found; who may
+  // see it is decided just below. Public RLS on groups shows only live ones.
+  const admin = createAdminClient();
+  const { data: group, error } = await admin.from('groups').select('*').eq('id', id).maybeSingle<Tables['groups']['Row']>();
+  if (error || !group || group.status === 'inactive') return notFound();
 
   const { userId } = await auth();
-  const [isMember, isAdmin] = userId
-    ? await Promise.all([isGroupMember(id, userId), getUserRole(userId).then((r) => hasRole(r, 'admin'))])
-    : [false, false];
+  const [access, siteRole] = await Promise.all([groupAccess(group, userId), userId ? getUserRole(userId) : Promise.resolve(null)]);
+  const { isMember, isOwner, isSiteAdmin: isAdmin, canRead, canModerate, canDelete } = access;
+  const isSuperadmin = siteRole !== null && hasRole(siteRole, 'superadmin');
+  const isPending = group.status === 'pending';
+  // A proposal is seen only by the person who proposed it and the superadmins
+  // who review it; for anyone else it doesn't exist yet.
+  if (isPending && !isOwner && !isSuperadmin) return notFound();
 
   // Memberships are only readable to their owner under RLS, so the head count
   // comes through the service role. Only the number leaves the server.
-  const admin = createAdminClient();
-  const [{ count: memberCount }, { count: commentCount }, polls, signups] = await Promise.all([
+  // A private group's content is authorized by groupAccess() above and read
+  // through the service role; the anon client would be filtered out by
+  // can_read_group(). Nothing is loaded for someone who can't read it.
+  const reader = group.is_private ? admin : supabase;
+  const [{ count: memberCount }, commentCount, polls, signups, myRequest, joinRequests] = await Promise.all([
     admin.from('group_members').select('id', { count: 'exact', head: true }).eq('group_id', id).eq('status', 'active'),
-    supabase.from('comments').select('id', { count: 'exact', head: true }).eq('entity_type', 'group').eq('entity_id', id),
-    loadPolls(supabase, id, userId, isAdmin),
-    loadSignups(supabase, id, userId, isAdmin),
+    canRead
+      ? reader.from('comments').select('id', { count: 'exact', head: true }).eq('entity_type', 'group').eq('entity_id', id).then((r) => r.count ?? 0)
+      : Promise.resolve(0),
+    canRead ? loadPolls(reader, id, userId, canModerate) : Promise.resolve([] as PollView[]),
+    canRead ? loadSignups(reader, id, userId, canModerate) : Promise.resolve([] as SignupView[]),
+    userId && !isMember && group.is_private ? loadMyRequest(admin, id, userId) : Promise.resolve(null),
+    canModerate ? loadJoinRequests(admin, id) : Promise.resolve([] as JoinRequestView[]),
   ]);
+  // Only the open tab's list is fetched; the tab's count is the head count.
+  const memberList = canRead && tab === 'members' ? await loadMembers(admin, id, userId, access) : [];
 
   const meta = GROUP_TYPES.find((t) => t.value === group.type);
   const avatar = groupIconMeta(group);
@@ -198,9 +286,15 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
                 >
                   {meta?.label ?? group.type}
                 </span>
+                {group.is_private ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                    <Lock className="h-3 w-3" aria-hidden />
+                    Private
+                  </span>
+                ) : null}
                 {isMember ? (
                   <span className="rounded-full border border-blue-400 px-2.5 py-0.5 text-xs font-medium text-blue-500 dark:text-blue-400">
-                    Member
+                    {isOwner ? 'Owner' : 'Member'}
                   </span>
                 ) : null}
               </div>
@@ -221,9 +315,10 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
             </div>
             <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
               {/* Non-members join from the prompt below the header. */}
-              {isMember ? <JoinGroupButton groupId={group.id} isMember /> : null}
-              {/* Hides the controls only -- /api/groups enforces admin. */}
-              <RoleGate minimum="admin">
+              {/* The owner can't leave: the group would be left without one. */}
+              {isMember && !isOwner ? <JoinGroupButton groupId={group.id} isMember /> : null}
+              {/* Shown from the server's groupAccess(); the routes check the same rules. */}
+              {canModerate ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <GroupFormDialog
                     group={{
@@ -234,15 +329,20 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
                       location: group.location,
                       image_url: group.image_url,
                       icon: group.icon,
+                      is_private: group.is_private,
                     }}
                   />
-                  <EventFormDialog
-                    buttonLabel="Schedule Event"
-                    dialogTitle="Schedule Meetup"
-                    defaultLocation={group.location ?? 'Briar Chapel'}
-                    fixedCategory="group"
-                    groupId={group.id}
-                  />
+                  {/* Events are still created by site admins only. */}
+                  {isAdmin ? (
+                    <EventFormDialog
+                      buttonLabel="Schedule Event"
+                      dialogTitle="Schedule Meetup"
+                      defaultLocation={group.location ?? 'Briar Chapel'}
+                      fixedCategory="group"
+                      groupId={group.id}
+                    />
+                  ) : null}
+                  {canDelete ? (
                   <AdminDeleteButton
                     endpoint="/api/groups"
                     id={group.id}
@@ -251,14 +351,52 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
                     name={group.title}
                     consequence="Its memberships, polls and sign-ups will be removed; its events stay on the calendar without a group."
                   />
+                  ) : null}
                 </div>
-              </RoleGate>
+              ) : null}
             </div>
           </div>
         </section>
 
+        {isPending ? (
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 dark:border-amber-900/60 dark:bg-amber-950/30">
+            <p className="text-slate-700 dark:text-slate-200">
+              {isSuperadmin
+                ? 'This group was proposed and is waiting for your review. Nobody else can see it yet.'
+                : "Your group is waiting for approval. Only you and the site's superadmins can see it until then."}
+            </p>
+            {isSuperadmin ? <GroupReviewButtons groupId={group.id} title={group.title} redirectTo="/groups" /> : null}
+          </div>
+        ) : null}
+
+        {canModerate && joinRequests.length > 0 ? <JoinRequestList requests={joinRequests} /> : null}
+
+        {/* Private group: ask to join */}
+        {!isMember && !isPending && group.is_private ? (
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-blue-50 px-6 py-4 dark:bg-slate-800">
+            <p className="text-slate-700 dark:text-slate-200">
+              <SignedOut>This is a private group. Sign in to ask to join.</SignedOut>
+              <SignedIn>
+                {myRequest !== null
+                  ? "Your request has been sent. You'll be able to take part once it's approved."
+                  : 'This is a private group. Ask to join to see the discussion, polls and sign-ups.'}
+              </SignedIn>
+            </p>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  Sign in
+                </button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <RequestToJoinButton groupId={group.id} groupTitle={group.title} pendingMessage={myRequest} />
+            </SignedIn>
+          </div>
+        ) : null}
+
         {/* Join prompt for anyone who can read but not take part */}
-        {!isMember ? (
+        {!isMember && !isPending && !group.is_private ? (
           <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-blue-50 px-6 py-4 dark:bg-slate-800">
             <p className="text-slate-700 dark:text-slate-200">
               <SignedOut>Sign in and join this group to comment, vote and sign up.</SignedOut>
@@ -278,11 +416,16 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
         ) : null}
 
         {/* Sections */}
+        {!canRead ? (
+          <div className="mt-8">
+            <EmptyState icon={Lock} text="Only members can see this group's discussion, polls and sign-ups." />
+          </div>
+        ) : (
         <div className="mt-8">
           <GroupTabs
             groupId={group.id}
             active={tab}
-            counts={{ discussion: commentCount ?? 0, polls: polls.length, signups: signups.length }}
+            counts={{ discussion: commentCount ?? 0, polls: polls.length, signups: signups.length, members: memberCount ?? 0 }}
           />
 
           <div className="mt-6">
@@ -292,6 +435,7 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
                   entityType="group"
                   entityId={group.id}
                   canPost={isMember}
+                  canModerate={canModerate}
                   readOnlyNotice={<p className="text-sm text-slate-600 dark:text-slate-300">Join the group to join the conversation.</p>}
                 />
               </div>
@@ -326,8 +470,17 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
                 )}
               </div>
             ) : null}
+
+            {tab === 'members' ? (
+              memberList.length === 0 ? (
+                <EmptyState icon={Users} text="No members yet." />
+              ) : (
+                <GroupMemberList groupId={group.id} members={memberList} />
+              )
+            ) : null}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

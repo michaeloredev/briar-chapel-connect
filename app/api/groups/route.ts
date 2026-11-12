@@ -1,14 +1,47 @@
 import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
-import { requireRole } from '@/lib/auth/roles';
+import { getUserRole, hasRole } from '@/lib/auth/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
-import { deleteEntityComments } from '@/lib/api/comments';
 import { publicImagePath, removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
+import { deleteGroup, GROUP_IMAGE_BUCKET } from '@/lib/api/groups';
+import { sendAdminEmail } from '@/lib/email/admin';
+import { authorNames } from '@/lib/api/user-names';
 import { isGroupIcon } from '@/lib/data/group-icon-meta';
+import { groupAccess, loadGroupPrivacy } from '@/lib/api/group-membership';
 
-const IMAGE_BUCKET = 'group-images';
+const IMAGE_BUCKET = GROUP_IMAGE_BUCKET;
+
+/** How many proposals one person can have waiting at once. */
+const MAX_PENDING_PROPOSALS = 3;
+
+/**
+ * Tell the admin inbox a group is waiting. Best effort: the proposal is
+ * already saved and shows on the groups page for superadmins either way.
+ */
+async function notifyProposal(group: { id: string; title: string; description: string; type: string; is_private: boolean }, userId: string, origin: string) {
+  try {
+    const name = (await authorNames([userId])).get(userId) ?? 'A neighbor';
+    await sendAdminEmail({
+      subject: `New group proposal: ${group.title}`,
+      text: [
+        `${name} proposed a new group.`,
+        '',
+        `Title:    ${group.title}`,
+        `Type:     ${group.type}`,
+        `Privacy:  ${group.is_private ? 'Private' : 'Public'}`,
+        `Account:  ${userId}`,
+        '',
+        group.description,
+        '',
+        `Review it: ${origin}/groups/${group.id}`,
+      ].join('\n'),
+    });
+  } catch (err) {
+    console.error('[Groups][POST] proposal email failed:', err instanceof Error ? err.message : err);
+  }
+}
 
 /**
  * Normalize an incoming picture: null clears it, anything else must be an
@@ -35,8 +68,15 @@ type Payload = {
   location?: string | null;
   image_url?: string | null;
   icon?: string | null;
+  /** Members-only content; joining takes an approved request. */
+  is_private?: boolean;
 };
 
+/**
+ * Create a group. Any signed-in user may: a site admin's group goes live at
+ * once, anyone else's waits as 'pending' until a superadmin approves it at
+ * /api/groups/review. Either way the creator becomes its owner.
+ */
 export async function POST(req: Request) {
   try {
     const body: Payload = await req.json();
@@ -52,14 +92,33 @@ export async function POST(req: Request) {
     }
     if (!image.ok) return apiBadRequest('invalid image');
     if (!icon.ok) return apiBadRequest('invalid icon');
+    if (body.is_private !== undefined && typeof body.is_private !== 'boolean') {
+      return apiBadRequest('is_private must be true or false');
+    }
 
     const { userId } = await requireAuthSupabase();
-    await requireRole(userId, 'admin');
+    // Same rule as editing: the picture must be the caller's own upload, or a
+    // later picture change would delete another group's file.
+    const imagePath = image.value ? storageObjectPath(image.value, IMAGE_BUCKET) : null;
+    if (imagePath && !imagePath.startsWith(`${userId}/`)) return apiBadRequest('invalid image');
+
+    const isSiteAdmin = hasRole(await getUserRole(userId), 'admin');
     // RLS grants no write on this table to anon or authenticated, so the
-    // insert goes through the service role -- authorized by the check above.
+    // insert goes through the service role -- authorized by the checks here.
     // The add_group_creator_as_owner trigger makes the creator the group's
     // owner in the same transaction, so there is no membership insert here.
     const admin = createAdminClient();
+    if (!isSiteAdmin) {
+      const { count, error: countError } = await admin
+        .from('groups')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('status', 'pending');
+      if (countError) return apiError(countError, 'Failed to create group');
+      if ((count ?? 0) >= MAX_PENDING_PROPOSALS) {
+        return apiBadRequest(`You already have ${MAX_PENDING_PROPOSALS} groups waiting for approval.`);
+      }
+    }
     type Insert = Database['public']['Tables']['groups']['Insert'];
     const insert: Insert = {
       user_id: userId,
@@ -67,22 +126,24 @@ export async function POST(req: Request) {
       description,
       type,
       location,
-      status: 'active',
+      status: isSiteAdmin ? 'active' : 'pending',
       image_url: image.value,
       icon: icon.value,
+      is_private: body.is_private ?? false,
     };
 
     const { data, error } = await admin
       .from('groups')
       .insert(insert as any)
       .select('*')
-      .single();
+      .single<Database['public']['Tables']['groups']['Row']>();
 
     if (error) {
       console.error('[Groups][POST] insert error:', error.message);
       return apiError(error, 'Failed to create group');
     }
 
+    if (data.status === 'pending') await notifyProposal(data, userId, new URL(req.url).origin);
     return NextResponse.json(data, { status: 201 });
   } catch (err) {
     return apiError(err, 'Failed to create group');
@@ -92,8 +153,7 @@ export async function POST(req: Request) {
 type PatchPayload = Payload & { id?: string; status?: string };
 
 /**
- * Edit a group. Admin and above, any group -- same reasoning as events: only
- * admins can create one, so the same people can correct it.
+ * Edit a group: its owner or group admins, or any site admin.
  *
  * Only the keys present in the request body are written, so a partial edit
  * cannot blank the fields it does not carry.
@@ -105,10 +165,14 @@ export async function PATCH(req: Request) {
     if (!id) return apiBadRequest('Missing id');
 
     const { userId } = await requireAuthSupabase();
-    await requireRole(userId, 'admin');
+    const group = await loadGroupPrivacy(id);
+    if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    const access = await groupAccess(group, userId);
+    if (!access.canModerate) throw new Error('Forbidden');
 
     type GroupUpdate = Database['public']['Tables']['groups']['Update'];
     const update: GroupUpdate = {};
+    let newImage: string | null = null;
 
     if (body.title !== undefined) {
       const title = body.title.trim();
@@ -130,13 +194,23 @@ export async function PATCH(req: Request) {
       const image = parseImageUrl(body.image_url);
       if (!image.ok) return apiBadRequest('invalid image');
       update.image_url = image.value;
+      newImage = image.value;
     }
     if (body.icon !== undefined) {
       const icon = parseIcon(body.icon);
       if (!icon.ok) return apiBadRequest('invalid icon');
       update.icon = icon.value;
     }
+    if (body.is_private !== undefined) {
+      if (typeof body.is_private !== 'boolean') return apiBadRequest('is_private must be true or false');
+      // Existing members stay when a group goes private. Pending requests stay
+      // when it goes public, and can still be approved or declined.
+      update.is_private = body.is_private;
+    }
     if (body.status !== undefined) {
+      // Status is site moderation, not the owner's to change, and a proposal
+      // leaves 'pending' only through /api/groups/review.
+      if (!access.isSiteAdmin || group.status === 'pending') throw new Error('Forbidden');
       const allowed = ['active', 'inactive'] as const;
       type GroupStatus = (typeof allowed)[number];
       if (!(allowed as readonly string[]).includes(body.status)) {
@@ -155,6 +229,11 @@ export async function PATCH(req: Request) {
     if (update.image_url !== undefined) {
       const { data: current } = await admin.from('groups').select('image_url').eq('id', id).maybeSingle<{ image_url: string | null }>();
       previousImage = current?.image_url ?? null;
+      // A new picture must be one the caller uploaded. Otherwise a group owner
+      // could point their group at another group's picture, then change it
+      // again and have the cleanup below delete that other group's file.
+      const newPath = newImage && newImage !== previousImage ? storageObjectPath(newImage, IMAGE_BUCKET) : null;
+      if (newPath && !newPath.startsWith(`${userId}/`)) return apiBadRequest('invalid image');
     }
 
     const { data, error } = await admin
@@ -183,11 +262,9 @@ export async function PATCH(req: Request) {
 }
 
 /**
- * Delete a group. Admin and above, any group -- the same people who can
- * create and edit one. Memberships cascade through the foreign key. The
- * group's events are kept -- that key is ON DELETE SET NULL, so they stay on
- * the calendar as standalone events. Comments have no foreign key at all, so
- * their thread is removed separately afterwards.
+ * Delete a group: its owner, or any site admin. Group admins can edit but not
+ * delete. An owner deleting a pending proposal withdraws it. What goes with
+ * the group is described at deleteGroup().
  */
 export async function DELETE(req: Request) {
   try {
@@ -196,30 +273,12 @@ export async function DELETE(req: Request) {
     if (!id) return apiBadRequest('Missing id');
 
     const { userId } = await requireAuthSupabase();
-    await requireRole(userId, 'admin');
-    const admin = createAdminClient();
-
-    // Return image_url so the picture can be removed from storage too.
-    const { data: deleted, error } = await admin
-      .from('groups')
-      .delete()
-      .eq('id', id)
-      .select('id, image_url');
-
-    if (error) {
-      if (error.code === '22P02') return apiBadRequest('invalid id');
-      console.error('[Groups][DELETE] error:', error.message);
-      return apiError(error, 'Failed to delete group');
-    }
-    if (!deleted || deleted.length === 0) {
+    const group = await loadGroupPrivacy(id);
+    if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    if (!(await groupAccess(group, userId)).canDelete) throw new Error('Forbidden');
+    if (!(await deleteGroup(createAdminClient(), id))) {
       return NextResponse.json({ error: 'Group not found' }, { status: 404 });
     }
-
-    await deleteEntityComments(admin, 'group', id);
-    const imagePaths = deleted
-      .map((row) => storageObjectPath(String((row as { image_url: string | null }).image_url ?? ''), IMAGE_BUCKET))
-      .filter((path): path is string => Boolean(path));
-    await removeStorageObjects(IMAGE_BUCKET, imagePaths);
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {

@@ -1,12 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { SearchX, Users } from 'lucide-react';
+import { Clock, SearchX, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { getUserRole, hasRole } from '@/lib/auth/roles';
+import { authorNames } from '@/lib/api/user-names';
+import GroupReviewButtons from '@/components/groups/GroupReviewButtons';
 import type { Database } from '@/lib/supabase/types';
 import { GROUP_TYPES } from '@/lib/data/group-types';
 import GroupFormDialog from '@/components/groups/GroupFormDialog';
 import { SignedIn, SignInButton } from '@clerk/nextjs';
-import RoleGate from '@/components/auth/RoleGate';
 import GroupCard from '@/components/groups/GroupCard';
 import { PageHeader } from '@/components/common/PageHeader';
 import { auth } from '@clerk/nextjs/server';
@@ -39,15 +42,33 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
   // Every membership of the current user: drives both the Join/Leave state on
   // each card and the "My groups" filter.
   let memberIds = new Set<string>();
+  let ownedIds = new Set<string>();
   if (userId) {
     type MemRow = Database['public']['Tables']['group_members']['Row'];
     const { data: memberships, error: memErr } = await supabase
       .from('group_members')
-      .select('group_id')
+      .select('group_id, role')
       .eq('user_id', userId)
-      .returns<Pick<MemRow, 'group_id'>[]>();
+      .returns<Pick<MemRow, 'group_id' | 'role'>[]>();
     if (memErr) console.error('Failed to load memberships:', memErr.message);
     memberIds = new Set((memberships ?? []).map((m) => m.group_id));
+    ownedIds = new Set((memberships ?? []).filter((m) => m.role === 'owner').map((m) => m.group_id));
+  }
+
+  // Proposals waiting for approval. Public RLS hides them, so they come
+  // through the service role: every one for a superadmin to review, or just
+  // the viewer's own so they can see theirs is waiting.
+  const siteRole = userId ? await getUserRole(userId) : null;
+  const isSiteAdmin = siteRole !== null && hasRole(siteRole, 'admin');
+  const isSuperadmin = siteRole !== null && hasRole(siteRole, 'superadmin');
+  let pending: Array<Row & { proposer: string }> = [];
+  if (userId) {
+    let pendingQuery = createAdminClient().from('groups').select('*').eq('status', 'pending').order('created_at');
+    if (!isSuperadmin) pendingQuery = pendingQuery.eq('user_id', userId);
+    const { data, error } = await pendingQuery.returns<Row[]>();
+    if (error) console.error('Failed to load pending groups:', error.message);
+    const names = await authorNames((data ?? []).map((g) => g.user_id));
+    pending = (data ?? []).map((g) => ({ ...g, proposer: names.get(g.user_id) ?? 'A neighbor' }));
   }
 
   let groups: Row[] = [];
@@ -72,12 +93,59 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
           description="Find your people — golf, tennis, dog walkers, book clubs and more."
           actions={
             <SignedIn>
-              <RoleGate minimum="admin">
-                <GroupFormDialog />
-              </RoleGate>
+              {/* Anyone can propose; a site admin's group skips review. */}
+              <GroupFormDialog proposal={!isSiteAdmin} />
             </SignedIn>
           }
         />
+
+        {pending.length > 0 ? (
+          <section
+            aria-labelledby="pending-groups-heading"
+            className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-900/60 dark:bg-amber-950/30"
+          >
+            <h2 id="pending-groups-heading" className="inline-flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
+              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" aria-hidden />
+              {isSuperadmin ? `Waiting for review (${pending.length})` : 'Your proposed groups'}
+            </h2>
+            {!isSuperadmin ? (
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                A site superadmin will review these. They appear to everyone once approved.
+              </p>
+            ) : null}
+            <ul className="mt-4 flex flex-col gap-3">
+              {pending.map((g) => (
+                <li
+                  key={g.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800"
+                >
+                  <div className="min-w-0">
+                    <Link
+                      href={`/groups/${g.id}`}
+                      className="font-semibold text-slate-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400"
+                    >
+                      {g.title}
+                    </Link>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {GROUP_TYPES.find((t) => t.value === g.type)?.label ?? g.type}
+                      {g.is_private ? ' · Private' : ''}
+                      {isSuperadmin ? ` · Proposed by ${g.proposer}` : ''}
+                      {' · '}
+                      {new Date(g.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </p>
+                  </div>
+                  {isSuperadmin ? (
+                    <GroupReviewButtons groupId={g.id} title={g.title} />
+                  ) : (
+                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+                      Pending approval
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {/* Filters */}
         <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between dark:border-slate-700 dark:bg-slate-800">
@@ -187,6 +255,8 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
                 imageUrl={g.image_url}
                 icon={g.icon}
                 isMember={memberIds.has(g.id)}
+                isPrivate={g.is_private}
+                isOwner={ownedIds.has(g.id)}
               />
             ))}
           </div>

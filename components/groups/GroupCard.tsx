@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, MapPin } from 'lucide-react';
+import { ArrowRight, Lock, MapPin } from 'lucide-react';
 import { GROUP_TYPES } from '@/lib/data/group-types';
 import { groupIconMeta } from '@/lib/data/group-icon-meta';
 import JoinGroupButton from './JoinGroupButton';
@@ -14,9 +14,13 @@ export type GroupCardProps = {
   /** Chosen icon key; falls back to the type's icon. */
   icon?: string | null;
   isMember?: boolean;
+  /** Members-only; non-members ask to join from the group's page. */
+  isPrivate?: boolean;
+  /** Owners can't leave, so they get no Leave button. */
+  isOwner?: boolean;
 };
 
-export default function GroupCard({ id, title, description, location, type, imageUrl, icon, isMember = false }: GroupCardProps) {
+export default function GroupCard({ id, title, description, location, type, imageUrl, icon, isMember = false, isPrivate = false, isOwner = false }: GroupCardProps) {
   const meta = GROUP_TYPES.find((t) => t.value === type);
   const avatar = groupIconMeta({ type, icon });
   const Icon = avatar.icon;
@@ -63,6 +67,12 @@ export default function GroupCard({ id, title, description, location, type, imag
             >
               {meta?.label ?? type}
             </span>
+            {isPrivate ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                <Lock className="h-3 w-3" aria-hidden />
+                Private
+              </span>
+            ) : null}
             {isMember ? (
               <span className="rounded-full border border-blue-400 px-2 py-0.5 text-xs font-medium text-blue-500 dark:border-blue-400 dark:text-blue-400">
                 Member
@@ -83,7 +93,20 @@ export default function GroupCard({ id, title, description, location, type, imag
       ) : null}
 
       <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-        <JoinGroupButton groupId={id} isMember={isMember} className="relative z-10" />
+        {isPrivate && !isMember ? (
+          // Asking to join takes a note, so it happens on the group's page;
+          // the whole card already links there.
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-600 px-4 py-1.5 text-sm font-semibold text-blue-600 dark:border-blue-400 dark:text-blue-400" aria-hidden>
+            <Lock className="h-3.5 w-3.5" />
+            Request to join
+          </span>
+        ) : isOwner ? (
+          <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+            Owner
+          </span>
+        ) : (
+          <JoinGroupButton groupId={id} isMember={isMember} className="relative z-10" />
+        )}
         <span className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400" aria-hidden>
           View group
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

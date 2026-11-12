@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ImagePlus, Pencil, Plus, Search, Users, X } from 'lucide-react';
+import { ImagePlus, Lock, Pencil, Plus, Search, Users, X } from 'lucide-react';
 import { DynamicIcon, type IconName } from 'lucide-react/dynamic';
 import { useRouter } from 'next/navigation';
 import { GROUP_TYPES } from '@/lib/data/group-types';
@@ -17,6 +17,7 @@ export type EditableGroup = {
   location?: string | null;
   image_url?: string | null;
   icon?: string | null;
+  is_private?: boolean;
 };
 
 /** How many icons the picker shows at once; a search narrows the rest. */
@@ -60,9 +61,15 @@ type Props = {
    * a PATCH for this row instead of creating a new group.
    */
   group?: EditableGroup;
+  /**
+   * Creating as someone whose group needs a superadmin's approval: the dialog
+   * says so, and opens the new group's page afterwards so they can see it's
+   * waiting. The route decides the status regardless.
+   */
+  proposal?: boolean;
 };
 
-export default function GroupFormDialog({ className = '', group }: Props) {
+export default function GroupFormDialog({ className = '', group, proposal = false }: Props) {
   const router = useRouter();
   const isEdit = Boolean(group);
   const [open, setOpen] = React.useState(false);
@@ -74,6 +81,7 @@ export default function GroupFormDialog({ className = '', group }: Props) {
   const [type, setType] = React.useState(group?.type ?? GROUP_TYPES[0].value);
   const [location, setLocation] = React.useState(group?.location ?? '');
   const [icon, setIcon] = React.useState(group?.icon ?? '');
+  const [isPrivate, setIsPrivate] = React.useState(group?.is_private ?? false);
   const [iconQuery, setIconQuery] = React.useState('');
 
   // Picture: a newly cropped file waiting to upload, or the saved one, or neither.
@@ -130,7 +138,9 @@ export default function GroupFormDialog({ className = '', group }: Props) {
       if (imageFile) {
         const fd = new FormData();
         fd.append('file', imageFile);
-        const up = await fetch('/api/uploads/group-image', { method: 'POST', body: fd });
+        // Editing names the group, so its owner can upload; creating is admin-only.
+        const uploadUrl = isEdit ? `/api/uploads/group-image?group_id=${encodeURIComponent(group!.id)}` : '/api/uploads/group-image';
+        const up = await fetch(uploadUrl, { method: 'POST', body: fd });
         if (!up.ok) throw new Error(await readFailedResponse(up, 'Failed to upload picture'));
         uploadedUrl = ((await up.json()) as { url?: string }).url ?? null;
       }
@@ -145,6 +155,7 @@ export default function GroupFormDialog({ className = '', group }: Props) {
           type,
           location: location.trim() || null,
           icon: icon || null,
+          is_private: isPrivate,
           // Only send the picture when it changed: a new upload, or removal.
           ...(uploadedUrl ? { image_url: uploadedUrl } : savedImage !== (group?.image_url ?? null) ? { image_url: savedImage } : {}),
         }),
@@ -153,18 +164,22 @@ export default function GroupFormDialog({ className = '', group }: Props) {
         throw new Error(await readFailedResponse(res, isEdit ? 'Failed to update group' : 'Failed to create group'));
       }
       saved = true;
+      const created = isEdit ? null : ((await res.json()) as { id?: string; status?: string });
       if (!isEdit) {
         setTitle('');
         setDescription('');
         setType(GROUP_TYPES[0].value);
         setLocation('');
         setIcon('');
+        setIsPrivate(false);
         setSavedImage(null);
       } else {
         setSavedImage(uploadedUrl ?? savedImage);
       }
       setImageFile(null);
       setOpen(false);
+      // A proposal isn't listed until it's approved, so go to its page.
+      if (created?.status === 'pending' && created.id) router.push(`/groups/${created.id}`);
       router.refresh();
     } catch (err: any) {
       setError(err?.message ?? 'Something went wrong');
@@ -188,10 +203,10 @@ export default function GroupFormDialog({ className = '', group }: Props) {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        title={isEdit ? `Edit ${group!.title}` : 'Create group'}
+        title={isEdit ? `Edit ${group!.title}` : proposal ? 'Propose a group' : 'Create group'}
       >
         {isEdit ? <Pencil className="h-3.5 w-3.5" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
-        {isEdit ? 'Edit' : 'Create Group'}
+        {isEdit ? 'Edit' : proposal ? 'Propose a Group' : 'Create Group'}
       </button>
 
       {open && (
@@ -206,7 +221,7 @@ export default function GroupFormDialog({ className = '', group }: Props) {
           />
           <div className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{isEdit ? 'Edit Group' : 'Create Group'}</h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{isEdit ? 'Edit Group' : proposal ? 'Propose a Group' : 'Create Group'}</h2>
               <button
                 type="button"
                 className="p-1 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -218,6 +233,11 @@ export default function GroupFormDialog({ className = '', group }: Props) {
             </div>
 
             <form onSubmit={onSubmit} className="px-5 py-4 space-y-4">
+              {proposal && !isEdit ? (
+                <p className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  A site superadmin reviews new groups before they appear to everyone. You&apos;ll be the group&apos;s owner.
+                </p>
+              ) : null}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Title <span className="text-red-600 dark:text-red-400" aria-hidden>*</span>
@@ -262,6 +282,41 @@ export default function GroupFormDialog({ className = '', group }: Props) {
                     placeholder="Neighborhood or venue"
                   />
                 </div>
+              </div>
+
+              {/* Privacy */}
+              <div className="flex items-start justify-between gap-4 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                <div>
+                  <p id="group-private-label" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <Lock className="h-4 w-4 text-slate-400" aria-hidden />
+                    Private group
+                  </p>
+                  <p id="group-private-help" className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {isPrivate
+                      ? 'Anyone can find the group, but only members see its discussion, polls and sign-ups. People request to join and the owner approves them.'
+                      : 'Anyone can join and see the discussion, polls and sign-ups.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isPrivate}
+                  aria-labelledby="group-private-label"
+                  aria-describedby="group-private-help"
+                  onClick={() => setIsPrivate((v) => !v)}
+                  className={[
+                    'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900',
+                    isPrivate ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600',
+                  ].join(' ')}
+                >
+                  <span
+                    aria-hidden
+                    className={[
+                      'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform',
+                      isPrivate ? 'translate-x-5' : 'translate-x-0.5',
+                    ].join(' ')}
+                  />
+                </button>
               </div>
 
               {/* Appearance */}

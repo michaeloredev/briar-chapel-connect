@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getUserRole, hasRole } from '@/lib/auth/roles';
+import type { Database } from '@/lib/supabase/types';
 
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -26,15 +27,119 @@ export async function isGroupMember(groupId: string, userId: string): Promise<bo
 
 /**
  * Whether `userId` may close or delete something `ownerId` created inside a
- * group: its creator, or a site admin moderating.
+ * group: its creator, a manager of that group, or a site admin moderating.
  */
-export async function canManage(userId: string, ownerId: string): Promise<boolean> {
+export async function canManage(userId: string, ownerId: string, groupId: string): Promise<boolean> {
   if (userId === ownerId) return true;
-  return hasRole(await getUserRole(userId), 'admin');
+  const [role, siteRole] = await Promise.all([groupRole(groupId, userId), getUserRole(userId)]);
+  return isManagerRole(role) || hasRole(siteRole, 'admin');
 }
 
 /** Open means not closed early and not past its closing time, if it has one. */
 export function isOpen(row: { closed_at: string | null; closes_at?: string | null }): boolean {
   if (row.closed_at) return false;
   return !row.closes_at || new Date(row.closes_at).getTime() > Date.now();
+}
+
+export type GroupRole = Database['public']['Tables']['group_members']['Row']['role'];
+
+/** `userId`'s role in the group, or null when they are not an active member. */
+export async function groupRole(groupId: string, userId: string): Promise<GroupRole | null> {
+  if (!UUID_PATTERN.test(groupId)) return null;
+  const { data, error } = await createAdminClient()
+    .from('group_members')
+    .select('role')
+    .eq('group_id', groupId)
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .maybeSingle<{ role: GroupRole }>();
+  if (error) throw new Error(error.message);
+  return data?.role ?? null;
+}
+
+/** Owners and group admins run a group; plain members take part in it. */
+function isManagerRole(role: GroupRole | null): boolean {
+  return role === 'owner' || role === 'admin';
+}
+
+export type GroupAccess = {
+  isMember: boolean;
+  isOwner: boolean;
+  /** Owner or group admin. */
+  isManager: boolean;
+  isSiteAdmin: boolean;
+  /** May see the discussion, polls and sign-ups. */
+  canRead: boolean;
+  /**
+   * May edit the group, approve join requests, and close or delete anyone's
+   * polls, sign-ups and comments in it.
+   */
+  canModerate: boolean;
+  /** May delete the group. The owner, not group admins. */
+  canDelete: boolean;
+};
+
+/**
+ * What `userId` (null when signed out) may do in a group. Reading mirrors the
+ * database's can_read_group(), plus site admins, who moderate every group and
+ * read private content through the service role.
+ */
+export async function groupAccess(group: { id: string; is_private: boolean }, userId: string | null): Promise<GroupAccess> {
+  if (!userId) {
+    return {
+      isMember: false,
+      isOwner: false,
+      isManager: false,
+      isSiteAdmin: false,
+      canRead: !group.is_private,
+      canModerate: false,
+      canDelete: false,
+    };
+  }
+  const [role, siteRole] = await Promise.all([groupRole(group.id, userId), getUserRole(userId)]);
+  const isSiteAdmin = hasRole(siteRole, 'admin');
+  const isMember = role !== null;
+  const isOwner = role === 'owner';
+  const isManager = isManagerRole(role);
+  return {
+    isMember,
+    isOwner,
+    isManager,
+    isSiteAdmin,
+    canRead: !group.is_private || isMember || isSiteAdmin,
+    canModerate: isManager || isSiteAdmin,
+    canDelete: isOwner || isSiteAdmin,
+  };
+}
+
+export type GroupSummary = Pick<Database['public']['Tables']['groups']['Row'], 'id' | 'is_private' | 'status' | 'user_id'>;
+
+/** A group's privacy, status and creator, or null when there is no such group. */
+export async function loadGroupPrivacy(groupId: string): Promise<GroupSummary | null> {
+  if (!UUID_PATTERN.test(groupId)) return null;
+  const { data, error } = await createAdminClient()
+    .from('groups')
+    .select('id, is_private, status, user_id')
+    .eq('id', groupId)
+    .maybeSingle<GroupSummary>();
+  if (error) throw new Error(error.message);
+  return data ?? null;
+}
+
+export type MemberAction = 'make_admin' | 'make_member' | 'make_owner' | 'remove';
+
+/**
+ * What a viewer with `access` may do to a member whose role is `targetRole`.
+ * The owner and site admins manage roles and ownership; group admins may only
+ * remove plain members. Nobody acts on the owner (ownership moves by transfer)
+ * or on themselves (they leave instead). The route and the members list both
+ * use this, so the buttons shown are exactly the actions the route accepts.
+ */
+export function memberActions(access: GroupAccess, targetRole: GroupRole, isSelf: boolean): MemberAction[] {
+  if (isSelf || targetRole === 'owner') return [];
+  if (access.isOwner || access.isSiteAdmin) {
+    return targetRole === 'admin' ? ['make_member', 'make_owner', 'remove'] : ['make_admin', 'make_owner', 'remove'];
+  }
+  if (access.isManager && targetRole === 'member') return ['remove'];
+  return [];
 }

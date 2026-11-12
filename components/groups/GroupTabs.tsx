@@ -1,12 +1,13 @@
 import Link from 'next/link';
-import { BarChart3, ClipboardList, MessageSquare, type LucideIcon } from 'lucide-react';
+import { BarChart3, ClipboardList, MessageSquare, Users, type LucideIcon } from 'lucide-react';
 
-export type GroupTab = 'discussion' | 'polls' | 'signups';
+export type GroupTab = 'discussion' | 'polls' | 'signups' | 'members';
 
 export const GROUP_TABS: Array<{ value: GroupTab; label: string; icon: LucideIcon }> = [
   { value: 'discussion', label: 'Discussion', icon: MessageSquare },
   { value: 'polls', label: 'Polls', icon: BarChart3 },
   { value: 'signups', label: 'Sign-ups', icon: ClipboardList },
+  { value: 'members', label: 'Members', icon: Users },
 ];
 
 /** Tab bar for a group page. Tabs are links (?tab=), so each is server-rendered and shareable. */
@@ -22,7 +23,7 @@ export default function GroupTabs({
   return (
     // No overflow scrolling here: the tabs' -mb-px overlap (which lays the
     // active underline over the border) would make it show a scrollbar.
-    // Three tabs fit at phone width; flex-wrap covers anything narrower.
+    // flex-wrap moves a tab to a second row when the four don't fit.
     <nav aria-label="Group sections" className="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700">
       {GROUP_TABS.map(({ value, label, icon: Icon }) => {
         const isActive = value === active;
