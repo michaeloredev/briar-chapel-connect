@@ -6,12 +6,13 @@ import { BarChart3, ClipboardList, Lock, MapPin, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Database } from '@/lib/supabase/types';
-import { groupAccess, isOpen, UUID_PATTERN } from '@/lib/api/group-membership';
+import { groupAccess, isOpen, memberActions, UUID_PATTERN, type GroupAccess, type GroupRole } from '@/lib/api/group-membership';
 import { authorNames } from '@/lib/api/user-names';
 import { GROUP_TYPES } from '@/lib/data/group-types';
 import { groupIconMeta } from '@/lib/data/group-icon-meta';
 import EventFormDialog from '@/components/events/EventFormDialog';
 import GroupFormDialog from '@/components/groups/GroupFormDialog';
+import GroupMemberList, { type MemberView } from '@/components/groups/GroupMemberList';
 import JoinGroupButton from '@/components/groups/JoinGroupButton';
 import JoinRequestList, { type JoinRequestView } from '@/components/groups/JoinRequestList';
 import RequestToJoinButton from '@/components/groups/RequestToJoinButton';
@@ -85,6 +86,42 @@ async function loadPolls(supabase: Supabase, groupId: string, userId: string | n
         }),
     };
   });
+}
+
+const ROLE_ORDER: Record<GroupRole, number> = { owner: 0, admin: 1, member: 2 };
+
+/**
+ * Active members, owner first, then admins, then by join date, with the
+ * actions this viewer may take on each. A member's Clerk ID only goes to the
+ * browser when the viewer has an action on them.
+ */
+async function loadMembers(admin: Supabase, groupId: string, userId: string | null, access: GroupAccess): Promise<MemberView[]> {
+  const { data, error } = await admin
+    .from('group_members')
+    .select('user_id, role, created_at')
+    .eq('group_id', groupId)
+    .eq('status', 'active')
+    .order('created_at')
+    .returns<Pick<Tables['group_members']['Row'], 'user_id' | 'role' | 'created_at'>[]>();
+  if (error) {
+    console.error('[GroupPage] members error:', error.message);
+    return [];
+  }
+  const names = await authorNames((data ?? []).map((m) => m.user_id));
+  return (data ?? [])
+    .map((m) => {
+      const isSelf = m.user_id === userId;
+      const actions = memberActions(access, m.role, isSelf);
+      return {
+        userId: actions.length ? m.user_id : null,
+        name: names.get(m.user_id) ?? UNNAMED,
+        role: m.role,
+        joinedAt: m.created_at,
+        isSelf,
+        actions,
+      };
+    })
+    .sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role]);
 }
 
 /** The signed-in user's pending request to join, as its note, or null. */
@@ -182,7 +219,8 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
   if (error || !group) return notFound();
 
   const { userId } = await auth();
-  const { isMember, isOwner, isSiteAdmin: isAdmin, canRead, canModerate, canDelete } = await groupAccess(group, userId);
+  const access = await groupAccess(group, userId);
+  const { isMember, isOwner, isSiteAdmin: isAdmin, canRead, canModerate, canDelete } = access;
 
   // Memberships are only readable to their owner under RLS, so the head count
   // comes through the service role. Only the number leaves the server.
@@ -201,6 +239,8 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
     userId && !isMember && group.is_private ? loadMyRequest(admin, id, userId) : Promise.resolve(null),
     canModerate ? loadJoinRequests(admin, id) : Promise.resolve([] as JoinRequestView[]),
   ]);
+  // Only the open tab's list is fetched; the tab's count is the head count.
+  const memberList = canRead && tab === 'members' ? await loadMembers(admin, id, userId, access) : [];
 
   const meta = GROUP_TYPES.find((t) => t.value === group.type);
   const avatar = groupIconMeta(group);
@@ -365,7 +405,7 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
           <GroupTabs
             groupId={group.id}
             active={tab}
-            counts={{ discussion: commentCount ?? 0, polls: polls.length, signups: signups.length }}
+            counts={{ discussion: commentCount ?? 0, polls: polls.length, signups: signups.length, members: memberCount ?? 0 }}
           />
 
           <div className="mt-6">
@@ -409,6 +449,14 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
                   signups.map((s) => <SignupCard key={s.id} signup={s} canParticipate={isMember} />)
                 )}
               </div>
+            ) : null}
+
+            {tab === 'members' ? (
+              memberList.length === 0 ? (
+                <EmptyState icon={Users} text="No members yet." />
+              ) : (
+                <GroupMemberList groupId={group.id} members={memberList} />
+              )
             ) : null}
           </div>
         </div>

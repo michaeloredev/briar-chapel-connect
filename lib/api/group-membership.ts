@@ -123,3 +123,21 @@ export async function loadGroupPrivacy(groupId: string): Promise<{ id: string; i
   if (error) throw new Error(error.message);
   return data ?? null;
 }
+
+export type MemberAction = 'make_admin' | 'make_member' | 'make_owner' | 'remove';
+
+/**
+ * What a viewer with `access` may do to a member whose role is `targetRole`.
+ * The owner and site admins manage roles and ownership; group admins may only
+ * remove plain members. Nobody acts on the owner (ownership moves by transfer)
+ * or on themselves (they leave instead). The route and the members list both
+ * use this, so the buttons shown are exactly the actions the route accepts.
+ */
+export function memberActions(access: GroupAccess, targetRole: GroupRole, isSelf: boolean): MemberAction[] {
+  if (isSelf || targetRole === 'owner') return [];
+  if (access.isOwner || access.isSiteAdmin) {
+    return targetRole === 'admin' ? ['make_member', 'make_owner', 'remove'] : ['make_admin', 'make_owner', 'remove'];
+  }
+  if (access.isManager && targetRole === 'member') return ['remove'];
+  return [];
+}

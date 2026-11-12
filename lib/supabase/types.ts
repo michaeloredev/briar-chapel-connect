@@ -309,7 +309,11 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      /** Service role only. The old owner becomes a group admin. */
+      transfer_group_ownership: {
+        Args: { p_group_id: string; p_new_owner: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;
