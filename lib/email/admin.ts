@@ -3,9 +3,10 @@ import { Resend } from 'resend';
 /** Where support tickets and group proposals go. */
 export const ADMIN_INBOX = 'michael.ore.dev@gmail.com';
 
-// Shares the Resend account behind jdrock.com, so it sends from that verified
-// domain. Only the admin inbox ever sees this address.
-export const FROM_ADDRESS = 'Briar Chapel Connect <support@jdrock.com>';
+// briarchapelconnect.com is verified in Resend (DNS on Cloudflare). Nothing
+// receives mail at this address -- support replies go to the neighbor through
+// replyTo -- so it never needs a mailbox.
+export const FROM_ADDRESS = 'Briar Chapel Connect <notifications@briarchapelconnect.com>';
 
 /**
  * Email the admin inbox. Throws when RESEND_API_KEY is missing or Resend
