@@ -5,6 +5,7 @@ import { SignedIn, SignedOut, SignInButton, useAuth } from '@clerk/nextjs';
 import { useRole } from '@/components/auth/RoleProvider';
 import CommentComposer from './CommentComposer';
 import CommentItem, { Comment } from './CommentItem';
+import { errorMessage } from '@/lib/utils/errors';
 
 type Props = {
   entityType: string;
@@ -31,7 +32,7 @@ export default function CommentThread({ entityType, entityId, className = '', ca
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  async function load() {
+  const load = React.useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -42,34 +43,16 @@ export default function CommentThread({ entityType, entityId, className = '', ca
       }
       const data = (await res.json()) as Comment[];
       setComments(data);
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to load comments');
+    } catch (e) {
+      setError(errorMessage(e, 'Failed to load comments'));
     } finally {
       setLoading(false);
     }
-  }
+  }, [entityType, entityId]);
 
   React.useEffect(() => {
     load();
-  }, [entityType, entityId]);
-
-  async function post(content: string, parent_id?: string) {
-    const res = await fetch('/api/comments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entity_type: entityType,
-        entity_id: entityId,
-        parent_id,
-        content,
-      }),
-    });
-    if (!res.ok) {
-      const msg = await res.text();
-      throw new Error(msg || 'Failed to post comment');
-    }
-    await load();
-  }
+  }, [load]);
 
   async function postWithImages(content: string, images: string[], parent_id?: string) {
     const res = await fetch('/api/comments', {

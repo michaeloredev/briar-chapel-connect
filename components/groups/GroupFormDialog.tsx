@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { GROUP_TYPES } from '@/lib/data/group-types';
 import { iconLabel, isGroupIcon, searchGroupIcons } from '@/lib/data/group-icons';
 import { ProviderLogoCropDialog } from '@/components/services/ProviderLogoCropDialog';
+import { errorMessage } from '@/lib/utils/errors';
 
 /** The subset of a group this form can edit. */
 export type EditableGroup = {
@@ -181,8 +182,8 @@ export default function GroupFormDialog({ className = '', group, proposal = fals
       // A proposal isn't listed until it's approved, so go to its page.
       if (created?.status === 'pending' && created.id) router.push(`/groups/${created.id}`);
       router.refresh();
-    } catch (err: any) {
-      setError(err?.message ?? 'Something went wrong');
+    } catch (err) {
+      setError(errorMessage(err, 'Something went wrong'));
     } finally {
       // The upload happens before the group write, so a failed write leaves
       // the new picture orphaned unless we take it back.

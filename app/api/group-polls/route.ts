@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     };
     const { data: poll, error: pollError } = await admin
       .from('group_polls')
-      .insert(pollInsert as any)
+      .insert(pollInsert)
       .select('*')
       .single<PollRow>();
     if (pollError || !poll) {
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       label,
       position,
     }));
-    const { error: optionsError } = await admin.from('group_poll_options').insert(optionRows as any);
+    const { error: optionsError } = await admin.from('group_poll_options').insert(optionRows);
     if (optionsError) {
       // No transaction across the two inserts: undo the poll so a question
       // without options never shows up.

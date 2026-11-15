@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     const signupInsert: SignupInsert = { group_id, user_id: userId, title, description };
     const { data: signup, error: signupError } = await admin
       .from('group_signups')
-      .insert(signupInsert as any)
+      .insert(signupInsert)
       .select('*')
       .single<SignupRow>();
     if (signupError || !signup) {
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       capacity: s.capacity,
       position,
     }));
-    const { error: slotsError } = await admin.from('group_signup_slots').insert(slotRows as any);
+    const { error: slotsError } = await admin.from('group_signup_slots').insert(slotRows);
     if (slotsError) {
       // No transaction across the two inserts: undo the sheet so one without
       // slots never shows up.

@@ -8,10 +8,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev      # dev server (Turbopack) on :3000
 npm run build    # production build
 npm start        # serve the production build
-npx tsc --noEmit # typecheck — the only standalone check in the repo
+npm run typecheck  # tsc --noEmit
+npm run lint       # ESLint (next/core-web-vitals + next/typescript), fails on any warning
+npm run test       # Vitest unit tests, once (npm run test:watch to keep running)
+npm run check      # all three, in that order
 ```
 
-There is no test suite, no linter config, and no `lint` script. `npx tsc --noEmit` plus a build is the full verification path.
+`npm run check` plus a build is the full verification path. The same three checks run in GitHub Actions (`.github/workflows/ci.yml`) on pushes to `develop`/`main` and on pull requests, and in a pre-push hook (`.githooks/pre-push`, enabled by the `prepare` script on `npm install`; bypass once with `git push --no-verify`). CI does not build, because a build needs the real env vars.
+
+Tests are `*.test.ts` files next to the module they cover, in the Node environment, and cover pure logic only: date math, image-URL validation, role and group-permission rules, API error mapping. Nothing talks to Supabase, Clerk or R2; mock a module that imports one (see `lib/api/upload.test.ts`). Date assertions are in Briar Chapel time and must pass in any `TZ`. `@next/next/no-img-element` is off on purpose: uploads are already cropped to WebP and served from R2's CDN.
+
+`lib/supabase/types.ts` is hand-written, so keep it in the shape supabase-js expects: a `type` (not an `interface`), `Relationships: []` on every table, and `Views`/`Functions`/`Enums`/`CompositeTypes`. Without that, row types collapse to `never` and code ends up needing `as any` casts.
 
 `next build` writes to `.next`, which is the same directory the dev server serves from — building while `npm run dev` is running will break the live server. Next 15 has no `--distDir` build flag, so to build in isolation use a detached git worktree and hardlink the deps into it (`cp -al ../node_modules node_modules`); a *symlinked* `node_modules` makes Turbopack panic with "points out of the filesystem root".
 

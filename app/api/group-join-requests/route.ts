@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
+import { apiError, apiBadRequest } from '@/lib/api/response';
 import { groupAccess, isGroupMember, loadGroupPrivacy, UUID_PATTERN } from '@/lib/api/group-membership';
 import { MAX_REQUEST_MESSAGE } from '@/lib/data/group-join-requests';
 

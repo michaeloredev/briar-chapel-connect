@@ -134,7 +134,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await admin
       .from('groups')
-      .insert(insert as any)
+      .insert(insert)
       .select('*')
       .single<Database['public']['Tables']['groups']['Row']>();
 

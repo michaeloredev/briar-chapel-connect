@@ -58,7 +58,7 @@ export async function PUT(req: Request) {
     if (option_ids.length > 0) {
       type Insert = Database['public']['Tables']['group_poll_votes']['Insert'];
       const rows: Insert[] = option_ids.map((option_id) => ({ poll_id, option_id, user_id: userId }));
-      const { error: insertError } = await admin.from('group_poll_votes').insert(rows as any);
+      const { error: insertError } = await admin.from('group_poll_votes').insert(rows);
       if (insertError) {
         console.error('[GroupPollVotes][PUT] insert error:', insertError.message);
         return apiError(insertError, 'Failed to save your vote');

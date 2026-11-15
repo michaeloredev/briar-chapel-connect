@@ -9,6 +9,7 @@ import StarRatingInput from '@/components/ui/StarRatingInput';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useRouter } from 'next/navigation';
 import { SignInButton, useAuth } from '@clerk/nextjs';
+import { errorMessage } from '@/lib/utils/errors';
 
 /** Routes answer with `{ error }` JSON; surface that rather than the raw body. */
 async function readFailedResponse(res: Response, fallback: string): Promise<string> {
@@ -122,8 +123,8 @@ export function ProviderCard({
         throw new Error(error.message || 'Failed to load details');
       }
       setRecord(data);
-    } catch (e: any) {
-      setRecordError(e?.message ?? 'Failed to load details');
+    } catch (e) {
+      setRecordError(errorMessage(e, 'Failed to load details'));
     } finally {
       setLoadingRecord(false);
     }
@@ -143,8 +144,8 @@ export function ProviderCard({
         throw new Error(error.message || 'Failed to load reviews');
       }
       setReviews(data as ReviewRow[]);
-    } catch (e: any) {
-      setReviewsError(e?.message ?? 'Failed to load reviews');
+    } catch (e) {
+      setReviewsError(errorMessage(e, 'Failed to load reviews'));
     } finally {
       setLoadingReviews(false);
     }
@@ -520,8 +521,8 @@ export function ProviderCard({
                           alert('Thanks for your review!');
                           // Sync server-rendered data
                           router.refresh();
-                        } catch (e: any) {
-                          setReviewError(e?.message ?? 'Failed to submit review');
+                        } catch (e) {
+                          setReviewError(errorMessage(e, 'Failed to submit review'));
                         } finally {
                           setSubmittingReview(false);
                         }

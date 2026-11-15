@@ -95,7 +95,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await admin
       .from('services')
-      .insert(insert as any)
+      .insert(insert)
       .select('*')
       .single();
 

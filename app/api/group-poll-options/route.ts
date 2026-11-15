@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     };
     const { data, error: insertError } = await admin
       .from('group_poll_options')
-      .insert(insert as any)
+      .insert(insert)
       .select('*')
       .single<OptionRow>();
     if (insertError) {

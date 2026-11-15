@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CheckCircle2, Send } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { SUPPORT_CATEGORIES } from '@/lib/data/support-categories';
+import { errorMessage } from '@/lib/utils/errors';
 
 /** Routes answer with `{ error }` JSON; surface that rather than the raw body. */
 async function readFailedResponse(res: Response, fallback: string): Promise<string> {
@@ -71,8 +72,8 @@ export default function SupportForm() {
       setTicket(data.ticket);
       setSubject('');
       setMessage('');
-    } catch (err: any) {
-      setError(err?.message ?? 'Something went wrong');
+    } catch (err) {
+      setError(errorMessage(err, 'Something went wrong'));
     } finally {
       setLoading(false);
     }
