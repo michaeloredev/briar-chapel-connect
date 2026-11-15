@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarDays, MapPin, Users } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { eventsReader } from '@/lib/api/event-reader';
 import type { Database } from '@/lib/supabase/types';
 import { getCategoryMeta } from '@/lib/data/event-categories';
 import { formatDateRange } from '@/lib/utils/date';
@@ -24,7 +24,8 @@ export default async function EventDetailPage({ params }: PageProps) {
   const { id } = await params;
   if (!id) return notFound();
 
-  const supabase = await createClient();
+  // A private group's event is a 404 to anyone outside the group.
+  const supabase = await eventsReader();
   type Row = Database['public']['Tables']['events']['Row'];
   const { data: event, error } = await supabase
     .from('events')
