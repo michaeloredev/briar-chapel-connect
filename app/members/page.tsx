@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { MemberRow } from '@/app/api/admin/members/route';
 import type { AppRole } from '@/lib/auth/roles';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import MembersTabs from '@/components/members/MembersTabs';
 
 const ROLE_LABELS: Record<AppRole, string> = {
   superadmin: 'Super Admin',
@@ -116,6 +117,8 @@ export default function MembersPage() {
             Manage registered users and their roles.
           </p>
         </div>
+
+        <MembersTabs />
 
         {/* Filter checkboxes */}
         <div className="flex flex-wrap gap-4 mb-6">
