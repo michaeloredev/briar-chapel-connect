@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
 import { canManage, isGroupMember, UUID_PATTERN } from '@/lib/api/group-membership';
 import { SIGNUP_LIMITS } from '@/lib/data/group-activity';
+import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
 
 type SignupRow = Database['public']['Tables']['group_signups']['Row'];
 
@@ -40,6 +41,8 @@ export async function POST(req: Request) {
     if (slots.some((s) => s.capacity !== null && (!Number.isInteger(s.capacity) || s.capacity < 1 || s.capacity > SIGNUP_LIMITS.maxCapacity))) {
       return apiBadRequest(`Spots must be between 1 and ${SIGNUP_LIMITS.maxCapacity}, or left unlimited`);
     }
+    const profane = findProfaneField({ title, description, 'slot names': slots.map((s) => s.label) });
+    if (profane) return apiBadRequest(profanityMessage(profane));
 
     const { userId } = await requireAuthSupabase();
     if (!(await isGroupMember(group_id, userId))) {

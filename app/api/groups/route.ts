@@ -10,6 +10,7 @@ import { sendAdminEmail } from '@/lib/email/admin';
 import { authorNames } from '@/lib/api/user-names';
 import { isGroupIcon } from '@/lib/data/group-icon-meta';
 import { groupAccess, loadGroupPrivacy } from '@/lib/api/group-membership';
+import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
 
 const IMAGE_BUCKET = GROUP_IMAGE_BUCKET;
 
@@ -90,6 +91,8 @@ export async function POST(req: Request) {
     if (!title || !description || !type) {
       return apiBadRequest('Missing required fields');
     }
+    const profane = findProfaneField({ name: title, description, location });
+    if (profane) return apiBadRequest(profanityMessage(profane));
     if (!image.ok) return apiBadRequest('invalid image');
     if (!icon.ok) return apiBadRequest('invalid icon');
     if (body.is_private !== undefined && typeof body.is_private !== 'boolean') {
@@ -220,6 +223,8 @@ export async function PATCH(req: Request) {
     }
 
     if (Object.keys(update).length === 0) return apiBadRequest('No fields to update');
+    const profane = findProfaneField({ name: update.title, description: update.description, location: update.location });
+    if (profane) return apiBadRequest(profanityMessage(profane));
 
     const admin = createAdminClient();
 

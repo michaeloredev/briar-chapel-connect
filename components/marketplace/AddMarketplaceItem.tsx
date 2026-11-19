@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ProviderLogoCropDialog } from '@/components/services/ProviderLogoCropDialog';
 import { MARKETPLACE_PHOTO_SIZE } from '@/lib/images/cropImageToSquareWebp';
 import { MARKETPLACE_CATEGORIES } from '@/lib/data/marketplace-categories';
-import { errorMessage } from '@/lib/utils/errors';
+import { errorMessage, responseError } from '@/lib/utils/errors';
 import type { Database } from '@/lib/supabase/types';
 
 type Condition = Database['public']['Tables']['marketplace_items']['Row']['condition'];
@@ -104,8 +104,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
         }),
       });
       if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg || 'Failed to create item');
+        throw new Error(await responseError(res, 'Failed to create item'));
       }
       setTitle('');
       setDescription('');

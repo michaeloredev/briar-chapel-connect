@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
 import { canManage, isGroupMember, UUID_PATTERN } from '@/lib/api/group-membership';
 import { POLL_LIMITS } from '@/lib/data/group-activity';
+import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
 
 const { question: MAX_QUESTION, option: MAX_OPTION, minOptions: MIN_OPTIONS, maxOptions: MAX_OPTIONS } = POLL_LIMITS;
 
@@ -35,6 +36,8 @@ export async function POST(req: Request) {
     if (options.length < MIN_OPTIONS) return apiBadRequest(`Add at least ${MIN_OPTIONS} different options`);
     if (options.length > MAX_OPTIONS) return apiBadRequest(`Polls can have at most ${MAX_OPTIONS} options`);
     if (options.some((o) => o.length > MAX_OPTION)) return apiBadRequest('An option is too long');
+    const profane = findProfaneField({ question, options });
+    if (profane) return apiBadRequest(profanityMessage(profane));
 
     let closes_at: string | null = null;
     if (body.closes_at) {

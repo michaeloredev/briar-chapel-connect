@@ -3,6 +3,8 @@ import { currentUser } from '@clerk/nextjs/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { apiError, apiBadRequest } from '@/lib/api/response';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
 
 type Payload = {
   service_id?: string;
@@ -26,6 +28,7 @@ export async function POST(req: Request) {
     if (comment && comment.length > 2000) {
       return apiBadRequest('comment too long (max 2000 chars)');
     }
+    if (findProfaneField({ review: comment })) return apiBadRequest(profanityMessage('review'));
 
     const { supabase, userId } = await requireAuthSupabase();
 
@@ -65,7 +68,9 @@ export async function POST(req: Request) {
       author_name,
     };
 
-    const { data, error } = await supabase
+    // Written through the service role: there is no insert or update policy,
+    // so the checks above cannot be skipped by writing to the table directly.
+    const { data, error } = await createAdminClient()
       .from('service_reviews')
       .upsert(insert, {
         onConflict: 'service_id,user_id',

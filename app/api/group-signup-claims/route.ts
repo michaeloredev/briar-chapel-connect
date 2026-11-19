@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
 import { isGroupMember, isOpen, UUID_PATTERN } from '@/lib/api/group-membership';
 import { SIGNUP_LIMITS } from '@/lib/data/group-activity';
+import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
 
 type SlotRow = Database['public']['Tables']['group_signup_slots']['Row'];
 type SignupRow = Database['public']['Tables']['group_signups']['Row'];
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
     const note = (body.note || '').trim() || null;
     if (!UUID_PATTERN.test(slot_id)) return apiBadRequest('Missing slot_id');
     if (note && note.length > SIGNUP_LIMITS.note) return apiBadRequest('Note is too long');
+    if (findProfaneField({ note })) return apiBadRequest(profanityMessage('note'));
 
     const { userId } = await requireAuthSupabase();
     const admin = createAdminClient();
