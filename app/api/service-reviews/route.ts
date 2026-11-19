@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
 import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
+import { authorNames } from '@/lib/api/user-names';
 
 type Payload = {
   service_id?: string;
@@ -47,17 +47,10 @@ export async function POST(req: Request) {
       return apiBadRequest('Service is not active');
     }
 
-    let author_name: string | null = null;
-    try {
-      const user = await currentUser();
-      if (user) {
-        const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-        const primaryEmail =
-          user.emailAddresses?.find((e) => e.id === user.primaryEmailAddressId)?.emailAddress ||
-          user.emailAddresses?.[0]?.emailAddress;
-        author_name = (fullName || user.username || primaryEmail || '').trim() || null;
-      }
-    } catch {}
+    // Shown publicly on the provider card, so it goes through the same lookup
+    // as comment authors, which never falls back to an email address. Null
+    // shows as "Anonymous".
+    const author_name = (await authorNames([userId])).get(userId) ?? null;
 
     type Insert = Database['public']['Tables']['service_reviews']['Insert'];
     const insert: Insert = {
