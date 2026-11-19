@@ -1,11 +1,14 @@
 import Link from 'next/link';
-import { ArrowRight, ArrowUp, Briefcase, Calendar, LifeBuoy, ShoppingBag, Users, type LucideIcon } from 'lucide-react';
+import { ArrowRight, ArrowUp, Briefcase, Calendar, LifeBuoy, Lock, Newspaper, ShoppingBag, Users, type LucideIcon } from 'lucide-react';
 import { eventsReader } from '@/lib/api/event-reader';
 import type { Database } from '@/lib/supabase/types';
 import DateTile from '@/components/events/DateTile';
-import { formatTime } from '@/lib/utils/date';
+import { formatPostTime, formatTime } from '@/lib/utils/date';
+import { loadNewsFeed, newsReader } from '@/lib/api/news';
+import { newsCategory } from '@/lib/data/news-categories';
 
 const UPCOMING_LIMIT = 3;
+const NEWS_PREVIEW_LIMIT = 3;
 
 type Section = {
   href: string;
@@ -72,6 +75,10 @@ export default async function Home() {
   }
   const events = upcoming ?? [];
 
+  // News is members-only: signed out, the reader is null and a teaser shows instead.
+  const newsClient = await newsReader();
+  const latestNews = newsClient ? (await loadNewsFeed(newsClient, { limit: NEWS_PREVIEW_LIMIT })).posts : null;
+
   return (
     <div id="top" className="flex flex-col flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <main className="flex-1">
@@ -136,6 +143,87 @@ export default async function Home() {
             )}
           </div>
         </section>
+
+        {latestNews ? (
+          <section aria-labelledby="latest-news" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
+            <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+              <div className="flex items-center justify-between gap-3">
+                <h2 id="latest-news" className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
+                  <Newspaper className="h-5 w-5 text-blue-600 dark:text-blue-400" aria-hidden />
+                  Latest from the neighborhood
+                </h2>
+                <Link href="/news" className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                  See all
+                </Link>
+              </div>
+              {latestNews.length === 0 ? (
+                <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-slate-600 dark:bg-slate-900/50 dark:text-slate-300">
+                  No posts yet.{' '}
+                  <Link href="/news" className="font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                    Share something with your neighbors
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <ul className="grid gap-3 md:grid-cols-3">
+                  {latestNews.map((post) => {
+                    const category = newsCategory(post.category);
+                    return (
+                      <li key={post.id}>
+                        <Link
+                          href={`/news/${post.id}`}
+                          className="flex h-full flex-col gap-2 rounded-xl bg-slate-50 p-4 hover:bg-slate-100 transition-colors dark:bg-slate-900/50 dark:hover:bg-slate-900"
+                        >
+                          <span className="flex flex-wrap items-center gap-2 text-sm">
+                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${category.chip}`}>{category.label}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{formatPostTime(post.created_at)}</span>
+                          </span>
+                          <span className="line-clamp-3 text-slate-800 dark:text-slate-200">{post.content}</span>
+                          <span className="mt-auto text-sm text-slate-600 dark:text-slate-300">
+                            {post.author_name || 'Community member'}
+                            {post.comment_count > 0
+                              ? ` · ${post.comment_count} ${post.comment_count === 1 ? 'reply' : 'replies'}`
+                              : ''}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </section>
+        ) : (
+          <section aria-labelledby="news-teaser" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
+            <div className="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+              <div className="flex items-start gap-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300">
+                  <Newspaper className="h-6 w-6" aria-hidden />
+                </span>
+                <div className="flex flex-col gap-1">
+                  <h2 id="news-teaser" className="text-lg font-bold text-slate-900 dark:text-white">
+                    See what neighbors are saying
+                  </h2>
+                  <p className="text-slate-600 dark:text-slate-300">
+                    News, lost &amp; found, safety alerts and recommendations from around Briar Chapel.
+                  </p>
+                  <p className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+                    <Lock className="h-3.5 w-3.5" aria-hidden />
+                    For signed-in neighbors only
+                  </p>
+                </div>
+              </div>
+              {/* /news is protected: middleware sends a signed-out visitor to sign in, then back here. */}
+              <Link
+                href="/news"
+                className="inline-flex min-h-12 items-center gap-2 rounded-full bg-blue-600 px-6 font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
+              >
+                Sign in to read
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </div>
+          </section>
+        )}
 
         {/* Sections */}
         <section aria-labelledby="explore" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">

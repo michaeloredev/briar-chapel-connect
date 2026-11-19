@@ -4,8 +4,8 @@ import * as React from 'react';
 import { X } from 'lucide-react';
 import { ProviderLogoCropDialog } from '@/components/services/ProviderLogoCropDialog';
 import { SQUARE_IMAGE_SIZE } from '@/lib/images/cropImageToSquareWebp';
+import { MAX_POST_PHOTOS } from '@/lib/data/photo-limits';
 
-const MAX_PHOTOS = 5;
 
 type Props = {
   placeholder?: string;
@@ -40,7 +40,7 @@ export default function CommentComposer({ placeholder = 'Write a comment…', on
 
   function handleCropComplete(file: File) {
     revokeCropUrl();
-    setPhotos((prev) => (prev.length >= MAX_PHOTOS ? prev : [...prev, file]));
+    setPhotos((prev) => (prev.length >= MAX_POST_PHOTOS ? prev : [...prev, file]));
   }
 
   function removePhoto(index: number) {
@@ -57,7 +57,7 @@ export default function CommentComposer({ placeholder = 'Write a comment…', on
       if (photos.length > 0) {
         setUploading(true);
         try {
-          for (const file of photos.slice(0, MAX_PHOTOS)) {
+          for (const file of photos.slice(0, MAX_POST_PHOTOS)) {
             const fd = new FormData();
             fd.append('file', file);
             const up = await fetch('/api/uploads/comment-image', { method: 'POST', body: fd });
@@ -124,12 +124,12 @@ export default function CommentComposer({ placeholder = 'Write a comment…', on
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            disabled={disabled || submitting || photos.length >= MAX_PHOTOS || !!imageToCrop}
+            disabled={disabled || submitting || photos.length >= MAX_POST_PHOTOS || !!imageToCrop}
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (!file) return;
-              if (photos.length >= MAX_PHOTOS) {
-                setError(`You can add up to ${MAX_PHOTOS} photos.`);
+              if (photos.length >= MAX_POST_PHOTOS) {
+                setError(`You can add up to ${MAX_POST_PHOTOS} photos.`);
                 e.target.value = '';
                 return;
               }
@@ -144,9 +144,9 @@ export default function CommentComposer({ placeholder = 'Write a comment…', on
             className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 disabled:opacity-50 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700"
           />
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {photos.length >= MAX_PHOTOS
-              ? `Maximum of ${MAX_PHOTOS} photos added. Remove one to replace it.`
-              : `Add up to ${MAX_PHOTOS} photos, one at a time. Choose a photo, then crop to a square. We save ${SQUARE_IMAGE_SIZE}×${SQUARE_IMAGE_SIZE} WebP (or PNG) for sharp thumbnails.`}
+            {photos.length >= MAX_POST_PHOTOS
+              ? `Maximum of ${MAX_POST_PHOTOS} photos added. Remove one to replace it.`
+              : `Add up to ${MAX_POST_PHOTOS} photos, one at a time. Choose a photo, then crop to a square. We save ${SQUARE_IMAGE_SIZE}×${SQUARE_IMAGE_SIZE} WebP (or PNG) for sharp thumbnails.`}
           </p>
         </div>
         <div className="mt-2 flex items-center justify-end">

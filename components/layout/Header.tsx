@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import { Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import RoleGate from '@/components/auth/RoleGate';
@@ -11,7 +13,6 @@ const NAV_LINKS = [
   { href: '/groups', label: 'Groups' },
   { href: '/marketplace', label: 'Marketplace' },
   { href: '/services', label: 'Services' },
-  
 ] as const;
 
 function navLinkClass(active: boolean) {
@@ -20,9 +21,20 @@ function navLinkClass(active: boolean) {
     : 'text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors';
 }
 
-//this is the header component for the app
+function mobileLinkClass(active: boolean) {
+  return `block rounded-lg px-3 py-3 text-base ${
+    active
+      ? 'bg-blue-50 text-blue-700 font-medium dark:bg-slate-800 dark:text-blue-300'
+      : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
+  }`;
+}
+
 export function Header() {
   const pathname = usePathname() ?? '';
+  // The phone menu. Every link in it closes it, so it never lingers over the
+  // page it just opened.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = () => setMenuOpen(false);
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(`${href}/`);
@@ -42,6 +54,12 @@ export function Header() {
                   {link.label}
                 </Link>
               ))}
+              {/* News is members-only, so signed-out visitors don't see the link. */}
+              <SignedIn>
+                <Link href="/news" className={navLinkClass(isActive('/news'))}>
+                  News
+                </Link>
+              </SignedIn>
               <RoleGate minimum="superadmin">
                 <Link href="/members" className={navLinkClass(isActive('/members'))}>
                   Members
@@ -60,9 +78,42 @@ export function Header() {
               <SignedIn>
                 <UserButton />
               </SignedIn>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((open) => !open)}
+                aria-expanded={menuOpen}
+                aria-controls="mobile-menu"
+                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+                className="md:hidden inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                {menuOpen ? <X className="h-6 w-6" aria-hidden /> : <Menu className="h-6 w-6" aria-hidden />}
+              </button>
             </div>
           </div>
         </div>
+
+        {menuOpen ? (
+          <div id="mobile-menu" className="md:hidden mt-3 flex flex-col gap-1 border-t border-slate-200 pt-3 dark:border-slate-700">
+            <Link href="/" onClick={closeMenu} className={mobileLinkClass(pathname === '/')}>
+              Home
+            </Link>
+            {NAV_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} onClick={closeMenu} className={mobileLinkClass(isActive(link.href))}>
+                {link.label}
+              </Link>
+            ))}
+            <SignedIn>
+              <Link href="/news" onClick={closeMenu} className={mobileLinkClass(isActive('/news'))}>
+                News
+              </Link>
+            </SignedIn>
+            <RoleGate minimum="superadmin">
+              <Link href="/members" onClick={closeMenu} className={mobileLinkClass(isActive('/members'))}>
+                Members
+              </Link>
+            </RoleGate>
+          </div>
+        ) : null}
       </nav>
     </header>
   );

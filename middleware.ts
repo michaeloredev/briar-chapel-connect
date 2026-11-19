@@ -37,9 +37,11 @@ export default clerkMiddleware(async (auth, request) => {
       return;
     }
 
-    await auth.protect({
-      unauthenticatedUrl: new URL('/sign-in', request.url).toString(),
-    });
+    // protect() redirects to unauthenticatedUrl as given, so carry the page
+    // they asked for in redirect_url; <SignIn> sends them back there after.
+    const signInUrl = new URL('/sign-in', request.url);
+    signInUrl.searchParams.set('redirect_url', request.url);
+    await auth.protect({ unauthenticatedUrl: signInUrl.toString() });
   }
 });
 

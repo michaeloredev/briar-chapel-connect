@@ -96,5 +96,6 @@ export const defaultLabelOverrides: Record<string, string> = {
   marketplace: 'Marketplace',
   events: 'Events',
   groups: 'Groups',
+  news: 'News',
   'ev-charging-locations': 'EV Charging Locations',
 };
