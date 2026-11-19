@@ -5,7 +5,7 @@ import { SignedIn, SignedOut, SignInButton, useAuth } from '@clerk/nextjs';
 import { useRole } from '@/components/auth/RoleProvider';
 import CommentComposer from './CommentComposer';
 import CommentItem, { Comment } from './CommentItem';
-import { errorMessage } from '@/lib/utils/errors';
+import { errorMessage, responseError } from '@/lib/utils/errors';
 
 type Props = {
   entityType: string;
@@ -38,8 +38,7 @@ export default function CommentThread({ entityType, entityId, className = '', ca
       setError(null);
       const res = await fetch(`/api/comments?entity_type=${encodeURIComponent(entityType)}&entity_id=${encodeURIComponent(entityId)}`);
       if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg || 'Failed to load comments');
+        throw new Error(await responseError(res, 'Failed to load comments'));
       }
       const data = (await res.json()) as Comment[];
       setComments(data);
@@ -67,8 +66,7 @@ export default function CommentThread({ entityType, entityId, className = '', ca
       }),
     });
     if (!res.ok) {
-      const msg = await res.text();
-      throw new Error(msg || 'Failed to post comment');
+      throw new Error(await responseError(res, 'Failed to post comment'));
     }
     await load();
   }
@@ -76,8 +74,7 @@ export default function CommentThread({ entityType, entityId, className = '', ca
   async function handleDelete(id: string) {
     const res = await fetch(`/api/comments?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
     if (!res.ok) {
-      const msg = await res.text();
-      throw new Error(msg || 'Failed to delete comment');
+      throw new Error(await responseError(res, 'Failed to delete comment'));
     }
     await load();
   }

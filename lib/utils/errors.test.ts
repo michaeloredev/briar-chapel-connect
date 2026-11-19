@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { errorMessage } from '@/lib/utils/errors';
+import { errorMessage, responseError } from '@/lib/utils/errors';
 
 describe('errorMessage', () => {
   it("uses an Error's message", () => {
@@ -15,5 +15,18 @@ describe('errorMessage', () => {
     expect(errorMessage({ message: 'looks like one' }, 'fallback')).toBe('fallback');
     expect(errorMessage(undefined, 'fallback')).toBe('fallback');
     expect(errorMessage(null, 'fallback')).toBe('fallback');
+  });
+});
+
+describe('responseError', () => {
+  it("reads a route's { error } JSON", async () => {
+    const res = new Response(JSON.stringify({ error: 'Please remove offensive language from the title.' }), { status: 400 });
+    expect(await responseError(res, 'fallback')).toBe('Please remove offensive language from the title.');
+  });
+
+  it('falls back for an empty body, non-JSON, or JSON without a message', async () => {
+    expect(await responseError(new Response('', { status: 500 }), 'fallback')).toBe('fallback');
+    expect(await responseError(new Response('<html>502</html>', { status: 502 }), 'fallback')).toBe('fallback');
+    expect(await responseError(new Response('{"debug":"x"}', { status: 500 }), 'fallback')).toBe('fallback');
   });
 });

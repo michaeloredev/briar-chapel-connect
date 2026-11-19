@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/auth/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 import { deleteEntityComments } from '@/lib/api/comments';
+import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
 
 type Payload = {
   title?: string;
@@ -39,6 +40,8 @@ export async function POST(req: Request) {
 
     if (!title) return apiBadRequest('Missing title');
     if (!rawStart) return apiBadRequest('Missing event_date');
+    const profane = findProfaneField({ title, description, location, address });
+    if (profane) return apiBadRequest(profanityMessage(profane));
 
     // Parse here so a bad date is the caller's 400, not a Postgres 500 --
     // matching what PATCH already does.
@@ -155,6 +158,13 @@ export async function PATCH(req: Request) {
     }
 
     if (Object.keys(update).length === 0) return apiBadRequest('No fields to update');
+    const profane = findProfaneField({
+      title: update.title,
+      description: update.description,
+      location: update.location,
+      address: update.address,
+    });
+    if (profane) return apiBadRequest(profanityMessage(profane));
 
     const admin = createAdminClient();
 

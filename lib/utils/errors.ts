@@ -9,3 +9,22 @@ export function errorMessage(err: unknown, fallback: string): string {
   if (err instanceof Error && err.message) return err.message;
   return fallback;
 }
+
+/**
+ * The message from a failed API response. Routes answer `{ error }` JSON
+ * (lib/api/response.ts); fall back when the body is empty or something else.
+ */
+export async function responseError(res: Response, fallback: string): Promise<string> {
+  try {
+    const text = await res.text();
+    if (!text) return fallback;
+    try {
+      const parsed = JSON.parse(text) as { error?: unknown };
+      return typeof parsed?.error === 'string' && parsed.error ? parsed.error : fallback;
+    } catch {
+      return fallback;
+    }
+  } catch {
+    return fallback;
+  }
+}

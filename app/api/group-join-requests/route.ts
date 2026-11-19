@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 import { groupAccess, isGroupMember, loadGroupPrivacy, UUID_PATTERN } from '@/lib/api/group-membership';
 import { MAX_REQUEST_MESSAGE } from '@/lib/data/group-join-requests';
+import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
 
 type Row = Database['public']['Tables']['group_join_requests']['Row'];
 
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
     if (!UUID_PATTERN.test(group_id)) return apiBadRequest('Missing or invalid group_id');
     if (!message) return apiBadRequest('Tell the group a little about yourself');
     if (message.length > MAX_REQUEST_MESSAGE) return apiBadRequest(`Keep it under ${MAX_REQUEST_MESSAGE} characters`);
+    if (findProfaneField({ message })) return apiBadRequest(profanityMessage('message'));
 
     const { userId } = await requireAuthSupabase();
     const group = await loadGroupPrivacy(group_id);

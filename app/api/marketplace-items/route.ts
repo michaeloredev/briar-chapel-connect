@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 import { removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
 import { isMarketplaceCategory } from '@/lib/data/marketplace-categories';
+import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
 
 type Payload = {
   title?: string;
@@ -30,10 +31,12 @@ export async function POST(req: Request) {
     const contact = (body.contact || '').trim() || null;
 
     if (!title) return apiBadRequest('Missing title');
+    const profane = findProfaneField({ title, description, location, 'contact info': contact });
+    if (profane) return apiBadRequest(profanityMessage(profane));
     if (!isMarketplaceCategory(category)) return apiBadRequest('Invalid category');
     if (!Number.isFinite(price) || price < 0) return apiBadRequest('Invalid price');
 
-    const { supabase, userId } = await requireAuthSupabase();
+    const { userId } = await requireAuthSupabase();
     type Insert = Database['public']['Tables']['marketplace_items']['Insert'];
     const insert: Insert = {
       user_id: userId,
@@ -48,7 +51,9 @@ export async function POST(req: Request) {
       contact,
     };
 
-    const { data, error } = await supabase
+    // Written through the service role: there is no insert policy, so the
+    // checks above cannot be skipped by writing to the table directly.
+    const { data, error } = await createAdminClient()
       .from('marketplace_items')
       .insert(insert)
       .select('*')

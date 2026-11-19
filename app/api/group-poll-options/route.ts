@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
 import { isGroupMember, isOpen, UUID_PATTERN } from '@/lib/api/group-membership';
 import { POLL_LIMITS } from '@/lib/data/group-activity';
+import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
 
 type PollRow = Database['public']['Tables']['group_polls']['Row'];
 type OptionRow = Database['public']['Tables']['group_poll_options']['Row'];
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
     const label = (body.label || '').trim();
     if (!UUID_PATTERN.test(poll_id) || !label) return apiBadRequest('Missing required fields');
     if (label.length > POLL_LIMITS.option) return apiBadRequest('That option is too long');
+    if (findProfaneField({ option: label })) return apiBadRequest(profanityMessage('option'));
 
     const { userId } = await requireAuthSupabase();
     const admin = createAdminClient();

@@ -9,6 +9,7 @@ import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
 import { authorNames } from '@/lib/api/user-names';
 import { groupAccess, isGroupMember, loadGroupPrivacy } from '@/lib/api/group-membership';
 import { auth } from '@clerk/nextjs/server';
+import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
 
 type PostBody = {
   entity_type?: string;
@@ -75,6 +76,7 @@ export async function POST(req: Request) {
     if (!entity_type || !entity_id || !content) {
       return apiBadRequest('Missing required fields');
     }
+    if (findProfaneField({ comment: content })) return apiBadRequest(profanityMessage('comment'));
 
     const { supabase, userId } = await requireAuthSupabase();
 
@@ -117,7 +119,10 @@ export async function POST(req: Request) {
       images,
     };
 
-    const { data, error } = await supabase
+    // Written through the service role: there is no insert policy, so the
+    // checks above (profanity, membership, parent) cannot be skipped by
+    // writing to the table directly.
+    const { data, error } = await createAdminClient()
       .from('comments')
       .insert(insert)
       .select('*')
