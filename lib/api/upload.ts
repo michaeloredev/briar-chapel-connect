@@ -204,6 +204,27 @@ export function publicImagePath(url: string, bucket: string): string | null {
 }
 
 /**
+ * Validates a client-supplied list of image URLs for a new post: each must be
+ * a public URL this app issued for `bucket`, under the caller's own
+ * `${userId}/` upload prefix. Returns the trimmed URLs, or null when the value
+ * is not a list, has more than `max` entries, or any entry fails -- so a post
+ * can't point at another host or reuse someone else's upload.
+ */
+export function ownImageUrls(value: unknown, bucket: string, userId: string, max: number): string[] | null {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value) || value.length > max) return null;
+  const urls: string[] = [];
+  for (const item of value) {
+    if (typeof item !== 'string') return null;
+    const url = item.trim();
+    const path = publicImagePath(url, bucket);
+    if (!path || !path.startsWith(`${userId}/`)) return null;
+    urls.push(url);
+  }
+  return urls;
+}
+
+/**
  * Turns a stored public URL or raw object path into a storage object path.
  * Returns null when the value does not belong to the given bucket.
  */

@@ -3,7 +3,10 @@ import type { Database } from '@/lib/supabase/types';
 import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
-import { removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
+import { ownImageUrls, removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
+
+/** The listing form's photo limit. */
+const MAX_LISTING_IMAGES = 3;
 import { isMarketplaceCategory } from '@/lib/data/marketplace-categories';
 import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
 
@@ -27,7 +30,6 @@ export async function POST(req: Request) {
     const price = Number(body.price || 0);
     const condition = body.condition ?? 'good';
     const location = (body.location || 'Road').trim() || 'Road';
-    const images = Array.isArray(body.images) ? body.images.slice(0, 3) : [];
     const contact = (body.contact || '').trim() || null;
 
     if (!title) return apiBadRequest('Missing title');
@@ -37,6 +39,8 @@ export async function POST(req: Request) {
     if (!Number.isFinite(price) || price < 0) return apiBadRequest('Invalid price');
 
     const { userId } = await requireAuthSupabase();
+    const images = ownImageUrls(body.images, 'marketplace-images', userId, MAX_LISTING_IMAGES);
+    if (!images) return apiBadRequest('invalid images');
     type Insert = Database['public']['Tables']['marketplace_items']['Insert'];
     const insert: Insert = {
       user_id: userId,
