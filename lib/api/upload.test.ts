@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // tests only cover the pure path checks, so keep Clerk out of the picture.
 vi.mock('@/lib/supabase/auth', () => ({ requireAuthSupabase: vi.fn() }));
 
-const { publicImagePath, storageObjectPath } = await import('@/lib/api/upload');
+const { ownImageUrls, publicImagePath, storageObjectPath } = await import('@/lib/api/upload');
 
 const R2 = 'https://images.example.com';
 const SUPABASE = 'https://abc.supabase.co';
@@ -74,5 +74,39 @@ describe('storageObjectPath', () => {
     expect(storageObjectPath('./a.webp', 'group-images')).toBeNull();
     expect(storageObjectPath('user_1\\a.webp', 'group-images')).toBeNull();
     expect(storageObjectPath('', 'group-images')).toBeNull();
+  });
+});
+
+describe('ownImageUrls', () => {
+  const mine = (n: number) => `${R2}/comment-images/user_1/${n}.webp`;
+
+  it("accepts the caller's own uploads, trimmed", () => {
+    expect(ownImageUrls([mine(1), ` ${mine(2)} `], 'comment-images', 'user_1', 5)).toEqual([mine(1), mine(2)]);
+  });
+
+  it('treats a missing list as no images', () => {
+    expect(ownImageUrls(undefined, 'comment-images', 'user_1', 5)).toEqual([]);
+    expect(ownImageUrls(null, 'comment-images', 'user_1', 5)).toEqual([]);
+    expect(ownImageUrls([], 'comment-images', 'user_1', 5)).toEqual([]);
+  });
+
+  it('rejects the whole list if any entry is bad', () => {
+    expect(ownImageUrls([mine(1), 'https://evil.com/x.png'], 'comment-images', 'user_1', 5)).toBeNull();
+    expect(ownImageUrls([mine(1), 42], 'comment-images', 'user_1', 5)).toBeNull();
+  });
+
+  it("rejects someone else's upload", () => {
+    expect(ownImageUrls([`${R2}/comment-images/user_2/1.webp`], 'comment-images', 'user_1', 5)).toBeNull();
+    // A user ID that merely starts with the caller's must not pass.
+    expect(ownImageUrls([`${R2}/comment-images/user_10/1.webp`], 'comment-images', 'user_1', 5)).toBeNull();
+  });
+
+  it('rejects another bucket', () => {
+    expect(ownImageUrls([`${R2}/group-images/user_1/1.webp`], 'comment-images', 'user_1', 5)).toBeNull();
+  });
+
+  it('rejects too many, or something that is not a list', () => {
+    expect(ownImageUrls([mine(1), mine(2), mine(3), mine(4)], 'comment-images', 'user_1', 3)).toBeNull();
+    expect(ownImageUrls(mine(1), 'comment-images', 'user_1', 5)).toBeNull();
   });
 });

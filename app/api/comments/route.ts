@@ -7,9 +7,13 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getUserRole, hasRole } from '@/lib/auth/roles';
 import { apiError, apiBadRequest, apiForbidden } from '@/lib/api/response';
 import { authorNames } from '@/lib/api/user-names';
+import { ownImageUrls } from '@/lib/api/upload';
 import { groupAccess, isGroupMember, loadGroupPrivacy } from '@/lib/api/group-membership';
 import { auth } from '@clerk/nextjs/server';
 import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
+
+/** The comment composer's photo limit. */
+const MAX_COMMENT_IMAGES = 5;
 
 type PostBody = {
   entity_type?: string;
@@ -71,7 +75,6 @@ export async function POST(req: Request) {
     const entity_id = (body.entity_id || '').trim();
     const parent_id = (body.parent_id || '')?.trim() || null;
     const content = (body.content || '').trim();
-    const images = Array.isArray(body.images) ? body.images.slice(0, 5) : [];
 
     if (!entity_type || !entity_id || !content) {
       return apiBadRequest('Missing required fields');
@@ -79,6 +82,8 @@ export async function POST(req: Request) {
     if (findProfaneField({ comment: content })) return apiBadRequest(profanityMessage('comment'));
 
     const { supabase, userId } = await requireAuthSupabase();
+    const images = ownImageUrls(body.images, 'comment-images', userId, MAX_COMMENT_IMAGES);
+    if (!images) return apiBadRequest('invalid images');
 
     // Group discussion is members-only. The comments insert policy enforces
     // this too; checking here turns the refusal into a message people can act on.
