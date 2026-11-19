@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { AlertTriangle, Loader2 } from 'lucide-react';
+import { errorMessage } from '@/lib/utils/errors';
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -66,8 +67,8 @@ export default function ConfirmDialog({
     try {
       await onConfirm();
       onClose();
-    } catch (e: any) {
-      setError(e?.message || 'Something went wrong. Please try again.');
+    } catch (e) {
+      setError(errorMessage(e, 'Something went wrong. Please try again.'));
     } finally {
       setPending(false);
     }

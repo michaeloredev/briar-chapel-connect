@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { errorMessage } from '@/lib/utils/errors';
 
 export default function JoinGroupButton({ groupId, isMember = false, className = '' }: { groupId: string; isMember?: boolean; className?: string }) {
   const router = useRouter();
@@ -32,8 +33,8 @@ export default function JoinGroupButton({ groupId, isMember = false, className =
               throw new Error(msg || (isMember ? 'Failed to leave group' : 'Failed to join group'));
             }
             router.refresh();
-          } catch (err: any) {
-            const msg = err?.message || '';
+          } catch (err) {
+            const msg = errorMessage(err, '');
             if (msg.toLowerCase().includes('unauthorized')) {
               setError('Please sign in to join.');
             } else {

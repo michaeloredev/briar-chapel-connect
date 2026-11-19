@@ -44,13 +44,13 @@ export async function POST(req: Request) {
       condition,
       location,
       status: 'available',
-      images: images as any,
+      images,
       contact,
     };
 
     const { data, error } = await supabase
       .from('marketplace_items')
-      .insert(insert as any)
+      .insert(insert)
       .select('*')
       .single();
 

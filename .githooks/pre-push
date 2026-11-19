@@ -1,0 +1,7 @@
+#!/bin/sh
+# Runs before every `git push`: typecheck, lint and unit tests. CI runs the
+# same checks, so this just catches problems before they leave your machine.
+# Installed by `npm install` (the "prepare" script sets core.hooksPath).
+# Skip once in an emergency with `git push --no-verify`.
+echo "pre-push: npm run check"
+exec npm run check

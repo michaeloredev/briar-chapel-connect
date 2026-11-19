@@ -9,7 +9,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       services: {
@@ -45,6 +45,7 @@ export interface Database {
           tags?: string[]; // optional when inserting; defaults to empty array
         };
         Update: Partial<Database['public']['Tables']['services']['Insert']>;
+        Relationships: [];
       };
       marketplace_items: {
         Row: {
@@ -77,6 +78,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['marketplace_items']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['marketplace_items']['Insert']>;
+        Relationships: [];
       };
       events: {
         Row: {
@@ -99,6 +101,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['events']['Row'], 'id' | 'created_at' | 'updated_at' | 'current_attendees' | 'group_id'> & { group_id?: string | null };
         Update: Partial<Database['public']['Tables']['events']['Insert']>;
+        Relationships: [];
       };
       event_attendees: {
         Row: {
@@ -110,6 +113,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['event_attendees']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['event_attendees']['Insert']>;
+        Relationships: [];
       };
       comments: {
         Row: {
@@ -132,6 +136,7 @@ export interface Database {
           images?: string[];
         };
         Update: Partial<Database['public']['Tables']['comments']['Insert']>;
+        Relationships: [];
       };
       service_reviews: {
         Row: {
@@ -152,6 +157,7 @@ export interface Database {
           author_name?: string | null;
         };
         Update: Partial<Database['public']['Tables']['service_reviews']['Insert']>;
+        Relationships: [];
       };
       groups: {
         Row: {
@@ -183,6 +189,7 @@ export interface Database {
           is_private?: boolean;
         };
         Update: Partial<Database['public']['Tables']['groups']['Insert']>;
+        Relationships: [];
       };
       user_roles: {
         Row: {
@@ -196,6 +203,7 @@ export interface Database {
           role?: 'superadmin' | 'admin' | 'client';
         };
         Update: Partial<Database['public']['Tables']['user_roles']['Insert']>;
+        Relationships: [];
       };
       group_members: {
         Row: {
@@ -213,6 +221,7 @@ export interface Database {
           status?: 'active' | 'inactive';
         };
         Update: Partial<Database['public']['Tables']['group_members']['Insert']>;
+        Relationships: [];
       };
       group_join_requests: {
         Row: {
@@ -229,6 +238,7 @@ export interface Database {
           message: string;
         };
         Update: Partial<Database['public']['Tables']['group_join_requests']['Insert']>;
+        Relationships: [];
       };
       group_polls: {
         Row: {
@@ -244,6 +254,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['group_polls']['Row'], 'id' | 'created_at' | 'closed_at'> & { closed_at?: string | null };
         Update: Partial<Database['public']['Tables']['group_polls']['Insert']>;
+        Relationships: [];
       };
       group_poll_options: {
         Row: {
@@ -256,6 +267,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['group_poll_options']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['group_poll_options']['Insert']>;
+        Relationships: [];
       };
       group_poll_votes: {
         Row: {
@@ -267,6 +279,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['group_poll_votes']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['group_poll_votes']['Insert']>;
+        Relationships: [];
       };
       group_signups: {
         Row: {
@@ -280,6 +293,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['group_signups']['Row'], 'id' | 'created_at' | 'closed_at'> & { closed_at?: string | null };
         Update: Partial<Database['public']['Tables']['group_signups']['Insert']>;
+        Relationships: [];
       };
       group_signup_slots: {
         Row: {
@@ -293,6 +307,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['group_signup_slots']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['group_signup_slots']['Insert']>;
+        Relationships: [];
       };
       group_signup_claims: {
         Row: {
@@ -304,6 +319,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['group_signup_claims']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['group_signup_claims']['Insert']>;
+        Relationships: [];
       };
     };
     Views: {
@@ -319,6 +335,9 @@ export interface Database {
     Enums: {
       [_ in never]: never;
     };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
-}
+};
 

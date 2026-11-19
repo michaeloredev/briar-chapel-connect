@@ -42,12 +42,12 @@ export default async function MarketplaceDetailPage({ params }: PageProps) {
         <div className="grid md:grid-cols-2 gap-6">
           <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
             {Array.isArray(item.images) && item.images.length > 1 ? (
-              <MarketplaceImageCarousel images={item.images as any} alt={item.title} />
+              <MarketplaceImageCarousel images={item.images} alt={item.title} />
             ) : (
               <div className="aspect-square bg-slate-100 dark:bg-slate-900 overflow-hidden rounded-xl">
                 {item.images?.[0] ? (
                   <img
-                    src={item.images[0] as any}
+                    src={item.images[0]}
                     alt={item.title}
                     className="w-full h-full object-cover"
                     width={1024}

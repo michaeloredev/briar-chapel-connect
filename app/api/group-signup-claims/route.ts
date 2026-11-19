@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
     type Insert = Database['public']['Tables']['group_signup_claims']['Insert'];
     const insert: Insert = { slot_id, user_id: userId, note };
-    const { data, error } = await admin.from('group_signup_claims').insert(insert as any).select('id').single<{ id: string }>();
+    const { data, error } = await admin.from('group_signup_claims').insert(insert).select('id').single<{ id: string }>();
     if (error) {
       if (error.code === '23505') {
         return NextResponse.json({ error: "You're already signed up for that slot" }, { status: 409 });

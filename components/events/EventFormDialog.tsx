@@ -6,6 +6,7 @@ import { Pencil, Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { EVENT_CATEGORIES, getCategoryMeta } from '@/lib/data/event-categories';
 import { fromDateTimeLocalValue, toDateTimeLocalValue } from '@/lib/utils/date';
+import { errorMessage } from '@/lib/utils/errors';
 
 /**
  * Moving the start of an event should carry its end along, the way a calendar
@@ -183,8 +184,8 @@ export default function EventFormDialog({
       if (!isEdit) resetForm();
       setOpen(false);
       router.refresh();
-    } catch (err: any) {
-      setError(err?.message ?? 'Something went wrong');
+    } catch (err) {
+      setError(errorMessage(err, 'Something went wrong'));
     } finally {
       setLoading(false);
     }

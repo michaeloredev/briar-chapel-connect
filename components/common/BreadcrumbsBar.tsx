@@ -9,13 +9,12 @@ export default function BreadcrumbsBar() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isHome = !pathname || pathname === "/";
   const isServices = pathname?.startsWith("/services");
   const isMarketplace = pathname?.startsWith("/marketplace");
 
   const q = searchParams?.get('q') ?? '';
   const category = searchParams?.get('category') ?? '';
-  const condition = (searchParams?.get('condition') as any) ?? '';
+  const condition = searchParams?.get('condition') ?? '';
   const min = searchParams?.get('min') ?? '';
   const max = searchParams?.get('max') ?? '';
   return (

@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await supabase
       .from('group_members')
-      .insert(insert as any)
+      .insert(insert)
       .select('id')
       .single<{ id: string }>();
 

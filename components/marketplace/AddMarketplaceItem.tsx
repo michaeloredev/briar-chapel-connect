@@ -6,6 +6,10 @@ import { useRouter } from 'next/navigation';
 import { ProviderLogoCropDialog } from '@/components/services/ProviderLogoCropDialog';
 import { MARKETPLACE_PHOTO_SIZE } from '@/lib/images/cropImageToSquareWebp';
 import { MARKETPLACE_CATEGORIES } from '@/lib/data/marketplace-categories';
+import { errorMessage } from '@/lib/utils/errors';
+import type { Database } from '@/lib/supabase/types';
+
+type Condition = Database['public']['Tables']['marketplace_items']['Row']['condition'];
 
 const MAX_PHOTOS = 3;
 
@@ -19,7 +23,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
   const [description, setDescription] = React.useState('');
   const [category, setCategory] = React.useState<string>('general');
   const [price, setPrice] = React.useState<string>('');
-  const [condition, setCondition] = React.useState<'new' | 'like_new' | 'good' | 'fair' | 'poor'>('good');
+  const [condition, setCondition] = React.useState<Condition>('good');
   const [locationText, setLocationText] = React.useState('');
   const [contact, setContact] = React.useState('');
   const [photos, setPhotos] = React.useState<File[]>([]);
@@ -113,8 +117,8 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
       setPhotos([]);
       closeModal();
       router.refresh();
-    } catch (err: any) {
-      setError(err?.message ?? 'Something went wrong');
+    } catch (err) {
+      setError(errorMessage(err, 'Something went wrong'));
     } finally {
       setLoading(false);
     }
@@ -211,7 +215,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Condition</label>
                   <select
                     value={condition}
-                    onChange={(e) => setCondition(e.target.value as any)}
+                    onChange={(e) => setCondition(e.target.value as Condition)}
                     className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="new">New</option>

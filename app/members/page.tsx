@@ -7,6 +7,7 @@ import type { MemberRow } from '@/app/api/admin/members/route';
 import type { AppRole } from '@/lib/auth/roles';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import MembersTabs from '@/components/members/MembersTabs';
+import { errorMessage } from '@/lib/utils/errors';
 
 const ROLE_LABELS: Record<AppRole, string> = {
   superadmin: 'Super Admin',
@@ -43,8 +44,8 @@ export default function MembersPage() {
       if (!res.ok) throw new Error('Failed to load members');
       const data: MemberRow[] = await res.json();
       setMembers(data);
-    } catch (err: any) {
-      setError(err.message ?? 'Something went wrong');
+    } catch (err) {
+      setError(errorMessage(err, 'Something went wrong'));
     } finally {
       setLoading(false);
     }
@@ -76,8 +77,8 @@ export default function MembersPage() {
       setMembers((prev) =>
         prev.map((m) => (m.id === userId ? { ...m, role: newRole } : m)),
       );
-    } catch (err: any) {
-      setError(err?.message ?? 'Failed to update role');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to update role'));
     } finally {
       setUpdatingId(null);
     }

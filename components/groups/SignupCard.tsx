@@ -7,6 +7,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { SIGNUP_LIMITS } from '@/lib/data/group-activity';
 import { groupRequest } from './request';
 import type { SignupView } from './types';
+import { errorMessage } from '@/lib/utils/errors';
 
 export default function SignupCard({ signup, canParticipate }: { signup: SignupView; canParticipate: boolean }) {
   const router = useRouter();
@@ -25,8 +26,8 @@ export default function SignupCard({ signup, canParticipate }: { signup: SignupV
     try {
       await action();
       router.refresh();
-    } catch (err: any) {
-      setError(err?.message ?? 'Something went wrong');
+    } catch (err) {
+      setError(errorMessage(err, 'Something went wrong'));
     } finally {
       setBusySlot(null);
     }

@@ -6,6 +6,7 @@ import { BarChart3, Plus, X } from 'lucide-react';
 import { POLL_LIMITS } from '@/lib/data/group-activity';
 import { fromDateTimeLocalValue } from '@/lib/utils/date';
 import { groupRequest } from './request';
+import { errorMessage } from '@/lib/utils/errors';
 
 const FIELD =
   'mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500';
@@ -66,8 +67,8 @@ export default function PollFormDialog({ groupId }: { groupId: string }) {
       reset();
       setOpen(false);
       router.refresh();
-    } catch (err: any) {
-      setError(err?.message ?? 'Something went wrong');
+    } catch (err) {
+      setError(errorMessage(err, 'Something went wrong'));
     } finally {
       setLoading(false);
     }

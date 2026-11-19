@@ -67,7 +67,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await supabase
       .from('service_reviews')
-      .upsert(insert as any, {
+      .upsert(insert, {
         onConflict: 'service_id,user_id',
         ignoreDuplicates: false,
       })

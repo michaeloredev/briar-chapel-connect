@@ -8,6 +8,7 @@ import { POLL_LIMITS } from '@/lib/data/group-activity';
 import { formatDateRange } from '@/lib/utils/date';
 import { groupRequest } from './request';
 import type { PollView } from './types';
+import { errorMessage } from '@/lib/utils/errors';
 
 export default function PollCard({ poll, canParticipate }: { poll: PollView; canParticipate: boolean }) {
   const router = useRouter();
@@ -27,8 +28,8 @@ export default function PollCard({ poll, canParticipate }: { poll: PollView; can
     try {
       await action();
       router.refresh();
-    } catch (err: any) {
-      setError(err?.message ?? 'Something went wrong');
+    } catch (err) {
+      setError(errorMessage(err, 'Something went wrong'));
     } finally {
       setBusy(false);
     }

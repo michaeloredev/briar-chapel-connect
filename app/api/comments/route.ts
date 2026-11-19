@@ -119,7 +119,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await supabase
       .from('comments')
-      .insert(insert as any)
+      .insert(insert)
       .select('*')
       .single();
 

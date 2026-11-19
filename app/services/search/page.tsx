@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { serviceSections } from '@/lib/data/services';
 import Link from 'next/link';
 import ProviderList from '@/components/services/ProviderList';
