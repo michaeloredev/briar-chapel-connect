@@ -7,7 +7,8 @@ import { apiError, apiBadRequest } from '@/lib/api/response';
 import { ownImageUrls, removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
 import { deleteEntityComments } from '@/lib/api/comments';
 import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
-import { isNewsCategory, MAX_NEWS_POST_IMAGES, MAX_NEWS_POST_LENGTH } from '@/lib/data/news-categories';
+import { isNewsCategory, MAX_NEWS_POST_LENGTH } from '@/lib/data/news-categories';
+import { MAX_POST_PHOTOS } from '@/lib/data/photo-limits';
 
 /** The R2 folder news photos are uploaded to (see app/api/uploads/news-image). */
 const IMAGE_FOLDER = 'general-images';
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     if (findProfaneField({ post: content })) return apiBadRequest(profanityMessage('post'));
 
     const { userId } = await requireAuthSupabase();
-    const images = ownImageUrls(body.images, IMAGE_FOLDER, userId, MAX_NEWS_POST_IMAGES);
+    const images = ownImageUrls(body.images, IMAGE_FOLDER, userId, MAX_POST_PHOTOS);
     if (!images) return apiBadRequest('invalid images');
 
     type Insert = Database['public']['Tables']['news_posts']['Insert'];

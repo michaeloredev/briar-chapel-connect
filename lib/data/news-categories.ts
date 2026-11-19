@@ -41,6 +41,3 @@ export function newsCategory(value: string) {
 
 /** The longest post the database accepts (news_posts_content_check). */
 export const MAX_NEWS_POST_LENGTH = 5000;
-
-/** The composer's photo limit. */
-export const MAX_NEWS_POST_IMAGES = 4;

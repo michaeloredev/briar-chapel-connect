@@ -6,12 +6,12 @@ import { ImagePlus, X } from 'lucide-react';
 import { ProviderLogoCropDialog } from '@/components/services/ProviderLogoCropDialog';
 import { MARKETPLACE_PHOTO_SIZE } from '@/lib/images/cropImageToSquareWebp';
 import {
-  MAX_NEWS_POST_IMAGES,
   MAX_NEWS_POST_LENGTH,
   NEWS_CATEGORIES,
   type NewsCategory,
 } from '@/lib/data/news-categories';
 import { errorMessage, responseError } from '@/lib/utils/errors';
+import { MAX_POST_PHOTOS } from '@/lib/data/photo-limits';
 
 /** Posting form at the top of the feed. */
 export default function NewsComposer() {
@@ -41,7 +41,7 @@ export default function NewsComposer() {
 
   function handleCropComplete(file: File) {
     revokeCropUrl();
-    setPhotos((prev) => (prev.length >= MAX_NEWS_POST_IMAGES ? prev : [...prev, file]));
+    setPhotos((prev) => (prev.length >= MAX_POST_PHOTOS ? prev : [...prev, file]));
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -51,7 +51,7 @@ export default function NewsComposer() {
     setError(null);
     try {
       const images: string[] = [];
-      for (const file of photos.slice(0, MAX_NEWS_POST_IMAGES)) {
+      for (const file of photos.slice(0, MAX_POST_PHOTOS)) {
         const fd = new FormData();
         fd.append('file', file);
         const up = await fetch('/api/uploads/news-image', { method: 'POST', body: fd });
@@ -145,17 +145,17 @@ export default function NewsComposer() {
 
           <label
             className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 ${
-              photos.length >= MAX_NEWS_POST_IMAGES || submitting ? 'pointer-events-none opacity-50' : ''
+              photos.length >= MAX_POST_PHOTOS || submitting ? 'pointer-events-none opacity-50' : ''
             }`}
           >
             <ImagePlus className="h-4 w-4" aria-hidden />
-            Photo ({photos.length}/{MAX_NEWS_POST_IMAGES})
+            Photo ({photos.length}/{MAX_POST_PHOTOS})
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
               className="sr-only"
-              disabled={photos.length >= MAX_NEWS_POST_IMAGES || submitting || !!imageToCrop}
+              disabled={photos.length >= MAX_POST_PHOTOS || submitting || !!imageToCrop}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;

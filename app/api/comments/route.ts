@@ -11,9 +11,7 @@ import { ownImageUrls } from '@/lib/api/upload';
 import { groupAccess, isGroupMember, loadGroupPrivacy } from '@/lib/api/group-membership';
 import { auth } from '@clerk/nextjs/server';
 import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
-
-/** The comment composer's photo limit. */
-const MAX_COMMENT_IMAGES = 5;
+import { MAX_POST_PHOTOS } from '@/lib/data/photo-limits';
 
 type PostBody = {
   entity_type?: string;
@@ -90,7 +88,7 @@ export async function POST(req: Request) {
     if (findProfaneField({ comment: content })) return apiBadRequest(profanityMessage('comment'));
 
     const { supabase, userId } = await requireAuthSupabase();
-    const images = ownImageUrls(body.images, 'comment-images', userId, MAX_COMMENT_IMAGES);
+    const images = ownImageUrls(body.images, 'comment-images', userId, MAX_POST_PHOTOS);
     if (!images) return apiBadRequest('invalid images');
 
     // Group discussion is members-only. The comments insert policy enforces
