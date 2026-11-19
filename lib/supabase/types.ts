@@ -80,6 +80,20 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['marketplace_items']['Insert']>;
         Relationships: [];
       };
+      news_posts: {
+        Row: {
+          id: string;
+          created_at: string;
+          user_id: string;
+          category: 'news' | 'lost_found' | 'safety' | 'recommendations' | 'chatter';
+          content: string;
+          images: string[];
+          pinned_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['news_posts']['Row'], 'id' | 'created_at' | 'pinned_at'> & { pinned_at?: string | null };
+        Update: Partial<Database['public']['Tables']['news_posts']['Insert']>;
+        Relationships: [];
+      };
       events: {
         Row: {
           id: string;

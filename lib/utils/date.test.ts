@@ -5,6 +5,7 @@ import {
   formatDateRange,
   formatDayHeading,
   formatMonthHeading,
+  formatPostTime,
   fromDateTimeLocalValue,
   isValidYM,
   isValidYMD,
@@ -155,5 +156,31 @@ describe('formatting', () => {
   it('formats day and month headings from calendar keys', () => {
     expect(formatDayHeading('2026-09-23')).toBe('Wednesday, September 23');
     expect(formatMonthHeading(2026, 8)).toBe('September 2026');
+  });
+});
+
+describe('formatPostTime', () => {
+  const now = new Date('2026-11-18T17:00:00Z'); // noon in Briar Chapel
+
+  it('counts minutes and hours for the last day', () => {
+    expect(formatPostTime('2026-11-18T16:59:30Z', now)).toBe('Just now');
+    expect(formatPostTime('2026-11-18T16:48:00Z', now)).toBe('12m ago');
+    expect(formatPostTime('2026-11-18T12:00:00Z', now)).toBe('5h ago');
+    expect(formatPostTime('2026-11-17T17:00:01Z', now)).toBe('23h ago');
+  });
+
+  it('shows the Briar Chapel date after a day', () => {
+    // 02:00 UTC on Nov 13 is still Nov 12 in Briar Chapel.
+    expect(formatPostTime('2026-11-13T02:00:00Z', now)).toBe('Nov 12');
+  });
+
+  it('adds the year for an earlier year, judged in Briar Chapel', () => {
+    expect(formatPostTime('2025-12-24T15:00:00Z', now)).toBe('Dec 24, 2025');
+    // Already 2026 in UTC, still New Year's Eve 2025 in Briar Chapel.
+    expect(formatPostTime('2026-01-01T03:00:00Z', now)).toBe('Dec 31, 2025');
+  });
+
+  it('returns an empty string for an invalid date', () => {
+    expect(formatPostTime('not a date', now)).toBe('');
   });
 });

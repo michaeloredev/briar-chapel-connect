@@ -241,3 +241,33 @@ export function fromDateTimeLocalValue(value: string): string | null {
   const instant = siteWallTimeToDate(y, m, d, hh, mm);
   return Number.isNaN(instant.getTime()) ? null : instant.toISOString();
 }
+
+const postDateFormatter = new Intl.DateTimeFormat(SITE_LOCALE, {
+  timeZone: SITE_TIME_ZONE,
+  month: 'short',
+  day: 'numeric',
+});
+
+const postDateYearFormatter = new Intl.DateTimeFormat(SITE_LOCALE, {
+  timeZone: SITE_TIME_ZONE,
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+
+/**
+ * When a post went up, the way a feed shows it: "Just now", "12m ago",
+ * "5h ago", then the date ("Nov 12", with the year once it is not this year's)
+ * in Briar Chapel time. `now` is a parameter so the result is testable; render
+ * it on the server only, since a client clock would disagree at hydration.
+ */
+export function formatPostTime(iso: string, now: Date = new Date()): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const minutes = Math.floor((now.getTime() - d.getTime()) / 60_000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 24 * 60) return `${Math.floor(minutes / 60)}h ago`;
+  const sameYear = siteParts(d).year === siteParts(now).year;
+  return (sameYear ? postDateFormatter : postDateYearFormatter).format(d);
+}

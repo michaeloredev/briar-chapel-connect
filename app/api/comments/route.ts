@@ -37,7 +37,15 @@ export async function GET(req: Request) {
   // An event's thread follows the event: members-only for a private group's
   // event, which eventsReader() and RLS work out between them.
   let reader = entity_type === 'event' ? await eventsReader() : await createClient();
-  if (entity_type === 'group') {
+  if (entity_type === 'news_post') {
+    // News is members-only, replies included; RLS hides them from the anon
+    // client too, so read with the caller's own token.
+    try {
+      reader = (await requireAuthSupabase()).supabase;
+    } catch (err) {
+      return apiError(err, 'Failed to load comments');
+    }
+  } else if (entity_type === 'group') {
     const group = await loadGroupPrivacy(entity_id);
     if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
     if (group.is_private) {
@@ -89,6 +97,18 @@ export async function POST(req: Request) {
     // this too; checking here turns the refusal into a message people can act on.
     if (entity_type === 'group' && !(await isGroupMember(entity_id, userId))) {
       return apiForbidden('Join the group to comment');
+    }
+    if (entity_type === 'news_post') {
+      const { data: post, error: postError } = await createAdminClient()
+        .from('news_posts')
+        .select('id')
+        .eq('id', entity_id)
+        .maybeSingle<{ id: string }>();
+      if (postError && postError.code !== '22P02') {
+        console.error('[Comments][POST] news post lookup error:', postError.message);
+        return apiError(postError, 'Failed to create comment');
+      }
+      if (!post) return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
     if (parent_id) {

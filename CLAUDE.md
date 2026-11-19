@@ -51,7 +51,9 @@ Because `requireAuthSupabase()` and `requireRole()` signal by throwing, a handle
 
 ### Auth routing
 
-`middleware.ts` makes browse routes (`/`, `/services`, `/marketplace`, `/events`, `/groups`) public and protects the rest, **splitting page from API**: page requests redirect to `/sign-in` (bare `auth.protect()` would 404 a signed-out visitor onto a dead end), while `/api/*` keeps returning JSON 401. Two GET endpoints are explicitly opened for signed-out reads: `/api/comments` and `/api/me/role`. Protected sections also gate on the server — see `app/members/layout.tsx`.
+`middleware.ts` makes browse routes (`/`, `/services`, `/marketplace`, `/events`, `/groups`) public and protects the rest, **splitting page from API**: page requests redirect to `/sign-in` (bare `auth.protect()` would 404 a signed-out visitor onto a dead end), while `/api/*` keeps returning JSON 401. Two GET endpoints are explicitly opened for signed-out reads: `/api/comments` and `/api/me/role`. The page redirect carries the requested URL as `redirect_url`, so signing in returns the visitor to it. Protected sections also gate on the server — see `app/members/layout.tsx`.
+
+**News (`/news`) is members-only all the way down:** it is not a public route, the `news_posts` SELECT policy requires a signed-in JWT, and its comments are hidden from signed-out readers by the comments policy. Read it with `newsReader()` (the viewer's own token), never the anon client. Signed out, the home page shows a teaser card instead of posts.
 
 ### Services taxonomy
 
@@ -59,11 +61,11 @@ The services catalog is **static data, not database rows**: `lib/data/services.t
 
 ### Comments
 
-`comments` is polymorphic over `(entity_type, entity_id)` with `parent_id` for threading, so one table backs discussion on marketplace items, events and groups. The `components/forum/*` components are correspondingly generic.
+`comments` is polymorphic over `(entity_type, entity_id)` with `parent_id` for threading, so one table backs discussion on marketplace items, events, groups and news posts. The `components/forum/*` components are correspondingly generic. Its SELECT policy is a `CASE` on `entity_type`: a group's thread follows `can_read_group()`, an event's follows the event's own visibility, and a `news_post` thread is signed-in only, like the post. A new entity type that isn't public needs its own branch there, re-created in a new migration.
 
 ### Uploads
 
-Images are stored in **Cloudflare R2**, not Supabase Storage. Every upload route delegates to `handleFileUpload(req, bucket)` in `lib/api/upload.ts`, where `bucket` is a folder in the single R2 bucket: `comment-images`, `marketplace-images`, `group-images` and `service-images` (provider logos). Objects are keyed `<folder>/<userId>/<uuid>.<ext>` and served from `R2_PUBLIC_URL` (`images.briarchapelconnect.com`); see `.env.example` for the `R2_*` vars. It caps files at 2MB and **sniffs magic bytes** to determine type rather than trusting the client's MIME type, accepting only JPEG/PNG/WebP. Client-side cropping/downscaling happens before upload via `lib/images/cropImageToSquareWebp.ts`. Validate a client-supplied image URL with `publicImagePath()` before storing it, so a record can't point at an arbitrary host. Deleting a parent record should also clean up its stored images.
+Images are stored in **Cloudflare R2**, not Supabase Storage. Every upload route delegates to `handleFileUpload(req, bucket)` in `lib/api/upload.ts`, where `bucket` is a folder in the single R2 bucket: `comment-images`, `marketplace-images`, `group-images`, `general-images` (news post photos; the folder was created before the feature and kept its name) and `service-images` (provider logos). Objects are keyed `<folder>/<userId>/<uuid>.<ext>` and served from `R2_PUBLIC_URL` (`images.briarchapelconnect.com`); see `.env.example` for the `R2_*` vars. It caps files at 2MB and **sniffs magic bytes** to determine type rather than trusting the client's MIME type, accepting only JPEG/PNG/WebP. Client-side cropping/downscaling happens before upload via `lib/images/cropImageToSquareWebp.ts`. Validate a client-supplied image URL with `publicImagePath()` before storing it, so a record can't point at an arbitrary host; for a list of photos on a new post use `ownImageUrls()`, which also requires each to be the caller's own upload. Deleting a parent record should also clean up its stored images.
 
 ### Dates
 
