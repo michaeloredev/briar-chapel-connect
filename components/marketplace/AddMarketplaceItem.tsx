@@ -151,7 +151,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
             className="absolute inset-0 bg-black/50"
             onClick={() => !loading && closeModal()}
           />
-          <div className="relative z-10 w-full max-w-lg rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl">
+          <div className="relative z-10 w-full max-w-lg rounded-xl bg-surface dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white">List an Item</h2>
               <button
@@ -173,7 +173,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="What are you selling?"
                 />
               </div>
@@ -184,7 +184,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                   rows={4}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Describe condition, dimensions, pickup details…"
                 />
               </div>
@@ -195,7 +195,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {MARKETPLACE_CATEGORIES.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -210,7 +210,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     inputMode="decimal"
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="0"
                   />
                 </div>
@@ -219,7 +219,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                   <select
                     value={condition}
                     onChange={(e) => setCondition(e.target.value as Condition)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="new">New</option>
                     <option value="like_new">Like new</option>
@@ -233,7 +233,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                   <input
                     value={locationText}
                     onChange={(e) => setLocationText(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Road"
                   />
                 </div>
@@ -245,7 +245,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                     required
                     value={contact}
                     onChange={(e) => setContact(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g. name@example.com or (555) 123-4567"
                   />
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">This will be visible to buyers.</p>

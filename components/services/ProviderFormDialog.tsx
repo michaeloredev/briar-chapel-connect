@@ -259,7 +259,7 @@ export function ProviderFormDialog({
             className="absolute inset-0 bg-black/50"
             onClick={() => !loading && !logoUploading && !imageToCrop && closeDialog()}
           />
-          <div className="relative z-10 w-full max-w-lg rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl">
+          <div className="relative z-10 w-full max-w-lg rounded-xl bg-surface dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
               <button
@@ -279,7 +279,7 @@ export function ProviderFormDialog({
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Business or person name"
                 />
               </div>
@@ -290,7 +290,7 @@ export function ProviderFormDialog({
                   required
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Short one-line summary"
                 />
               </div>
@@ -301,7 +301,7 @@ export function ProviderFormDialog({
                   rows={4}
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Longer description of services"
                 />
               </div>
@@ -312,7 +312,7 @@ export function ProviderFormDialog({
                   <input
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="https://example.com"
                   />
                 </div>
@@ -321,7 +321,7 @@ export function ProviderFormDialog({
                   <input
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="(555) 123-4567"
                   />
                 </div>
@@ -330,7 +330,7 @@ export function ProviderFormDialog({
                   <input
                     value={locationText}
                     onChange={(e) => setLocationText(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Neighborhood or city (e.g., Briar Chapel)"
                   />
                 </div>
@@ -339,7 +339,7 @@ export function ProviderFormDialog({
                   <input
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g. insured, local, eco-friendly"
                   />
                 </div>
@@ -403,7 +403,7 @@ export function ProviderFormDialog({
                     type="email"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="name@example.com"
                   />
                 </div>

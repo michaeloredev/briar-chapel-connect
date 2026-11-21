@@ -86,7 +86,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
   const heading = [mineSelected ? 'My' : 'All', typeLabel ?? '', 'groups'].filter(Boolean).join(' ');
 
   return (
-    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <PageHeader
           title="Groups & Clubs"
@@ -117,7 +117,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
               {pending.map((g) => (
                 <li
                   key={g.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-surface p-4 dark:border-slate-700 dark:bg-slate-800"
                 >
                   <div className="min-w-0">
                     <Link
@@ -148,7 +148,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
         ) : null}
 
         {/* Filters */}
-        <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between dark:border-slate-700 dark:bg-slate-800">
+        <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-surface p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between dark:border-slate-700 dark:bg-slate-800">
           <nav aria-label="Group type" className="flex flex-wrap gap-2">
             <Link
               href={groupsHref('', mineSelected)}
@@ -199,7 +199,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
                   className={[
                     'rounded-full px-4 py-1.5 text-sm font-semibold transition-colors',
                     active
-                      ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
+                      ? 'bg-surface text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
                       : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white',
                   ].join(' ')}
                 >
@@ -221,7 +221,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
         </div>
 
         {needsSignIn ? (
-          <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-800">
+          <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-surface px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-800">
             <Users className="h-10 w-10 text-slate-400" aria-hidden />
             <p className="text-slate-600 dark:text-slate-300">Sign in to see the groups you&apos;ve joined.</p>
             <SignInButton mode="modal">
@@ -231,7 +231,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
             </SignInButton>
           </div>
         ) : groups.length === 0 ? (
-          <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-800">
+          <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-surface px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-800">
             <SearchX className="h-10 w-10 text-slate-400" aria-hidden />
             <p className="text-slate-600 dark:text-slate-300">
               {mineSelected ? "You haven't joined any groups here yet." : 'No groups here yet.'}

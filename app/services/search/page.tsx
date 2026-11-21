@@ -135,7 +135,7 @@ export default async function ServicesSearchPage(props: SearchPageProps) {
         {topicHits.length > 0 ? (
           <ul className="mt-3 grid gap-3">
             {topicHits.map((hit, i) => (
-              <li key={`${hit.href}-${i}`} className="rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-800">
+              <li key={`${hit.href}-${i}`} className="rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-surface dark:bg-slate-800">
                 <Link href={hit.href} className="text-blue-600 hover:underline dark:text-blue-400">
                   {hit.title}
                 </Link>

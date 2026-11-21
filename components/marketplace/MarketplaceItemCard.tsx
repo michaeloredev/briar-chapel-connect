@@ -24,7 +24,7 @@ export default function MarketplaceItemCard({
   const dateText = isNaN(time.getTime()) ? '' : time.toLocaleDateString();
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden hover:shadow-sm transition-shadow">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-surface dark:bg-slate-800 overflow-hidden hover:shadow-sm transition-shadow">
       <div className="aspect-square bg-slate-100 dark:bg-slate-900">
         {imageUrl ? (
           <img

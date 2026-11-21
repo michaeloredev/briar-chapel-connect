@@ -25,11 +25,11 @@ export default async function NewsPostPage({ params }: PageProps) {
   const isAdmin = hasRole(role, 'admin');
 
   return (
-    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800">
       <SetBreadcrumbTitle value={`${newsCategory(post.category).label} post`} />
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
         <NewsPostCard post={post} canDelete={post.user_id === userId || isAdmin} canPin={isAdmin} linkToPost={false} />
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div className="mt-8 rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <CommentThread entityType="news_post" entityId={post.id} />
         </div>
       </div>

@@ -31,7 +31,7 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
       />
       <span
         aria-hidden="true"
-        className="pointer-events-none z-10 ml-1 h-6 w-6 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 dark:translate-x-6 dark:bg-slate-900 dark:ring-white/10"
+        className="pointer-events-none z-10 ml-1 h-6 w-6 rounded-full bg-surface shadow-sm ring-1 ring-black/5 transition-transform duration-200 dark:translate-x-6 dark:bg-slate-900 dark:ring-white/10"
       />
     </button>
   );

@@ -90,7 +90,7 @@ export function ProviderList({
             </button>
           </div>
         ) : null}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-8 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-8 bg-surface dark:bg-slate-800 text-slate-600 dark:text-slate-300">
           No providers found yet.
         </div>
         <ProviderFormDialog

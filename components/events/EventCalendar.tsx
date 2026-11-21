@@ -91,7 +91,7 @@ export default function EventCalendar({
 
   return (
     <div
-      className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm"
+      className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-surface dark:bg-slate-800 p-6 shadow-sm"
       aria-busy={pending}
     >
       <div className="flex items-center justify-between gap-2">

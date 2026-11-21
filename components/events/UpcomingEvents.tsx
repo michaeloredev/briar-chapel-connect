@@ -30,14 +30,14 @@ export default function UpcomingEvents({
   if (upcoming.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+    <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-surface dark:bg-slate-800 p-6 shadow-sm">
       <h2 className="text-lg font-bold text-slate-900 dark:text-white">Coming up</h2>
       <ul className="mt-4 flex flex-col gap-3">
         {upcoming.map(({ event }) => (
           <li key={event.id}>
             <Link
               href={`/events/${event.id}`}
-              className="flex items-center gap-4 rounded-xl bg-slate-50 p-3 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-900/50 dark:hover:bg-slate-900"
+              className="flex items-center gap-4 rounded-xl bg-surface-muted p-3 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-900/50 dark:hover:bg-slate-900"
             >
               <DateTile iso={event.date} category={event.category} />
               <span className="flex min-w-0 flex-col gap-0.5">

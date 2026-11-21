@@ -8,7 +8,7 @@ import { ArrowUp, LifeBuoy } from 'lucide-react';
  */
 export function Footer() {
   return (
-    <footer className="border-t border-slate-200 bg-white/60 dark:border-slate-700 dark:bg-slate-900/60">
+    <footer className="border-t border-slate-200 bg-surface/60 dark:border-slate-700 dark:bg-slate-900/60">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-1">
           <span className="font-bold text-slate-900 dark:text-white">Briar Chapel Connect</span>

@@ -110,7 +110,7 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Members</h1>
@@ -151,14 +151,14 @@ export default function MembersPage() {
         )}
 
         {loading ? (
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-12 text-center text-slate-500 dark:text-slate-400">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-surface dark:bg-slate-800 p-12 text-center text-slate-500 dark:text-slate-400">
             Loading members...
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-surface dark:bg-slate-800">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                <tr className="border-b border-slate-200 dark:border-slate-700 bg-surface-muted dark:bg-slate-800/50">
                   <th className="px-4 py-3 font-medium text-slate-600 dark:text-slate-300">User</th>
                   <th className="px-4 py-3 font-medium text-slate-600 dark:text-slate-300">Email</th>
                   <th className="px-4 py-3 font-medium text-slate-600 dark:text-slate-300">Role</th>
@@ -177,7 +177,7 @@ export default function MembersPage() {
                   visibleMembers.map((m) => (
                     <tr
                       key={m.id}
-                      className="border-b border-slate-100 dark:border-slate-700/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+                      className="border-b border-slate-100 dark:border-slate-700/50 last:border-0 hover:bg-surface-muted dark:hover:bg-slate-700/30 transition-colors"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">

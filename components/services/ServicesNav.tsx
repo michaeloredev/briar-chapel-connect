@@ -123,7 +123,7 @@ export default function ServicesNav({ counts }: Props) {
   return (
     <>
       {/* Phone and tablet: one collapsed panel above the content. */}
-      <details className="group/menu rounded-xl border border-slate-200 bg-white shadow-sm lg:hidden dark:border-slate-700 dark:bg-slate-800">
+      <details className="group/menu rounded-xl border border-slate-200 bg-surface shadow-sm lg:hidden dark:border-slate-700 dark:bg-slate-800">
         <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 px-4 font-semibold text-slate-900 dark:text-white [&::-webkit-details-marker]:hidden">
           Browse categories
           <ChevronDown className="h-5 w-5 text-slate-400 transition-transform group-open/menu:rotate-180" aria-hidden />
@@ -136,7 +136,7 @@ export default function ServicesNav({ counts }: Props) {
       {/* Desktop: a side menu that stays in view. */}
       <nav
         aria-label="Service categories"
-        className="hidden max-h-[calc(100vh-3rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:sticky lg:top-6 lg:block dark:border-slate-700 dark:bg-slate-800"
+        className="hidden max-h-[calc(100vh-3rem)] overflow-y-auto rounded-xl border border-slate-200 bg-surface p-2 shadow-sm lg:sticky lg:top-6 lg:block dark:border-slate-700 dark:bg-slate-800"
       >
         {menu}
       </nav>

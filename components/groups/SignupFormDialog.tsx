@@ -8,7 +8,7 @@ import { groupRequest } from './request';
 import { errorMessage } from '@/lib/utils/errors';
 
 const FIELD =
-  'mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500';
+  'mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500';
 const LABEL = 'block text-sm font-medium text-slate-700 dark:text-slate-300';
 
 /** `limited: false` is an unlimited slot, the default. */
@@ -86,7 +86,7 @@ export default function SignupFormDialog({ groupId }: { groupId: string }) {
       {open && (
         <div role="dialog" aria-modal="true" aria-labelledby="signup-form-title" className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => !loading && setOpen(false)} />
-          <div className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+          <div className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-surface shadow-xl dark:border-slate-700 dark:bg-slate-900">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-700">
               <h2 id="signup-form-title" className="text-lg font-semibold text-slate-900 dark:text-white">New sign-up</h2>
               <button

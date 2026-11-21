@@ -47,7 +47,7 @@ export default function JoinRequestList({ requests }: { requests: JoinRequestVie
       {error ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <ul className="mt-4 flex flex-col gap-3">
         {requests.map((r) => (
-          <li key={r.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+          <li key={r.id} className="rounded-xl border border-slate-200 bg-surface p-4 dark:border-slate-700 dark:bg-slate-800">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="font-semibold text-slate-900 dark:text-white">{r.name}</p>
               <time dateTime={r.createdAt} className="text-xs text-slate-500 dark:text-slate-400">

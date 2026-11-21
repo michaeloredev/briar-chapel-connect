@@ -163,7 +163,7 @@ export function ProviderCard({
     />
   ) : (
     <div
-      className="h-20 w-20 shrink-0 rounded-lg border border-dashed border-slate-200 bg-slate-50 dark:border-slate-600 dark:bg-slate-800/80"
+      className="h-20 w-20 shrink-0 rounded-lg border border-dashed border-slate-200 bg-surface-muted dark:border-slate-600 dark:bg-slate-800/80"
       aria-hidden
     />
   );
@@ -218,7 +218,7 @@ export function ProviderCard({
   return (
     <>
     <div
-      className={`rounded-xl border border-slate-200 dark:border-slate-700 p-6 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer ${className}`}
+      className={`rounded-xl border border-slate-200 dark:border-slate-700 p-6 bg-surface dark:bg-slate-800 hover:bg-surface-muted dark:hover:bg-slate-800/80 cursor-pointer ${className}`}
       role="button"
       onClick={openDetails}
     >
@@ -307,7 +307,7 @@ export function ProviderCard({
       >
         <div className="absolute inset-0 bg-black/50" />
         <div
-          className="relative z-10 w-full max-w-2xl rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-6 max-h-[80vh] overflow-y-auto"
+          className="relative z-10 w-full max-w-2xl rounded-xl bg-surface dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-6 max-h-[80vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-start gap-4">
@@ -377,7 +377,7 @@ export function ProviderCard({
                       await loadReviews();
                     }
                   }}
-                  className="w-full flex items-center justify-between rounded-md border border-slate-200 dark:border-slate-700 px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full flex items-center justify-between rounded-md border border-slate-200 dark:border-slate-700 px-3 py-2 text-left hover:bg-surface-muted dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Reviews</span>
                   <ChevronDown
@@ -428,7 +428,7 @@ export function ProviderCard({
                     <SignInButton mode="modal">
                       <button
                         type="button"
-                        className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-surface-muted dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         Sign in to rate
                       </button>
@@ -440,7 +440,7 @@ export function ProviderCard({
                       onClick={() => {
                         setShowReviewForm(true);
                       }}
-                      className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-surface-muted disabled:opacity-50 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       Rate
                     </button>
@@ -465,7 +465,7 @@ export function ProviderCard({
                       onChange={(e) => setReviewText(e.target.value)}
                       rows={3}
                       maxLength={2000}
-                      className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-900 p-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Share a few words about your experience…"
                     />
                   </div>
@@ -479,7 +479,7 @@ export function ProviderCard({
                         setShowReviewForm(false);
                         setReviewError(null);
                       }}
-                      className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-surface-muted dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       Cancel
                     </button>

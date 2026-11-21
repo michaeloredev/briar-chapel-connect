@@ -77,13 +77,13 @@ export default function NewsComposer() {
   }
 
   const field =
-    'rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
+    'rounded-lg border border-slate-300 bg-surface px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
 
   return (
     <>
       <form
         onSubmit={onSubmit}
-        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+        className="rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800"
       >
         <label htmlFor="news-content" className="sr-only">
           Your post
