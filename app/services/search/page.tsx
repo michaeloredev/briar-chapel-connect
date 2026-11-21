@@ -4,6 +4,8 @@ import Link from 'next/link';
 import ProviderList from '@/components/services/ProviderList';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
+import { PageHeader } from '@/components/common/PageHeader';
+import ServicesShell from '@/components/services/ServicesShell';
 
 export const metadata: Metadata = {
   title: 'Search Services • Briar Chapel Connect',
@@ -39,12 +41,9 @@ export default async function ServicesSearchPage(props: SearchPageProps) {
 
   if (!query) {
     return (
-      <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Search</h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-300">Type in the search box to find services and providers.</p>
-        </div>
-      </div>
+      <ServicesShell header={<PageHeader title="Search" description="Type in the search box to find services and providers." />}>
+        {null}
+      </ServicesShell>
     );
   }
 
@@ -130,37 +129,33 @@ export default async function ServicesSearchPage(props: SearchPageProps) {
     }) ?? [];
 
   return (
-    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Search results for “{query}”</h1>
+    <ServicesShell header={<PageHeader title={`Search results for “${query}”`} />}>
+      <section>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Service Topics</h2>
+        {topicHits.length > 0 ? (
+          <ul className="mt-3 grid gap-3">
+            {topicHits.map((hit, i) => (
+              <li key={`${hit.href}-${i}`} className="rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-800">
+                <Link href={hit.href} className="text-blue-600 hover:underline dark:text-blue-400">
+                  {hit.title}
+                </Link>
+                <div className="mt-1 text-xs text-slate-500">{hit.section}</div>
+                <div className="mt-1 text-sm text-slate-700 dark:text-slate-300">{hit.description}</div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">No matching topics found.</p>
+        )}
+      </section>
 
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Service Topics</h2>
-          {topicHits.length > 0 ? (
-            <ul className="mt-3 grid gap-3">
-              {topicHits.map((hit, i) => (
-                <li key={`${hit.href}-${i}`} className="rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-800">
-                  <Link href={hit.href} className="text-blue-600 hover:underline dark:text-blue-400">
-                    {hit.title}
-                  </Link>
-                  <div className="mt-1 text-xs text-slate-500">{hit.section}</div>
-                  <div className="mt-1 text-sm text-slate-700 dark:text-slate-300">{hit.description}</div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">No matching topics found.</p>
-          )}
-        </section>
-
-        <section className="mt-10">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Providers</h2>
-          <div className="mt-3">
-            <ProviderList providers={providers} />
-          </div>
-        </section>
-      </div>
-    </div>
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Providers</h2>
+        <div className="mt-3">
+          <ProviderList providers={providers} />
+        </div>
+      </section>
+    </ServicesShell>
   );
 }
 
