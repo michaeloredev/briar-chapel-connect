@@ -89,16 +89,14 @@ export default async function ServiceDetailListPage({ params }: PageProps) {
     }) ?? [];
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <PageHeader title={item.title} description={item.description} />
-        <ProviderList
-          providers={providers}
-          categorySlug={category}
-          serviceSlug={service}
-          canManageProviders={canManageProviders}
-        />
-      </div>
-    </div>
+    <>
+      <PageHeader title={item.title} description={item.description} />
+      <ProviderList
+        providers={providers}
+        categorySlug={category}
+        serviceSlug={service}
+        canManageProviders={canManageProviders}
+      />
+    </>
   );
 }
