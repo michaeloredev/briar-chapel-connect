@@ -238,8 +238,8 @@ export default async function Home() {
                 href={href}
                 className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
               >
-                {/* Slate tile with a light blue border, colored icon: the services icon look. */}
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-blue-300 bg-slate-100 dark:border-blue-400 dark:bg-slate-600">
+                {/* Slate tile, colored icon: the services icon look, with the cards' border and shadow. */}
+                <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 shadow-sm dark:border-slate-700 dark:bg-slate-600 dark:shadow-black/40">
                   <Icon className={`h-6 w-6 ${iconColor}`} aria-hidden />
                 </span>
                 <span className="text-xl font-semibold text-slate-900 dark:text-white">{title}</span>
