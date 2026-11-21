@@ -39,7 +39,7 @@ export default async function ServicesSearchPage(props: SearchPageProps) {
 
   if (!query) {
     return (
-      <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Search</h1>
           <p className="mt-2 text-slate-600 dark:text-slate-300">Type in the search box to find services and providers.</p>
@@ -130,7 +130,7 @@ export default async function ServicesSearchPage(props: SearchPageProps) {
     }) ?? [];
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Search results for “{query}”</h1>
 

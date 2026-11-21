@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function ServicesPage() {
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <PageHeader title="Local Services" description="Discover trusted providers in your neighborhood." />
 

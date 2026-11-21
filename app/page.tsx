@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, ArrowUp, Briefcase, Calendar, LifeBuoy, Lock, Newspaper, ShoppingBag, Users, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Briefcase, Calendar, Lock, Newspaper, ShoppingBag, Users, type LucideIcon } from 'lucide-react';
 import { eventsReader } from '@/lib/api/event-reader';
 import type { Database } from '@/lib/supabase/types';
 import DateTile from '@/components/events/DateTile';
@@ -80,7 +80,7 @@ export default async function Home() {
   const latestNews = newsClient ? (await loadNewsFeed(newsClient, { limit: NEWS_PREVIEW_LIMIT })).posts : null;
 
   return (
-    <div id="top" className="flex flex-col flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex flex-col flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <main className="flex-1">
         {/* Hero */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-14 grid gap-12 lg:grid-cols-2 items-center">
@@ -270,31 +270,6 @@ export default async function Home() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white/60 dark:border-slate-700 dark:bg-slate-900/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-wrap items-center justify-between gap-6">
-          <div className="flex flex-col gap-1">
-            <span className="font-bold text-slate-900 dark:text-white">Briar Chapel Connect</span>
-            <span className="text-sm text-slate-600 dark:text-slate-400">© 2026 · Made by neighbors, for neighbors.</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <Link
-              href="/support"
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              <LifeBuoy className="h-4 w-4" aria-hidden />
-              Support
-            </Link>
-            <a
-              href="#top"
-              aria-label="Back to top"
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
-            >
-              <ArrowUp className="h-5 w-5" aria-hidden />
-            </a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
