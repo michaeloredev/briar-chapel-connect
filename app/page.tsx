@@ -82,7 +82,7 @@ export default async function Home() {
   const latestNews = newsClient ? (await loadNewsFeed(newsClient, { limit: NEWS_PREVIEW_LIMIT })).posts : null;
 
   return (
-    <div className="flex flex-col flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex flex-col flex-1 bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800">
       <main className="flex-1">
         {/* Hero */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-14 grid gap-12 lg:grid-cols-2 items-center">
@@ -112,7 +112,7 @@ export default async function Home() {
           </div>
 
           {/* Upcoming events */}
-          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Coming up</h3>
               <Link href="/events" className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
@@ -120,7 +120,7 @@ export default async function Home() {
               </Link>
             </div>
             {events.length === 0 ? (
-              <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-slate-600 dark:bg-slate-900/50 dark:text-slate-300">
+              <p className="rounded-xl bg-surface-muted px-4 py-6 text-center text-slate-600 dark:bg-slate-900/50 dark:text-slate-300">
                 Nothing on the calendar yet — check back soon.
               </p>
             ) : (
@@ -129,7 +129,7 @@ export default async function Home() {
                   <li key={event.id}>
                     <Link
                       href={`/events/${event.id}`}
-                      className="flex items-center gap-4 rounded-xl bg-slate-50 p-3 hover:bg-slate-100 transition-colors dark:bg-slate-900/50 dark:hover:bg-slate-900"
+                      className="flex items-center gap-4 rounded-xl bg-surface-muted p-3 hover:bg-slate-100 transition-colors dark:bg-slate-900/50 dark:hover:bg-slate-900"
                     >
                       <DateTile iso={event.event_date} category={event.category} />
                       <span className="flex min-w-0 flex-col gap-0.5">
@@ -148,7 +148,7 @@ export default async function Home() {
 
         {latestNews ? (
           <section aria-labelledby="latest-news" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
-            <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
               <div className="flex items-center justify-between gap-3">
                 <h2 id="latest-news" className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
                   <Newspaper className="h-5 w-5 text-blue-600 dark:text-blue-400" aria-hidden />
@@ -159,7 +159,7 @@ export default async function Home() {
                 </Link>
               </div>
               {latestNews.length === 0 ? (
-                <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-slate-600 dark:bg-slate-900/50 dark:text-slate-300">
+                <p className="rounded-xl bg-surface-muted px-4 py-6 text-center text-slate-600 dark:bg-slate-900/50 dark:text-slate-300">
                   No posts yet.{' '}
                   <Link href="/news" className="font-semibold text-blue-600 hover:underline dark:text-blue-400">
                     Share something with your neighbors
@@ -174,7 +174,7 @@ export default async function Home() {
                       <li key={post.id}>
                         <Link
                           href={`/news/${post.id}`}
-                          className="flex h-full flex-col gap-2 rounded-xl bg-slate-50 p-4 hover:bg-slate-100 transition-colors dark:bg-slate-900/50 dark:hover:bg-slate-900"
+                          className="flex h-full flex-col gap-2 rounded-xl bg-surface-muted p-4 hover:bg-slate-100 transition-colors dark:bg-slate-900/50 dark:hover:bg-slate-900"
                         >
                           <span className="flex flex-wrap items-center gap-2 text-sm">
                             <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${category.chip}`}>{category.label}</span>
@@ -197,7 +197,7 @@ export default async function Home() {
           </section>
         ) : (
           <section aria-labelledby="news-teaser" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
-            <div className="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div className="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
               <div className="flex items-start gap-4">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300">
                   <Newspaper className="h-6 w-6" aria-hidden />
@@ -237,7 +237,7 @@ export default async function Home() {
               <Link
                 key={href}
                 href={href}
-                className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
+                className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
               >
                                 <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${ICON_TILE}`}>
                   <Icon className={`h-6 w-6 ${iconColor}`} aria-hidden />

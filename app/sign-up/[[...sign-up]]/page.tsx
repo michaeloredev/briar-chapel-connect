@@ -12,7 +12,7 @@ export const metadata: Metadata = {
  */
 export default function SignUpPage() {
   return (
-    <div className="flex flex-1 items-center justify-center bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-4 py-16">
+    <div className="flex flex-1 items-center justify-center bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800 px-4 py-16">
       <SignUp />
     </div>
   );

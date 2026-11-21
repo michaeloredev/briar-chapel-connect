@@ -24,7 +24,7 @@ async function readFailedResponse(res: Response, fallback: string): Promise<stri
 }
 
 const FIELD =
-  'mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500';
+  'mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500';
 const LABEL = 'block text-sm font-medium text-slate-700 dark:text-slate-300';
 
 export default function SupportForm() {
@@ -81,7 +81,7 @@ export default function SupportForm() {
 
   if (ticket) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <div className="rounded-2xl border border-slate-200 bg-surface p-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600 dark:text-emerald-400" aria-hidden />
         <h2 className="mt-4 text-xl font-semibold text-slate-900 dark:text-white">Thanks — we got your message</h2>
         <p className="mt-2 text-slate-600 dark:text-slate-300">
@@ -110,7 +110,7 @@ export default function SupportForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+      className="space-y-4 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800"
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <div>

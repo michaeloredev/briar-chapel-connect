@@ -6,7 +6,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
+  --background: #e9edf2;
   --foreground: #171717;
 }
 
@@ -21,6 +21,16 @@
 :root.dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+}
+
+/* Light-mode surfaces, toned down from pure white so day mode is easier on
+   the eyes. Dark mode never sees these: every use is paired with a dark:
+   class. Change the look of light mode here, not in the components. */
+@theme {
+  --color-page-top: #eef1f5;     /* page background gradient, top */
+  --color-page-bottom: #e3e8ee;  /* page background gradient, bottom */
+  --color-surface: #f8f9fb;      /* cards, panels, dialogs, inputs */
+  --color-surface-muted: #eef1f5;/* insets and hover rows inside a card */
 }
 
 @theme inline {

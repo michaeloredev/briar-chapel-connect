@@ -70,7 +70,7 @@ export default function PollCard({ poll, canParticipate }: { poll: PollView; can
   }
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+    <article className="rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{poll.question}</h3>
@@ -162,7 +162,7 @@ export default function PollCard({ poll, canParticipate }: { poll: PollView; can
             onChange={(e) => setNewOption(e.target.value)}
             maxLength={POLL_LIMITS.option}
             placeholder="Add an option…"
-            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           />
           <button
             type="submit"

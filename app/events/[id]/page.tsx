@@ -51,7 +51,7 @@ export default async function EventDetailPage({ params }: PageProps) {
   const isCancelled = event.status === 'cancelled';
 
   return (
-    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800">
       <SetBreadcrumbTitle value={event.title} />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -140,7 +140,7 @@ export default async function EventDetailPage({ params }: PageProps) {
         </dl>
 
         {event.description ? (
-          <div className="mt-8 rounded-xl border border-slate-200 dark:border-slate-700 p-6 bg-white dark:bg-slate-800">
+          <div className="mt-8 rounded-xl border border-slate-200 dark:border-slate-700 p-6 bg-surface dark:bg-slate-800">
             <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{event.description}</p>
           </div>
         ) : null}

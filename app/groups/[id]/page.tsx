@@ -257,11 +257,11 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
   const members = memberCount ?? 0;
 
   return (
-    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800">
       <SetBreadcrumbTitle value={group.title} />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-700 dark:bg-slate-800">
+        <section className="rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm sm:p-8 dark:border-slate-700 dark:bg-slate-800">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
             {group.image_url ? (
               <img
@@ -423,7 +423,7 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
 
           <div className="mt-6">
             {tab === 'discussion' ? (
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+              <div className="rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
                 <CommentThread
                   entityType="group"
                   entityId={group.id}
@@ -481,7 +481,7 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
 
 function EmptyState({ icon: Icon, text }: { icon: typeof Users; text: string }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-800">
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-surface px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-800">
       <Icon className="h-10 w-10 text-slate-400" aria-hidden />
       <p className="max-w-md text-slate-600 dark:text-slate-300">{text}</p>
     </div>

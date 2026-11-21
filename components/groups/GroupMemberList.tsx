@@ -68,7 +68,7 @@ export default function GroupMemberList({ groupId, members }: { groupId: string;
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       {error ? <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <ul className="divide-y divide-slate-200 dark:divide-slate-700">
         {members.map((m) => {

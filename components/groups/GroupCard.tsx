@@ -29,7 +29,7 @@ export default function GroupCard({ id, title, description, location, type, imag
     // The title link stretches over the whole card through its ::after, so the
     // card is one click target without wrapping the Join button in a link;
     // the button sits above it (relative z-10) to stay clickable on its own.
-    <article className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-blue-500 dark:border-slate-700 dark:bg-slate-800">
+    <article className="group relative flex flex-col rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm transition-shadow hover:shadow-md has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-blue-500 dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-start gap-4">
         {imageUrl ? (
           <img

@@ -22,7 +22,7 @@ export default function EventList({
   const filtered = events.filter((e) => eventDayKeys(e.date, e.endDate).includes(selectedYMD));
 
   return (
-    <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+    <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-surface dark:bg-slate-800 p-6 shadow-sm">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">{formatDayHeading(selectedYMD)}</h2>
         <span className="text-sm text-slate-500 dark:text-slate-400">
@@ -30,7 +30,7 @@ export default function EventList({
         </span>
       </div>
       {filtered.length === 0 ? (
-        <div className="mt-4 flex flex-col items-center gap-2 rounded-xl bg-slate-50 px-4 py-8 text-center dark:bg-slate-900/50">
+        <div className="mt-4 flex flex-col items-center gap-2 rounded-xl bg-surface-muted px-4 py-8 text-center dark:bg-slate-900/50">
           <CalendarX2 className="h-8 w-8 text-slate-400" aria-hidden />
           <p className="text-slate-600 dark:text-slate-300">Nothing scheduled this day.</p>
         </div>

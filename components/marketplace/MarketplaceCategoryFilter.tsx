@@ -36,7 +36,7 @@ export default function MarketplaceCategoryFilter({
             }),
           );
         }}
-        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
         aria-label="Filter by category"
       >
         <option value="">All types</option>

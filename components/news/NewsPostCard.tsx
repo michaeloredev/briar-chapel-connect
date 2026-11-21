@@ -23,7 +23,7 @@ export default function NewsPostCard({ post, canDelete, canPin, linkToPost = tru
 
   return (
     <article
-      className={`rounded-2xl border bg-white p-5 shadow-sm dark:bg-slate-800 ${
+      className={`rounded-2xl border bg-surface p-5 shadow-sm dark:bg-slate-800 ${
         post.pinned_at ? 'border-blue-300 dark:border-blue-700' : 'border-slate-200 dark:border-slate-700'
       }`}
     >

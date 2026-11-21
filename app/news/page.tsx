@@ -48,11 +48,11 @@ export default async function NewsPage({ searchParams }: { searchParams: SearchP
     `inline-flex min-h-9 items-center rounded-full px-3.5 text-sm font-medium transition-colors ${
       active
         ? 'bg-blue-600 text-white'
-        : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700'
+        : 'bg-surface text-slate-700 border border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700'
     }`;
 
   return (
-    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800">
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
         <PageHeader title="News" description="What neighbors are talking about. Only signed-in members can see this page." />
 
@@ -76,7 +76,7 @@ export default async function NewsPage({ searchParams }: { searchParams: SearchP
 
         <div className="mt-6 flex flex-col gap-4">
           {posts.length === 0 ? (
-            <p className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <p className="rounded-2xl border border-slate-200 bg-surface p-8 text-center text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
               {before
                 ? 'No older posts.'
                 : filter

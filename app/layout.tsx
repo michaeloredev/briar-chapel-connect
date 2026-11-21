@@ -55,7 +55,7 @@ export default function RootLayout({
             <RoleProvider>
               <BreadcrumbTitleProvider>
                 <Header />
-                <div className="bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+                <div className="bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800">
                   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <Suspense fallback={null}>
                       <BreadcrumbsBar />
@@ -64,7 +64,7 @@ export default function RootLayout({
                 </div>
                 {/* Fills the space between the header and footer, so the footer
                     sits at the bottom of short pages. Pages fill it with flex-1. */}
-                <div className="flex flex-1 flex-col bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+                <div className="flex flex-1 flex-col bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800">
                   {children}
                 </div>
                 <Footer />

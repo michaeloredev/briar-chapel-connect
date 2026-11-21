@@ -36,11 +36,11 @@ export default async function MarketplaceDetailPage({ params }: PageProps) {
   const dateText = isNaN(created.getTime()) ? '' : created.toLocaleString();
 
   return (
-    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800">
       <SetBreadcrumbTitle value={item.title} />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-surface dark:bg-slate-800 p-3">
             {Array.isArray(item.images) && item.images.length > 1 ? (
               <MarketplaceImageCarousel images={item.images} alt={item.title} />
             ) : (

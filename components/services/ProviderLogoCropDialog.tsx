@@ -61,7 +61,7 @@ export function ProviderLogoCropDialog({
       className="fixed inset-0 z-60 flex items-center justify-center p-4"
     >
       <div className="absolute inset-0 bg-black/60" onClick={() => !applying && onCancel()} />
-      <div className="relative z-10 w-full max-w-md rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
+      <div className="relative z-10 w-full max-w-md rounded-xl bg-surface dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
           <h2 id="logo-crop-title" className="text-base font-semibold text-slate-900 dark:text-white">
             {title}

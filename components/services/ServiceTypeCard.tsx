@@ -15,7 +15,7 @@ export default function ServiceTypeCard({ sectionSlug, item, providerCount }: Se
   return (
     <Link
       href={`/services/${sectionSlug}/${item.slug}`}
-      className="group flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
+      className="group flex items-start gap-4 rounded-xl border border-slate-200 bg-surface p-4 shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
     >
       <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${item.colorClasses.bg}`}>
         <Icon className={`h-5 w-5 ${item.colorClasses.icon}`} aria-hidden />

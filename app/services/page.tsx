@@ -29,7 +29,7 @@ export default async function ServicesPage() {
             <section
               key={section.slug}
               aria-labelledby={`section-${section.slug}`}
-              className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+              className="flex flex-col rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800"
             >
               <div className="mb-3 flex items-baseline justify-between gap-3">
                 <h2 id={`section-${section.slug}`} className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -49,7 +49,7 @@ export default async function ServicesPage() {
                     <li key={item.slug}>
                       <Link
                         href={`/services/${section.slug}/${item.slug}`}
-                        className="group flex min-h-11 items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:hover:bg-slate-700/50"
+                        className="group flex min-h-11 items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-blue-500 dark:hover:bg-slate-700/50"
                       >
                         <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${item.colorClasses.bg}`}>
                           <item.icon className={`h-4 w-4 ${item.colorClasses.icon}`} aria-hidden />

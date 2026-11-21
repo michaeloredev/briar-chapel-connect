@@ -26,7 +26,7 @@ export type EditableGroup = {
 const ICON_RESULTS = 48;
 
 const FIELD =
-  'mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500';
+  'mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-surface dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500';
 
 /** Routes answer with `{ error }` JSON; surface that rather than the raw body. */
 async function readFailedResponse(res: Response, fallback: string): Promise<string> {
@@ -222,7 +222,7 @@ export default function GroupFormDialog({ className = '', group, proposal = fals
             className="absolute inset-0 bg-black/50"
             onClick={() => !loading && !imageToCrop && setOpen(false)}
           />
-          <div className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl">
+          <div className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-surface dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{isEdit ? 'Edit Group' : proposal ? 'Propose a Group' : 'Create Group'}</h2>
               <button

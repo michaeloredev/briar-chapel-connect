@@ -92,7 +92,7 @@ export default function ConfirmDialog({
         e.stopPropagation();
         if (e.target === e.currentTarget) requestClose();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-slate-200 bg-white p-0 text-left shadow-2xl transition duration-150 ease-out starting:scale-95 starting:opacity-0 backdrop:bg-slate-950/50 backdrop:backdrop-blur-[2px] dark:border-slate-700 dark:bg-slate-900"
+      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-slate-200 bg-surface p-0 text-left shadow-2xl transition duration-150 ease-out starting:scale-95 starting:opacity-0 backdrop:bg-slate-950/50 backdrop:backdrop-blur-[2px] dark:border-slate-700 dark:bg-slate-900"
     >
       <div className="p-6">
         <div className="flex items-start gap-4">
@@ -120,13 +120,13 @@ export default function ConfirmDialog({
         </div>
       </div>
 
-      <div className="flex flex-col-reverse gap-2 rounded-b-xl border-t border-slate-200 bg-slate-50 px-6 py-4 sm:flex-row sm:justify-end dark:border-slate-700 dark:bg-slate-800/60">
+      <div className="flex flex-col-reverse gap-2 rounded-b-xl border-t border-slate-200 bg-surface-muted px-6 py-4 sm:flex-row sm:justify-end dark:border-slate-700 dark:bg-slate-800/60">
         <button
           ref={cancelRef}
           type="button"
           onClick={requestClose}
           disabled={pending}
-          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          className="rounded-lg border border-slate-300 bg-surface px-4 py-2 text-sm font-medium text-slate-700 hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
         >
           Cancel
         </button>

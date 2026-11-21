@@ -110,7 +110,7 @@ export default function RequestToJoinButton({ groupId, groupTitle, pendingMessag
       {open ? (
         <div role="dialog" aria-modal="true" aria-labelledby="join-request-title" className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => !busy && setOpen(false)} />
-          <div className="relative z-10 w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+          <div className="relative z-10 w-full max-w-md rounded-xl border border-slate-200 bg-surface shadow-xl dark:border-slate-700 dark:bg-slate-900">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-700">
               <h2 id="join-request-title" className="text-lg font-semibold text-slate-900 dark:text-white">
                 Ask to join {groupTitle}
@@ -142,7 +142,7 @@ export default function RequestToJoinButton({ groupId, groupTitle, pendingMessag
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Who you are, where in Briar Chapel you live, and why you'd like to join."
                   aria-describedby="join-request-count"
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-surface px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 />
                 <p id="join-request-count" className="mt-1 text-right text-xs text-slate-500 dark:text-slate-400">
                   {remaining} characters left

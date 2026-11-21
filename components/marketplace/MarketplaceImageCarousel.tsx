@@ -55,7 +55,7 @@ export default function MarketplaceImageCarousel({ images, alt, className = '' }
           <button
             type="button"
             onClick={prev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 shadow"
+            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-surface/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 shadow"
             aria-label="Previous image"
           >
             <ChevronLeft className="w-5 h-5" aria-hidden />
@@ -63,7 +63,7 @@ export default function MarketplaceImageCarousel({ images, alt, className = '' }
           <button
             type="button"
             onClick={next}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 shadow"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-surface/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 shadow"
             aria-label="Next image"
           >
             <ChevronRight className="w-5 h-5" aria-hidden />

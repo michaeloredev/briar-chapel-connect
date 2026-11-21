@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function SupportPage() {
   return (
-    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-page-top to-page-bottom dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <PageHeader
           title="Support"
