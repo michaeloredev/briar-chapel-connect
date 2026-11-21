@@ -8,10 +8,9 @@ import { MARKETPLACE_PHOTO_SIZE } from '@/lib/images/cropImageToSquareWebp';
 import { MARKETPLACE_CATEGORIES } from '@/lib/data/marketplace-categories';
 import { errorMessage, responseError } from '@/lib/utils/errors';
 import type { Database } from '@/lib/supabase/types';
+import { MAX_POST_PHOTOS } from '@/lib/data/photo-limits';
 
 type Condition = Database['public']['Tables']['marketplace_items']['Row']['condition'];
-
-const MAX_PHOTOS = 3;
 
 export function AddMarketplaceItemButton({ className = '' }: { className?: string }) {
   const router = useRouter();
@@ -48,7 +47,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
 
   function handleCropComplete(file: File) {
     revokeCropUrl();
-    setPhotos((prev) => (prev.length >= MAX_PHOTOS ? prev : [...prev, file]));
+    setPhotos((prev) => (prev.length >= MAX_POST_PHOTOS ? prev : [...prev, file]));
   }
 
   function removePhoto(index: number) {
@@ -70,11 +69,16 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
         setLoading(false);
         return;
       }
+      if (photos.length === 0) {
+        setError('Add at least one photo of the item.');
+        setLoading(false);
+        return;
+      }
       const images: string[] = [];
       if (photos.length > 0) {
         setUploading(true);
         try {
-          for (const file of photos.slice(0, MAX_PHOTOS)) {
+          for (const file of photos.slice(0, MAX_POST_PHOTOS)) {
             const fd = new FormData();
             fd.append('file', file);
             const up = await fetch('/api/uploads/marketplace-image', { method: 'POST', body: fd });
@@ -250,7 +254,8 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Photos <span className="font-normal text-slate-500 dark:text-slate-400">({photos.length}/{MAX_PHOTOS})</span>
+                  Photos <span className="text-red-600 dark:text-red-400" aria-hidden>*</span>{' '}
+                  <span className="font-normal text-slate-500 dark:text-slate-400">({photos.length}/{MAX_POST_PHOTOS})</span>
                 </label>
                 {photoPreviews.length > 0 ? (
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -279,12 +284,12 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
-                  disabled={photos.length >= MAX_PHOTOS || !!imageToCrop}
+                  disabled={photos.length >= MAX_POST_PHOTOS || !!imageToCrop}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    if (photos.length >= MAX_PHOTOS) {
-                      setError(`You can add up to ${MAX_PHOTOS} photos.`);
+                    if (photos.length >= MAX_POST_PHOTOS) {
+                      setError(`You can add up to ${MAX_POST_PHOTOS} photos.`);
                       e.target.value = '';
                       return;
                     }
@@ -299,9 +304,9 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                   className="mt-2 block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 disabled:opacity-50 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700"
                 />
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  {photos.length >= MAX_PHOTOS
-                    ? `Maximum of ${MAX_PHOTOS} photos added. Remove one to replace it.`
-                    : `Add up to ${MAX_PHOTOS} photos, one at a time. Choose a photo, then crop to a square. We save ${MARKETPLACE_PHOTO_SIZE}×${MARKETPLACE_PHOTO_SIZE} WebP (or PNG).`}
+                  {photos.length >= MAX_POST_PHOTOS
+                    ? `Maximum of ${MAX_POST_PHOTOS} photos added. Remove one to replace it.`
+                    : `At least one photo is required, up to ${MAX_POST_PHOTOS}, added one at a time. Choose a photo, then crop to a square. We save ${MARKETPLACE_PHOTO_SIZE}×${MARKETPLACE_PHOTO_SIZE} WebP (or PNG).`}
                 </p>
               </div>
 

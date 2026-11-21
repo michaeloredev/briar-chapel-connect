@@ -4,11 +4,9 @@ import { requireAuthSupabase } from '@/lib/supabase/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiError, apiBadRequest } from '@/lib/api/response';
 import { ownImageUrls, removeStorageObjects, storageObjectPath } from '@/lib/api/upload';
-
-/** The listing form's photo limit. */
-const MAX_LISTING_IMAGES = 3;
 import { isMarketplaceCategory } from '@/lib/data/marketplace-categories';
 import { findProfaneField, profanityMessage } from '@/lib/moderation/profanity';
+import { MAX_POST_PHOTOS } from '@/lib/data/photo-limits';
 
 type Payload = {
   title?: string;
@@ -39,8 +37,11 @@ export async function POST(req: Request) {
     if (!Number.isFinite(price) || price < 0) return apiBadRequest('Invalid price');
 
     const { userId } = await requireAuthSupabase();
-    const images = ownImageUrls(body.images, 'marketplace-images', userId, MAX_LISTING_IMAGES);
+    const images = ownImageUrls(body.images, 'marketplace-images', userId, MAX_POST_PHOTOS);
     if (!images) return apiBadRequest('invalid images');
+    // Every new listing needs a photo: the marketplace is browsed by picture.
+    // Older listings without one stay up; there is no edit route to re-check.
+    if (images.length === 0) return apiBadRequest('Add at least one photo of the item.');
     type Insert = Database['public']['Tables']['marketplace_items']['Insert'];
     const insert: Insert = {
       user_id: userId,

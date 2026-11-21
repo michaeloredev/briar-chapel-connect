@@ -1,7 +1,7 @@
 /**
- * Photos allowed on one news post or one comment/reply. Shared so a post and
- * the replies under it can never disagree; both composers and both API
- * routes (/api/news-posts, /api/comments) read it. Marketplace listings have
- * their own limit in AddMarketplaceItem and /api/marketplace-items.
+ * Photos allowed on one news post, comment/reply or marketplace listing.
+ * Shared so the site has one limit and a form can never disagree with its
+ * route: the news, comment and listing composers and /api/news-posts,
+ * /api/comments and /api/marketplace-items all read it.
  */
 export const MAX_POST_PHOTOS = 4;
