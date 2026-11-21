@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import BreadcrumbsBar from "@/components/common/BreadcrumbsBar";
 import BreadcrumbTitleProvider from "@/components/common/BreadcrumbTitleProvider";
 import RoleProvider from "@/components/auth/RoleProvider";
@@ -61,7 +62,12 @@ export default function RootLayout({
                     </Suspense>
                   </div>
                 </div>
-                {children}
+                {/* Fills the space between the header and footer, so the footer
+                    sits at the bottom of short pages. Pages fill it with flex-1. */}
+                <div className="flex flex-1 flex-col bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+                  {children}
+                </div>
+                <Footer />
               </BreadcrumbTitleProvider>
             </RoleProvider>
           </ThemeProvider>

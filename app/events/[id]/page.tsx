@@ -51,7 +51,7 @@ export default async function EventDetailPage({ params }: PageProps) {
   const isCancelled = event.status === 'cancelled';
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <SetBreadcrumbTitle value={event.title} />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-wrap items-start justify-between gap-4">

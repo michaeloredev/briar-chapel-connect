@@ -103,14 +103,14 @@ export default function MembersPage() {
 
   if (roleLoading || (!hasRole('superadmin') && !error)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <div className="text-slate-500 dark:text-slate-400">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Members</h1>

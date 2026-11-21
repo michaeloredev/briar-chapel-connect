@@ -36,7 +36,7 @@ export default async function MarketplaceDetailPage({ params }: PageProps) {
   const dateText = isNaN(created.getTime()) ? '' : created.toLocaleString();
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <SetBreadcrumbTitle value={item.title} />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid md:grid-cols-2 gap-6">

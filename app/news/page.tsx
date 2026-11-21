@@ -52,7 +52,7 @@ export default async function NewsPage({ searchParams }: { searchParams: SearchP
     }`;
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex-1 bg-linear-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
         <PageHeader title="News" description="What neighbors are talking about. Only signed-in members can see this page." />
 
