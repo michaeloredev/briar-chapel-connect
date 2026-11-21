@@ -4,6 +4,7 @@ import type { NewsPost } from '@/lib/api/news';
 import { newsCategory } from '@/lib/data/news-categories';
 import { formatPostTime } from '@/lib/utils/date';
 import NewsPostActions from './NewsPostActions';
+import PhotoGallery from '@/components/ui/PhotoGallery';
 
 export type NewsPostCardProps = {
   post: NewsPost;
@@ -45,22 +46,13 @@ export default function NewsPostCard({ post, canDelete, canPin, linkToPost = tru
 
       <p className="mt-3 whitespace-pre-wrap text-slate-800 dark:text-slate-200">{post.content}</p>
 
-      {post.images.length > 0 ? (
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {post.images.map((src, i) => (
-            <a key={src + i} href={src} target="_blank" rel="noopener noreferrer" className="block">
-              <img
-                src={src}
-                alt={`Photo ${i + 1}`}
-                className="aspect-square w-full rounded-lg border border-slate-200 object-cover dark:border-slate-700"
-                width={400}
-                height={400}
-                loading="lazy"
-              />
-            </a>
-          ))}
-        </div>
-      ) : null}
+      <PhotoGallery
+        images={post.images}
+        className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
+        thumbClassName="aspect-square w-full rounded-lg"
+        thumbSize={400}
+        label="Post photo"
+      />
 
       {linkToPost ? (
         <Link
