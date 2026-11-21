@@ -9,7 +9,6 @@ import type { Database } from '@/lib/supabase/types';
 import { getUserRole, hasRole } from '@/lib/auth/roles';
 import { groupAccess, isOpen, memberActions, UUID_PATTERN, type GroupAccess, type GroupRole } from '@/lib/api/group-membership';
 import { authorNames } from '@/lib/api/user-names';
-import { GROUP_TYPES } from '@/lib/data/group-types';
 import { groupIconMeta } from '@/lib/data/group-icon-meta';
 import EventFormDialog from '@/components/events/EventFormDialog';
 import GroupFormDialog from '@/components/groups/GroupFormDialog';
@@ -28,6 +27,7 @@ import AdminDeleteButton from '@/components/common/AdminDeleteButton';
 import SetBreadcrumbTitle from '@/components/common/SetBreadcrumbTitle';
 import CommentThread from '@/components/forum/CommentThread';
 import { ICON_TILE } from '@/components/ui/iconTile';
+import GroupTypePill from '@/components/groups/GroupTypePill';
 
 export const metadata: Metadata = {
   title: 'Group • Briar Chapel Connect',
@@ -252,7 +252,6 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
   // Only the open tab's list is fetched; the tab's count is the head count.
   const memberList = canRead && tab === 'members' ? await loadMembers(admin, id, userId, access) : [];
 
-  const meta = GROUP_TYPES.find((t) => t.value === group.type);
   const avatar = groupIconMeta(group);
   const Icon = avatar.icon;
   const members = memberCount ?? 0;
@@ -279,16 +278,9 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
             )}
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={[
-                    'rounded-full px-2.5 py-0.5 text-xs font-medium',
-                    meta ? `${meta.colorClasses.bg} ${meta.colorClasses.icon}` : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
-                  ].join(' ')}
-                >
-                  {meta?.label ?? group.type}
-                </span>
+                <GroupTypePill type={group.type} className="px-2.5" />
                 {group.is_private ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-transparent bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
                     <Lock className="h-3 w-3" aria-hidden />
                     Private
                   </span>

@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { ArrowRight, Lock, MapPin } from 'lucide-react';
-import { GROUP_TYPES } from '@/lib/data/group-types';
 import { groupIconMeta } from '@/lib/data/group-icon-meta';
 import JoinGroupButton from './JoinGroupButton';
 import { ICON_TILE } from '@/components/ui/iconTile';
+import GroupTypePill from '@/components/groups/GroupTypePill';
 
 export type GroupCardProps = {
   id: string;
@@ -22,7 +22,6 @@ export type GroupCardProps = {
 };
 
 export default function GroupCard({ id, title, description, location, type, imageUrl, icon, isMember = false, isPrivate = false, isOwner = false }: GroupCardProps) {
-  const meta = GROUP_TYPES.find((t) => t.value === type);
   const avatar = groupIconMeta({ type, icon });
   const Icon = avatar.icon;
 
@@ -60,16 +59,9 @@ export default function GroupCard({ id, title, description, location, type, imag
             </Link>
           </h3>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <span
-              className={[
-                'rounded-full px-2 py-0.5 text-xs font-medium',
-                meta ? `${meta.colorClasses.bg} ${meta.colorClasses.icon}` : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
-              ].join(' ')}
-            >
-              {meta?.label ?? type}
-            </span>
+            <GroupTypePill type={type} />
             {isPrivate ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+              <span className="inline-flex items-center gap-1 rounded-full border border-transparent bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
                 <Lock className="h-3 w-3" aria-hidden />
                 Private
               </span>
