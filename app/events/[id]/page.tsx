@@ -61,7 +61,7 @@ export default async function EventDetailPage({ params }: PageProps) {
                 {meta.label}
               </span>
               {isCancelled ? (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200">
+                <span className="text-xs px-2 py-0.5 rounded-full border border-current bg-slate-100 font-medium text-red-600 dark:bg-slate-600 dark:text-red-400">
                   Cancelled
                 </span>
               ) : null}

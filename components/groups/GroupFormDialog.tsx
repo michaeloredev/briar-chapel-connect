@@ -8,6 +8,7 @@ import { GROUP_TYPES } from '@/lib/data/group-types';
 import { iconLabel, isGroupIcon, searchGroupIcons } from '@/lib/data/group-icons';
 import { ProviderLogoCropDialog } from '@/components/services/ProviderLogoCropDialog';
 import { errorMessage } from '@/lib/utils/errors';
+import { ICON_TILE, ICON_TILE_BG } from '@/components/ui/iconTile';
 
 /** The subset of a group this form can edit. */
 export type EditableGroup = {
@@ -115,10 +116,11 @@ export default function GroupFormDialog({ className = '', group, proposal = fals
   }
 
   const shownImage = imagePreview ?? savedImage;
-  // Icons take the group type's colors; the type's own icon is the default.
+  // Icons take the group type's icon color on the shared slate tile; the
+  // type's own icon is the default.
   const typeMeta = GROUP_TYPES.find((t) => t.value === type);
   const tint = {
-    bg: typeMeta?.colorClasses.bg ?? 'bg-slate-100 dark:bg-slate-800',
+    bg: ICON_TILE_BG,
     color: typeMeta?.colorClasses.icon ?? 'text-slate-600 dark:text-slate-300',
   };
   const TypeIcon = typeMeta?.icon ?? Users;
@@ -332,7 +334,7 @@ export default function GroupFormDialog({ className = '', group, proposal = fals
                       className="h-16 w-16 shrink-0 rounded-2xl border border-slate-200 object-cover dark:border-slate-700"
                     />
                   ) : (
-                    <span className={['flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl', tint.bg].join(' ')}>
+                    <span className={['flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl', ICON_TILE].join(' ')}>
                       {chosenIcon ? (
                         <DynamicIcon name={chosenIcon} className={['h-8 w-8', tint.color].join(' ')} aria-hidden />
                       ) : (
