@@ -4,6 +4,8 @@ import Link from 'next/link';
 import ProviderList from '@/components/services/ProviderList';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
+import { PageHeader } from '@/components/common/PageHeader';
+import ServicesShell from '@/components/services/ServicesShell';
 
 export const metadata: Metadata = {
   title: 'Search Services • Briar Chapel Connect',
@@ -39,10 +41,9 @@ export default async function ServicesSearchPage(props: SearchPageProps) {
 
   if (!query) {
     return (
-      <>
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Search</h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-300">Type in the search box to find services and providers.</p>
-      </>
+      <ServicesShell header={<PageHeader title="Search" description="Type in the search box to find services and providers." />}>
+        {null}
+      </ServicesShell>
     );
   }
 
@@ -128,10 +129,8 @@ export default async function ServicesSearchPage(props: SearchPageProps) {
     }) ?? [];
 
   return (
-    <>
-      <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Search results for “{query}”</h1>
-
-      <section className="mt-8">
+    <ServicesShell header={<PageHeader title={`Search results for “${query}”`} />}>
+      <section>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Service Topics</h2>
         {topicHits.length > 0 ? (
           <ul className="mt-3 grid gap-3">
@@ -156,7 +155,7 @@ export default async function ServicesSearchPage(props: SearchPageProps) {
           <ProviderList providers={providers} />
         </div>
       </section>
-    </>
+    </ServicesShell>
   );
 }
 

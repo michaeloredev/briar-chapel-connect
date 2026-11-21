@@ -7,6 +7,7 @@ import { auth } from '@clerk/nextjs/server';
 import { getUserRole, hasRole } from '@/lib/auth/roles';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
+import ServicesShell from '@/components/services/ServicesShell';
 
 export const metadata: Metadata = {
   title: 'Service • Briar Chapel Connect',
@@ -89,14 +90,13 @@ export default async function ServiceDetailListPage({ params }: PageProps) {
     }) ?? [];
 
   return (
-    <>
-      <PageHeader title={item.title} description={item.description} />
+    <ServicesShell header={<PageHeader title={item.title} description={item.description} />}>
       <ProviderList
         providers={providers}
         categorySlug={category}
         serviceSlug={service}
         canManageProviders={canManageProviders}
       />
-    </>
+    </ServicesShell>
   );
 }

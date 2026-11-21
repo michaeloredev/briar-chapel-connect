@@ -4,6 +4,7 @@ import { serviceSections } from '@/lib/data/services';
 import { PageHeader } from '@/components/common/PageHeader';
 import ServiceTypeCard from '@/components/services/ServiceTypeCard';
 import { providerCounts } from '@/lib/api/service-counts';
+import ServicesShell from '@/components/services/ServicesShell';
 
 export const metadata: Metadata = {
   title: 'Services Category • Briar Chapel Connect',
@@ -20,8 +21,9 @@ export default async function ServicesCategoryPage({ params }: PageProps) {
   const counts = await providerCounts();
 
   return (
-    <>
-      <PageHeader title={section.title} description="Choose a service to see neighbors' recommended providers." />
+    <ServicesShell
+      header={<PageHeader title={section.title} description="Choose a service to see neighbors' recommended providers." />}
+    >
       <div className="grid gap-4 md:grid-cols-2">
         {section.items.map((item) => (
           <ServiceTypeCard
@@ -32,6 +34,6 @@ export default async function ServicesCategoryPage({ params }: PageProps) {
           />
         ))}
       </div>
-    </>
+    </ServicesShell>
   );
 }
