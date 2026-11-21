@@ -70,6 +70,11 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
         setLoading(false);
         return;
       }
+      if (photos.length === 0) {
+        setError('Add at least one photo of the item.');
+        setLoading(false);
+        return;
+      }
       const images: string[] = [];
       if (photos.length > 0) {
         setUploading(true);
@@ -250,7 +255,8 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Photos <span className="font-normal text-slate-500 dark:text-slate-400">({photos.length}/{MAX_PHOTOS})</span>
+                  Photos <span className="text-red-600 dark:text-red-400" aria-hidden>*</span>{' '}
+                  <span className="font-normal text-slate-500 dark:text-slate-400">({photos.length}/{MAX_PHOTOS})</span>
                 </label>
                 {photoPreviews.length > 0 ? (
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -301,7 +307,7 @@ export function AddMarketplaceItemButton({ className = '' }: { className?: strin
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   {photos.length >= MAX_PHOTOS
                     ? `Maximum of ${MAX_PHOTOS} photos added. Remove one to replace it.`
-                    : `Add up to ${MAX_PHOTOS} photos, one at a time. Choose a photo, then crop to a square. We save ${MARKETPLACE_PHOTO_SIZE}×${MARKETPLACE_PHOTO_SIZE} WebP (or PNG).`}
+                    : `At least one photo is required, up to ${MAX_PHOTOS}, added one at a time. Choose a photo, then crop to a square. We save ${MARKETPLACE_PHOTO_SIZE}×${MARKETPLACE_PHOTO_SIZE} WebP (or PNG).`}
                 </p>
               </div>
 
