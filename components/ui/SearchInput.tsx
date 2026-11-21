@@ -36,8 +36,8 @@ export default function SearchInput({
   }, [initialValue]);
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative">
+    <div className="flex w-full items-center gap-2 sm:w-auto">
+      <div className="relative w-full sm:w-auto">
         <input
           type="text"
           value={value}
@@ -46,7 +46,7 @@ export default function SearchInput({
             if (e.key === 'Enter') submit();
           }}
           placeholder={placeholder}
-          className="w-64 sm:w-72 lg:w-96 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 pr-10 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full sm:w-72 lg:w-96 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 pr-10 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label={ariaLabel}
         />
         {value ? (
