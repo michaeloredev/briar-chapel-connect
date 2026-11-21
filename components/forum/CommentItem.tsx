@@ -4,6 +4,7 @@ import * as React from 'react';
 import { SignedIn } from '@clerk/nextjs';
 import CommentComposer from './CommentComposer';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import PhotoGallery from '@/components/ui/PhotoGallery';
 
 export type Comment = {
   id: string;
@@ -45,21 +46,7 @@ export default function CommentItem({ comment, replies, rootId, onReply, onDelet
       </div>
       <div className="mt-1 text-sm text-slate-900 dark:text-slate-100 whitespace-pre-wrap">{comment.content}</div>
       {Array.isArray(comment.images) && comment.images.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-2">
-          {comment.images.map((src, i) => (
-            <a key={src + i} href={src} target="_blank" rel="noopener noreferrer" className="block">
-              {/* using img for simplicity to avoid layout shift constraints */}
-              <img
-                src={src}
-                alt=""
-                className="w-24 h-24 object-cover rounded-md border border-slate-200 dark:border-slate-700"
-                width={96}
-                height={96}
-                loading="lazy"
-              />
-            </a>
-          ))}
-        </div>
+        <PhotoGallery images={comment.images} className="mt-2 flex flex-wrap gap-2" label="Comment photo" />
       ) : null}
       <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
         <span>{created}</span>
