@@ -1,9 +1,11 @@
 import { getCategoryMeta } from '@/lib/data/event-categories';
 import { formatDateTile } from '@/lib/utils/date';
+import { ICON_TILE } from '@/components/ui/iconTile';
 
 /**
  * Compact weekday-over-day badge for an event's start, in Briar Chapel time,
- * tinted with the event's category color to match its badge and calendar dot.
+ * on the shared slate tile, with the date in the event's category color to
+ * match its badge and calendar dot.
  */
 export default function DateTile({ iso, category }: { iso: string; category?: string | null }) {
   const tile = formatDateTile(iso);
@@ -11,6 +13,7 @@ export default function DateTile({ iso, category }: { iso: string; category?: st
     <span
       className={[
         'flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl leading-none',
+        ICON_TILE,
         getCategoryMeta(category).tileClasses,
       ].join(' ')}
     >
