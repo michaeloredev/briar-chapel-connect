@@ -16,7 +16,8 @@ type Section = {
   title: string;
   description: string;
   cta: string;
-  tile: string;
+  /** Icon color, light and dark; the tile behind it is slate on every card. */
+  iconColor: string;
 };
 
 const SECTIONS: Section[] = [
@@ -26,7 +27,7 @@ const SECTIONS: Section[] = [
     title: 'Community events',
     description: 'Yard sales, block parties, meetups and everything happening nearby.',
     cta: 'See events',
-    tile: 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400',
+    iconColor: 'text-purple-600 dark:text-purple-400',
   },
   {
     href: '/groups',
@@ -34,7 +35,7 @@ const SECTIONS: Section[] = [
     title: 'Groups & clubs',
     description: 'Find your people — golf, tennis, dog walkers, book clubs and more.',
     cta: 'Find a group',
-    tile: 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400',
+    iconColor: 'text-orange-600 dark:text-orange-400',
   },
   {
     href: '/marketplace',
@@ -42,7 +43,7 @@ const SECTIONS: Section[] = [
     title: 'Marketplace',
     description: 'Buy, sell and give away with neighbors — no shipping required.',
     cta: 'Start browsing',
-    tile: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
   },
   {
     href: '/services',
@@ -50,7 +51,7 @@ const SECTIONS: Section[] = [
     title: 'Local services',
     description: 'Plumbers, tutors, cleaners and more, recommended by neighbors.',
     cta: 'Find a pro',
-    tile: 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400',
+    iconColor: 'text-blue-600 dark:text-blue-400',
   },
 ];
 
@@ -231,14 +232,15 @@ export default async function Home() {
             Explore the neighborhood
           </h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {SECTIONS.map(({ href, icon: Icon, title, description, cta, tile }) => (
+            {SECTIONS.map(({ href, icon: Icon, title, description, cta, iconColor }) => (
               <Link
                 key={href}
                 href={href}
                 className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
               >
-                <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${tile}`}>
-                  <Icon className="h-6 w-6" aria-hidden />
+                {/* Slate tile, colored icon: the same look as the services icons. */}
+                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-600">
+                  <Icon className={`h-6 w-6 ${iconColor}`} aria-hidden />
                 </span>
                 <span className="text-xl font-semibold text-slate-900 dark:text-white">{title}</span>
                 <span className="text-slate-600 dark:text-slate-300">{description}</span>
