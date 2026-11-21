@@ -6,6 +6,7 @@ import DateTile from '@/components/events/DateTile';
 import { formatPostTime, formatTime } from '@/lib/utils/date';
 import { loadNewsFeed, newsReader } from '@/lib/api/news';
 import { newsCategory } from '@/lib/data/news-categories';
+import { ICON_TILE } from '@/components/ui/iconTile';
 
 const UPCOMING_LIMIT = 3;
 const NEWS_PREVIEW_LIMIT = 3;
@@ -238,9 +239,7 @@ export default async function Home() {
                 href={href}
                 className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
               >
-                {/* Slate tile, colored icon: the services icon look. The shadow falls down and
-                    to the right, as if lit from the top-left corner of the page. */}
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 shadow-[4px_5px_14px_-3px_rgb(15_23_42/0.14)] dark:border-slate-700 dark:bg-slate-600 dark:shadow-[4px_5px_14px_-3px_rgb(0_0_0/0.4)]">
+                                <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${ICON_TILE}`}>
                   <Icon className={`h-6 w-6 ${iconColor}`} aria-hidden />
                 </span>
                 <span className="text-xl font-semibold text-slate-900 dark:text-white">{title}</span>

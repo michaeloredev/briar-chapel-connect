@@ -34,19 +34,17 @@ export function isGroupIcon(name: string): boolean {
 
 /**
  * What a group shows as its avatar: its chosen icon, else its type's icon,
- * always tinted with the type's colors. A picture, when the group has one, is
+ * colored with the type's icon color, on the shared ICON_TILE. A picture, when the group has one, is
  * drawn instead of this by the caller.
  */
 export function groupIconMeta(group: { type: string; icon?: string | null }): {
   icon: LucideIcon;
-  bg: string;
   color: string;
 } {
   const type = GROUP_TYPES.find((t) => t.value === group.type);
   const chosen = group.icon ? lookupIcon(group.icon) : null;
   return {
     icon: chosen ?? type?.icon ?? Lucide.Users,
-    bg: type?.colorClasses.bg ?? 'bg-slate-100 dark:bg-slate-800',
     color: type?.colorClasses.icon ?? 'text-slate-600 dark:text-slate-300',
   };
 }

@@ -3,6 +3,7 @@ import { ArrowRight, Lock, MapPin } from 'lucide-react';
 import { GROUP_TYPES } from '@/lib/data/group-types';
 import { groupIconMeta } from '@/lib/data/group-icon-meta';
 import JoinGroupButton from './JoinGroupButton';
+import { ICON_TILE } from '@/components/ui/iconTile';
 
 export type GroupCardProps = {
   id: string;
@@ -43,7 +44,7 @@ export default function GroupCard({ id, title, description, location, type, imag
           <span
             className={[
               'flex h-14 w-14 shrink-0 items-center justify-center rounded-xl',
-              avatar.bg,
+              ICON_TILE,
             ].join(' ')}
           >
             <Icon className={['h-7 w-7', avatar.color].join(' ')} aria-hidden />

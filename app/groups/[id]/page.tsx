@@ -27,6 +27,7 @@ import type { PollView, SignupView } from '@/components/groups/types';
 import AdminDeleteButton from '@/components/common/AdminDeleteButton';
 import SetBreadcrumbTitle from '@/components/common/SetBreadcrumbTitle';
 import CommentThread from '@/components/forum/CommentThread';
+import { ICON_TILE } from '@/components/ui/iconTile';
 
 export const metadata: Metadata = {
   title: 'Group • Briar Chapel Connect',
@@ -272,7 +273,7 @@ export default async function GroupDetailPage({ params, searchParams }: PageProp
                 height={80}
               />
             ) : (
-              <span className={['flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl', avatar.bg].join(' ')}>
+              <span className={['flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl', ICON_TILE].join(' ')}>
                 <Icon className={['h-10 w-10', avatar.color].join(' ')} aria-hidden />
               </span>
             )}
